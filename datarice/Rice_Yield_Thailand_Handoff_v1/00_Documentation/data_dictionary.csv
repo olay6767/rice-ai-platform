@@ -1,0 +1,27 @@
+﻿field,thai_name,description,unit,frequency
+province_id,รหัสจังหวัด,Stable province key,integer,All
+province_en,ชื่อจังหวัดอังกฤษ,English province name,text,All
+province_th,ชื่อจังหวัดไทย,Thai province name,text,All
+region,ภูมิภาค,North / Northeast / Central / South,text,All
+year,ปี,Calendar year,year,Monthly
+month,เดือน,Calendar month 1-12,integer,Monthly
+temperature_mean_c,อุณหภูมิเฉลี่ย,Monthly mean temperature,°C,Monthly
+dewpoint_mean_c,จุดน้ำค้างเฉลี่ย,Monthly mean dew point,°C,Monthly
+soil_moisture_mean,ความชื้นในดิน,Monthly mean soil moisture,dataset-native,Monthly
+rainfall_total_mm,ปริมาณฝนรวม,Monthly precipitation,mm,Monthly
+evaporation_total_mm,การระเหยรวม,Monthly potential evaporation,mm,Monthly
+solar_total_mj_m2,รังสีดวงอาทิตย์,Monthly solar radiation,MJ/m²,Monthly
+ndvi_mean,NDVI เฉลี่ย,Mean rice-area NDVI,index,Monthly
+ndvi_median,NDVI มัธยฐาน,Median rice-area NDVI,index,Monthly
+ndvi_std,ส่วนเบี่ยงเบน NDVI,NDVI variability,index,Monthly
+ndvi_min,NDVI ต่ำสุด,Minimum NDVI,index,Monthly
+ndvi_max,NDVI สูงสุด,Maximum NDVI,index,Monthly
+crop_start_year,ปีเริ่มเพาะปลูก,Gregorian crop start year,year,Yearly
+crop_year,ปีเพาะปลูก,Thai crop-year label,text,Yearly
+actual_yield,ผลผลิตจริง,Observed yield per planted rai,kg/rai,Yearly
+predicted_yield,ผลผลิตพยากรณ์,ML predicted yield,kg/rai,Yearly
+residual,Residual,Actual - Predicted,kg/rai,Prediction
+absolute_error,Absolute Error,|Actual - Predicted|,kg/rai,Prediction
+percentage_error,Percentage Error,Absolute error / actual × 100,%,Prediction
+lower_90,ขอบล่างช่วงประมาณการ,90% prediction interval lower bound,kg/rai,Prediction
+upper_90,ขอบบนช่วงประมาณการ,90% prediction interval upper bound,kg/rai,Prediction

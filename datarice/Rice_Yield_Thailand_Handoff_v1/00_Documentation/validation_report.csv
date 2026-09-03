@@ -1,0 +1,8 @@
+﻿Check,Actual,Expected,Pass
+Province Master,77,77,True
+Map Provinces,77,77,True
+Monthly Rows,13860,13860,True
+Monthly Provinces,77,77,True
+Yield Rows,1078,1078,True
+Yield Provinces,77,77,True
+Prediction Rows,154,154,True

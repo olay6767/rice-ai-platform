@@ -1,0 +1,36 @@
+{
+  "name": "rice-ai-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:all": "node scripts/dev-all.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test:dashboard": "node scripts/test-dashboard-import.mjs",
+    "test:dashboard:ui": "node scripts/test-dashboard-ui.mjs",
+    "rice:data:check": "node scripts/import-rice-yield-data.mjs --dry-run",
+    "rice:data:import": "node scripts/import-rice-yield-data.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^2.13.0",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
+    "lucide-react": "^1.24.0",
+    "next": "16.2.10",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "supabase": "^2.111.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,42 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1920 512"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Rice AI Platform dark mode logo</title>
+  <desc id="description">
+    โลโก้ Rice AI Platform สำหรับใช้งานบนพื้นหลังสีเข้ม
+  </desc>
+
+  <g>
+    <rect x="28" y="28" width="456" height="456" rx="116" fill="#16A34A" />
+    <path d="M244 343C174 330 127 275 116 190C192 208 238 261 244 343Z" fill="#FFFFFF" />
+    <path d="M268 343C282 251 333 187 408 156C396 245 340 319 268 343Z" fill="#166534" />
+    <path d="M256 404C256 366 258 333 264 303" fill="none" stroke="#FFFFFF" stroke-width="18" stroke-linecap="round" />
+    <ellipse cx="390" cy="148" rx="25" ry="42" transform="rotate(42 390 148)" fill="#EAB308" />
+    <path d="M278 321L318 286L352 252L383 208" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="318" cy="286" r="11" fill="#FFFFFF" />
+    <circle cx="352" cy="252" r="11" fill="#FFFFFF" />
+    <circle cx="383" cy="208" r="12" fill="#EAB308" />
+    <path d="M229 319L190 279L151 246" fill="none" stroke="#166534" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="190" cy="279" r="11" fill="#166534" />
+    <circle cx="151" cy="246" r="12" fill="#EAB308" />
+    <path d="M256 401V430H188V393M256 430H330V388" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="188" cy="388" r="13" fill="#EAB308" />
+    <circle cx="330" cy="383" r="13" fill="#EAB308" />
+  </g>
+
+  <text
+    x="568"
+    y="316"
+    font-family="Inter, Avenir Next, Montserrat, Arial, sans-serif"
+    font-size="148"
+    font-weight="700"
+    letter-spacing="-5"
+  >
+    <tspan fill="#FFFFFF">Rice </tspan>
+    <tspan fill="#EAB308">AI</tspan>
+    <tspan fill="#DCFCE7" font-weight="500"> Platform</tspan>
+  </text>
+</svg>

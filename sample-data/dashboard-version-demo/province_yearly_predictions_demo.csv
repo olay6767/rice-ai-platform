@@ -1,0 +1,6 @@
+province_id,crop_start_year,crop_year,actual_yield,predicted_yield,residual,absolute_error,percentage_error,model_version
+1,2025,2568/69,360,372,-12,12,3.333,Demo_Model_v1.0
+3,2025,2568/69,690,682,8,8,1.159,Demo_Model_v1.0
+5,2025,2568/69,410,422,-12,12,2.927,Demo_Model_v1.0
+14,2025,2568/69,350,361,-11,11,3.143,Demo_Model_v1.0
+16,2025,2568/69,610,598,12,12,1.967,Demo_Model_v1.0
