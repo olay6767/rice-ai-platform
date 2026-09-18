@@ -10,6 +10,8 @@ import {
   LogIn,
   RotateCcw,
   Send,
+  Sparkles,
+  Sprout,
   UserRound,
 } from "lucide-react";
 import {
@@ -25,6 +27,11 @@ import type {
   ChatbotStreamEvent,
   KnowledgeTopic,
 } from "@/lib/chatbot/types";
+import { readJsonResponse } from "@/lib/http/json";
+import type {
+  PersonalizedRecommendationData,
+  RecommendationApiSuccess,
+} from "@/lib/recommendations/types";
 
 const MAX_MESSAGE_LENGTH = 4_000;
 
@@ -87,6 +94,15 @@ export default function RiceChatbot({
   const [copiedMessageId, setCopiedMessageId] = useState<
     string | null
   >(null);
+  const [recommendations, setRecommendations] = useState<
+    PersonalizedRecommendationData | null
+  >(null);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(
+    isAuthenticated
+  );
+  const [recommendationsError, setRecommendationsError] = useState<
+    string | null
+  >(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -101,6 +117,56 @@ export default function RiceChatbot({
   useEffect(() => {
     return () => abortControllerRef.current?.abort();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function loadRecommendations(): Promise<void> {
+      setRecommendationsLoading(true);
+      setRecommendationsError(null);
+
+      try {
+        const response = await fetch("/api/recommendations", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(await readApiError(response));
+        }
+
+        const payload = await readJsonResponse<RecommendationApiSuccess>(
+          response
+        );
+
+        setRecommendations(payload.data);
+      } catch (caughtError) {
+        if (
+          caughtError instanceof DOMException &&
+          caughtError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        setRecommendationsError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "ไม่สามารถโหลดคำถามแนะนำได้"
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setRecommendationsLoading(false);
+        }
+      }
+    }
+
+    void loadRecommendations();
+    return () => controller.abort();
+  }, [isAuthenticated]);
 
   async function sendMessage(rawMessage: string): Promise<void> {
     const message = rawMessage.trim();
@@ -432,6 +498,65 @@ export default function RiceChatbot({
                       </div>
                     );
                   })}
+
+                  {messages.length === 1 && !isSending && (
+                    <section
+                      aria-label="คำถามแนะนำเฉพาะคุณ"
+                      className="ml-12 rounded-2xl border border-rice-forest/10 bg-rice-mint/10 p-3.5 sm:ml-14 sm:max-w-[78%] sm:p-4 dark:border-white/10 dark:bg-white/[0.04]"
+                    >
+                      <div className="flex items-center gap-2 text-rice-forest dark:text-rice-mint-light">
+                        <Sparkles className="h-4 w-4" />
+                        <h3 className="text-sm font-bold">
+                          คำถามที่เหมาะกับคุณ
+                        </h3>
+                      </div>
+
+                      {recommendationsLoading && (
+                        <div className="mt-3 space-y-2" aria-label="กำลังสร้างคำถามแนะนำ">
+                          {[0, 1, 2].map((item) => (
+                            <div
+                              key={item}
+                              className="h-10 animate-pulse rounded-xl bg-rice-forest/[0.07] dark:bg-white/[0.07]"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {!recommendationsLoading && recommendations?.needsFarmField && (
+                        <div className="mt-3 rounded-xl bg-white/75 p-3 dark:bg-white/[0.05]">
+                          <p className="text-xs leading-5 text-rice-muted dark:text-white/60">
+                            {recommendations.message}
+                          </p>
+                          <Link
+                            href="/profile#farm-fields"
+                            className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full bg-rice-forest px-3.5 text-xs font-bold text-white transition hover:bg-rice-dark dark:bg-rice-mint-light dark:text-rice-dark"
+                          >
+                            <Sprout className="h-3.5 w-3.5" />
+                            เพิ่มข้อมูลแปลงนา
+                          </Link>
+                        </div>
+                      )}
+
+                      {!recommendationsLoading &&
+                        !recommendations?.needsFarmField &&
+                        recommendations?.suggestedQuestions.map((question) => (
+                          <button
+                            key={question}
+                            type="button"
+                            onClick={() => void sendMessage(question)}
+                            className="mt-2 block w-full rounded-xl border border-rice-forest/10 bg-white/80 px-3.5 py-2.5 text-left text-xs font-medium leading-5 text-rice-dark transition hover:border-rice-leaf/40 hover:bg-white hover:text-rice-forest dark:border-white/10 dark:bg-white/[0.05] dark:text-white/80 dark:hover:bg-white/[0.09] dark:hover:text-white"
+                          >
+                            {question}
+                          </button>
+                        ))}
+
+                      {!recommendationsLoading && recommendationsError && (
+                        <p className="mt-3 text-xs leading-5 text-rice-muted dark:text-white/50">
+                          {recommendationsError}
+                        </p>
+                      )}
+                    </section>
+                  )}
 
                   <div ref={messagesEndRef} />
                 </>

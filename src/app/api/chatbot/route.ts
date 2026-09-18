@@ -12,6 +12,7 @@ import type {
   ChatbotStreamEvent,
   KnowledgeTopic,
 } from "@/lib/chatbot/types";
+import { recordBehaviorEvent } from "@/lib/recommendations/server";
 import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -388,9 +389,10 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   let userId: string;
+  let supabase: Awaited<ReturnType<typeof createClient>>;
 
   try {
-    const supabase = await createClient();
+    supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -436,6 +438,15 @@ export async function POST(request: Request): Promise<Response> {
       }
     );
   }
+
+  await recordBehaviorEvent(supabase, userId, {
+    eventType: "chat",
+    feature: "chat",
+    path: pagePath,
+    metadata: {
+      surface: pagePath === "/chatbot" ? "chatbot-page" : "global-assistant",
+    },
+  });
 
   const apiKey = process.env.GEMINI_API_KEY?.trim();
 

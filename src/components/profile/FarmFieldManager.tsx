@@ -201,7 +201,7 @@ export default function FarmFieldManager(initial: FarmFieldManagerProps) {
     } finally { setSaving(false); }
   }
 
-  return <section aria-label="จัดการแปลงนา" className="mt-6 rounded-[2rem] border border-rice-forest/10 bg-white/80 p-5 shadow-card backdrop-blur sm:p-7 dark:border-white/10 dark:bg-white/[0.045]">
+  return <section id="farm-fields" aria-label="จัดการแปลงนา" className="mt-6 scroll-mt-24 rounded-[2rem] border border-rice-forest/10 bg-white/80 p-5 shadow-card backdrop-blur sm:p-7 dark:border-white/10 dark:bg-white/[0.045]">
     <div className="flex flex-col gap-4 border-b border-rice-forest/10 pb-5 dark:border-white/10 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex items-start gap-3"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rice-mint/60 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light"><Sprout className="h-5 w-5" /></span><div><h2 className="font-heading text-lg font-bold text-rice-forest dark:text-white">แปลงนาของฉัน</h2><p className="mt-1 max-w-2xl text-xs leading-5 text-rice-muted dark:text-white/45">บันทึกพื้นที่ พันธุ์ข้าว และช่วงเพาะปลูก เพื่อใช้แปลงหลักกับสภาพอากาศและการแจ้งเตือน</p></div></div>
       <div className="flex gap-2"><span className="rounded-xl bg-rice-mint/35 px-3 py-2 text-xs font-bold text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light">{fields.length} แปลง</span>{fields.length > 0 && <span className="rounded-xl bg-rice-surface-soft px-3 py-2 text-xs font-bold text-rice-dark dark:bg-white/10 dark:text-white">{totalArea.toLocaleString("th-TH", { maximumFractionDigits: 2 })} ไร่</span>}</div>

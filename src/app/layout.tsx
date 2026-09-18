@@ -11,6 +11,7 @@ import Footer from "@/components/layout/Footer/Footer";
 import Navbar, {
   type NavbarUser,
 } from "@/components/layout/Navbar/Navbar";
+import UserBehaviorTracker from "@/components/recommendations/UserBehaviorTracker";
 import { createClient } from "@/lib/supabase/server";
 
 import "./globals.css";
@@ -195,6 +196,10 @@ export default async function RootLayout({
           <GlobalRiceAssistant
             isAuthenticated={Boolean(navbarUser)}
             displayName={navbarUser?.fullName}
+          />
+
+          <UserBehaviorTracker
+            isAuthenticated={Boolean(navbarUser)}
           />
         </div>
       </body>
