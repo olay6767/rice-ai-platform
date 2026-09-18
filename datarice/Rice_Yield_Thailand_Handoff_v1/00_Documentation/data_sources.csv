@@ -1,0 +1,5 @@
+﻿dataset,provider,period,resolution,source_file
+Rice Yield,"Office of Agricultural Economics (OAE), Thailand",2011-2024,Province-Year,oae_rice_yield_province_year_2011_2025.csv
+Climate,ERA5 / ERA5-Land — VERIFY exact product used,2011-2025,Province-Month,era5_thailand_province_month_2011_2025.csv
+NDVI,MODIS / Google Earth Engine processing — VERIFY exact source,2011-2025,Province-Month,rice_ndvi_province_month_2011_2025_final.csv
+Administrative Boundary,GADM 4.1,Static,ADM1 / Province,gadm41_THA.gpkg

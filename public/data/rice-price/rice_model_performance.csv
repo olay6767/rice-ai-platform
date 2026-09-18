@@ -1,0 +1,6 @@
+﻿rice_type,Final_Method,CV_MAE,CV_Std_MAE,CV_MAPE,Test_MAE,Test_MAPE,forecast_method,reliability,status
+ข้าวขาว,Ridge C,257.97,287.09,13.14,160.88,7.79,Recursive Bridge,Medium,FINAL
+ข้าวนึ่ง,Ridge C,79.52,38.99,5.93,218.51,10.81,Recursive Bridge,Low,FINAL_WITH_CAUTION
+ข้าวหอมปทุมธานี,Ridge C,201.65,73.54,9.35,418.49,25.13,Direct Recursive Forecast,Medium,FINAL_WITH_CAUTION
+ข้าวหอมมะลิ,Ridge B,252.34,179.5,8.64,184.16,5.61,Direct Recursive Forecast,High,FINAL
+ข้าวเหนียว,Naive Last Month,232.3,188.64,11.91,201.11,9.58,Baseline,Low,FINAL_BASELINE

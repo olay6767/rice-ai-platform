@@ -1,0 +1,43 @@
+{
+  "name": "rice-ai-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev-all.mjs",
+    "dev:web": "next dev",
+    "dev:all": "node scripts/dev-all.mjs --include-admin",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test:dashboard": "node scripts/test-dashboard-import.mjs",
+    "test:dashboard:ui": "node scripts/test-dashboard-ui.mjs",
+    "test:flood:ui": "node --test --test-isolation=none scripts/test-flood-ui.mjs",
+    "test:drought:ui": "node --test --test-isolation=none scripts/test-drought-ui.mjs",
+    "test:storm:ui": "node --test --test-isolation=none scripts/test-storm-ui.mjs",
+    "test:disease:ui": "node --test --test-isolation=none scripts/test-disease-ui.mjs",
+    "test:rice-price:ui": "node --test --test-isolation=none scripts/test-rice-price-ui.mjs",
+    "rice:data:check": "node scripts/import-rice-yield-data.mjs --dry-run",
+    "rice:data:import": "node scripts/import-rice-yield-data.mjs"
+  },
+  "dependencies": {
+    "@google/genai": "^2.13.0",
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7",
+    "lucide-react": "^1.24.0",
+    "next": "16.2.10",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "recharts": "^3.10.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "supabase": "^2.111.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

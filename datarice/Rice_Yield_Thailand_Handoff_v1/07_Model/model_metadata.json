@@ -1,0 +1,29 @@
+{
+  "project_name": "Rice Yield Thailand",
+  "model_name": "Extra Trees Regressor",
+  "model_version": "ExtraTrees_Environmental_v1.0",
+  "target": "yield_per_planted_rai",
+  "target_unit": "kg/rai",
+  "feature_count": 77,
+  "development_period": "2011-2022",
+  "final_test_period": "2023-2024",
+  "parameters": {
+    "n_estimators": 800,
+    "max_depth": null,
+    "min_samples_leaf": 2,
+    "min_samples_split": 4,
+    "max_features": 1.0,
+    "random_state": 42
+  },
+  "test_metrics": {
+    "MAE": 54.08428706709959,
+    "RMSE": 68.92695094489831,
+    "R2": 0.7497382308785738
+  },
+  "notes": [
+    "Yield is annual/crop-year data, not monthly.",
+    "Prediction is a machine-learning estimate.",
+    "SHAP explains model behavior and does not establish causality.",
+    "Prediction interval results are from a conformal calibration experiment."
+  ]
+}

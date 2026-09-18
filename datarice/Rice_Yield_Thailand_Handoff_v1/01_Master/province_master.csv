@@ -1,0 +1,78 @@
+﻿province_id,gid_1,province_en,province_th,region,region_code
+1,THA.1_1,Amnat Charoen,อำนาจเจริญ,Northeast,NE
+2,THA.2_1,Ang Thong,อ่างทอง,Central,C
+3,THA.3_1,Bangkok Metropolis,กรุงเทพมหานคร,Central,C
+4,THA.4_1,Bueng Kan,บึงกาฬ,Northeast,NE
+5,THA.5_1,Buri Ram,บุรีรัมย์,Northeast,NE
+6,THA.6_1,Chachoengsao,ฉะเชิงเทรา,Central,C
+7,THA.7_1,Chai Nat,ชัยนาท,Central,C
+8,THA.8_1,Chaiyaphum,ชัยภูมิ,Northeast,NE
+9,THA.9_1,Chanthaburi,จันทบุรี,Central,C
+10,THA.10_1,Chiang Mai,เชียงใหม่,North,N
+11,THA.11_1,Chiang Rai,เชียงราย,North,N
+12,THA.12_1,Chon Buri,ชลบุรี,Central,C
+13,THA.13_1,Chumphon,ชุมพร,South,S
+14,THA.14_1,Kalasin,กาฬสินธุ์,Northeast,NE
+15,THA.15_1,Kamphaeng Phet,กำแพงเพชร,North,N
+16,THA.16_1,Kanchanaburi,กาญจนบุรี,Central,C
+17,THA.17_1,Khon Kaen,ขอนแก่น,Northeast,NE
+18,THA.18_1,Krabi,กระบี่,South,S
+19,THA.19_1,Lampang,ลำปาง,North,N
+20,THA.20_1,Lamphun,ลำพูน,North,N
+21,THA.21_1,Loei,เลย,Northeast,NE
+22,THA.22_1,Lop Buri,ลพบุรี,Central,C
+23,THA.23_1,Mae Hong Son,แม่ฮ่องสอน,North,N
+24,THA.24_1,Maha Sarakham,มหาสารคาม,Northeast,NE
+25,THA.25_1,Mukdahan,มุกดาหาร,Northeast,NE
+26,THA.26_1,Nakhon Nayok,นครนายก,Central,C
+27,THA.27_1,Nakhon Pathom,นครปฐม,Central,C
+28,THA.28_1,Nakhon Phanom,นครพนม,Northeast,NE
+29,THA.29_1,Nakhon Ratchasima,นครราชสีมา,Northeast,NE
+30,THA.30_1,Nakhon Sawan,นครสวรรค์,North,N
+31,THA.31_1,Nakhon Si Thammarat,นครศรีธรรมราช,South,S
+32,THA.32_1,Nan,น่าน,North,N
+33,THA.33_1,Narathiwat,นราธิวาส,South,S
+34,THA.34_1,Nong Bua Lam Phu,หนองบัวลำภู,Northeast,NE
+35,THA.35_1,Nong Khai,หนองคาย,Northeast,NE
+36,THA.36_1,Nonthaburi,นนทบุรี,Central,C
+37,THA.37_1,Pathum Thani,ปทุมธานี,Central,C
+38,THA.38_1,Pattani,ปัตตานี,South,S
+39,THA.39_1,Phangnga,พังงา,South,S
+40,THA.40_1,Phatthalung,พัทลุง,South,S
+41,THA.41_1,Phayao,พะเยา,North,N
+42,THA.42_1,Phetchabun,เพชรบูรณ์,North,N
+43,THA.43_1,Phetchaburi,เพชรบุรี,Central,C
+44,THA.44_1,Phichit,พิจิตร,North,N
+45,THA.45_1,Phitsanulok,พิษณุโลก,North,N
+46,THA.46_1,Phra Nakhon Si Ayutthaya,พระนครศรีอยุธยา,Central,C
+47,THA.47_1,Phrae,แพร่,North,N
+48,THA.48_1,Phuket,ภูเก็ต,South,S
+49,THA.49_1,Prachin Buri,ปราจีนบุรี,Central,C
+50,THA.50_1,Prachuap Khiri Khan,ประจวบคีรีขันธ์,Central,C
+51,THA.51_1,Ranong,ระนอง,South,S
+52,THA.52_1,Ratchaburi,ราชบุรี,Central,C
+53,THA.53_1,Rayong,ระยอง,Central,C
+54,THA.54_1,Roi Et,ร้อยเอ็ด,Northeast,NE
+55,THA.55_1,Sa Kaeo,สระแก้ว,Central,C
+56,THA.56_1,Sakon Nakhon,สกลนคร,Northeast,NE
+57,THA.57_1,Samut Prakan,สมุทรปราการ,Central,C
+58,THA.58_1,Samut Sakhon,สมุทรสาคร,Central,C
+59,THA.59_1,Samut Songkhram,สมุทรสงคราม,Central,C
+60,THA.60_1,Saraburi,สระบุรี,Central,C
+61,THA.61_1,Satun,สตูล,South,S
+62,THA.62_1,Si Sa Ket,ศรีสะเกษ,Northeast,NE
+63,THA.63_1,Sing Buri,สิงห์บุรี,Central,C
+64,THA.64_1,Songkhla,สงขลา,South,S
+65,THA.65_1,Sukhothai,สุโขทัย,North,N
+66,THA.66_1,Suphan Buri,สุพรรณบุรี,Central,C
+67,THA.67_1,Surat Thani,สุราษฎร์ธานี,South,S
+68,THA.68_1,Surin,สุรินทร์,Northeast,NE
+69,THA.69_1,Tak,ตาก,North,N
+70,THA.70_1,Trang,ตรัง,South,S
+71,THA.71_1,Trat,ตราด,Central,C
+72,THA.72_1,Ubon Ratchathani,อุบลราชธานี,Northeast,NE
+73,THA.73_1,Udon Thani,อุดรธานี,Northeast,NE
+74,THA.74_1,Uthai Thani,อุทัยธานี,North,N
+75,THA.75_1,Uttaradit,อุตรดิตถ์,North,N
+76,THA.76_1,Yala,ยะลา,South,S
+77,THA.77_1,Yasothon,ยโสธร,Northeast,NE

@@ -1,0 +1,387 @@
+.phoneWrap {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  height: 100%;
+  margin-inline: auto;
+}
+
+.phoneFrame {
+  position: relative;
+  height: 100%;
+  min-height: 820px;
+  padding: 8px;
+  border-radius: 3.4rem;
+  background: #161a18;
+  box-shadow:
+    0 30px 80px rgb(20 42 29 / 25%),
+    0 8px 24px rgb(0 0 0 / 18%),
+    inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.phoneScreen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 804px;
+  overflow: hidden;
+  border-radius: 2.9rem;
+  background: #fff;
+}
+
+.phoneStatusBar {
+  pointer-events: none;
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 28px;
+  color: #151917;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dynamicIsland {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 96px;
+  height: 28px;
+  border-radius: 999px;
+  background: #000;
+  box-shadow: inset 0 1px 2px rgb(255 255 255 / 8%);
+  transform: translateX(-50%);
+}
+
+.phoneSignal {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.phoneBattery {
+  position: relative;
+  display: block;
+  width: 20px;
+  height: 10px;
+  padding: 1px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+}
+
+.phoneBattery > span {
+  display: block;
+  width: 14px;
+  height: 100%;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.phoneBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 40px;
+  scrollbar-width: none;
+}
+
+.phoneBody::-webkit-scrollbar {
+  display: none;
+}
+
+.homeIndicator {
+  display: block;
+  flex: none;
+  width: 112px;
+  height: 6px;
+  margin: 4px auto 10px;
+  border-radius: 999px;
+  background: #171a18;
+}
+
+.phoneMuteButton,
+.phoneVolumeButton,
+.phonePowerButton {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  width: 6px;
+  background: #343936;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 18%);
+}
+
+.phoneMuteButton {
+  top: 112px;
+  left: -4px;
+  height: 64px;
+  border-radius: 5px 0 0 5px;
+}
+
+.phoneVolumeButton {
+  top: 192px;
+  left: -4px;
+  height: 96px;
+  border-radius: 5px 0 0 5px;
+}
+
+.phonePowerButton {
+  top: 144px;
+  right: -4px;
+  height: 112px;
+  border-radius: 0 5px 5px 0;
+}
+
+.mustardIcon {
+  color: #fff !important;
+  background: #946b08 !important;
+  box-shadow: 0 10px 24px rgb(148 107 8 / 24%) !important;
+}
+
+.mustardDropZone {
+  color: #2f291b;
+  border-color: rgb(177 133 31 / 52%);
+  background: #fffbf1;
+}
+
+.mustardDropZone:hover {
+  border-color: #946b08;
+  background: #fff4d8;
+}
+
+.mustardDropZone:focus-within {
+  --tw-ring-color: #946b08;
+}
+
+.mustardUploadIcon {
+  color: #946b08;
+}
+
+.mustardButton {
+  color: #fff !important;
+  background: #946b08 !important;
+  box-shadow: 0 12px 28px rgb(148 107 8 / 25%) !important;
+}
+
+.mustardButton:hover:not(:disabled) {
+  background: #795604 !important;
+}
+
+.mustardButton:focus-visible {
+  --tw-ring-color: #946b08;
+}
+
+.mustardGhostButton {
+  color: #795604 !important;
+}
+
+.mustardGhostButton:hover {
+  color: #654702 !important;
+  background: #fff4d8 !important;
+}
+
+.mustardPreview,
+.mustardPreviewDivider {
+  border-color: rgb(148 107 8 / 18%) !important;
+}
+
+.mustardOutlineButton {
+  color: #795604 !important;
+  border-color: rgb(148 107 8 / 34%) !important;
+}
+
+.mustardOutlineButton:hover {
+  color: #654702 !important;
+  border-color: #946b08 !important;
+  background: #fff4d8 !important;
+}
+
+:global(.dark) .phoneScreen {
+  background: #0d2014;
+}
+
+:global(.dark) .phoneStatusBar {
+  color: #fff;
+}
+
+:global(.dark) .homeIndicator {
+  background: rgb(255 255 255 / 75%);
+}
+
+:global(.dark) .mustardDropZone {
+  color: #f8e8b6;
+  border-color: rgb(214 168 58 / 50%);
+  background: rgb(148 107 8 / 12%);
+}
+
+:global(.dark) .mustardDropZone:hover {
+  border-color: #d6a83a;
+  background: rgb(148 107 8 / 20%);
+}
+
+:global(.dark) .mustardUploadIcon {
+  color: #e0b54c;
+}
+
+.mascotStage {
+  position: relative;
+  display: grid;
+  min-height: 240px;
+  place-items: end center;
+  overflow: visible;
+}
+
+.mascotLanding {
+  position: relative;
+  z-index: 2;
+  transform-origin: 50% 100%;
+  animation:
+    mascot-side-arrival 1.05s cubic-bezier(0.2, 0.82, 0.22, 1) both,
+    mascot-hover 3.2s ease-in-out 1.05s infinite;
+}
+
+.rocketTrail {
+  position: absolute;
+  z-index: 1;
+  top: 48%;
+  left: -92%;
+  width: 240px;
+  height: 54px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 72%) 30%,
+    rgb(216 180 91 / 70%) 68%,
+    rgb(94 140 74 / 28%) 100%
+  );
+  filter: blur(12px);
+  opacity: 0;
+  animation: mascot-side-trail 0.98s ease-out both;
+}
+
+.landingShadow {
+  position: absolute;
+  z-index: 0;
+  bottom: 3px;
+  left: 50%;
+  width: min(70%, 128px);
+  height: 18px;
+  border-radius: 50%;
+  background: rgb(11 46 28 / 18%);
+  filter: blur(8px);
+  transform: translateX(-50%);
+  animation: mascot-shadow-arrival 1.05s ease-out both;
+}
+
+@keyframes mascot-side-arrival {
+  0% {
+    opacity: 0;
+    transform: translate3d(-82vw, 8px, 0) rotate(-12deg) scale(0.68);
+  }
+
+  58% {
+    opacity: 1;
+    transform: translate3d(12px, -3px, 0) rotate(3deg) scale(1.04);
+  }
+
+  76% {
+    transform: translate3d(-7px, 0, 0) rotate(-1deg) scale(0.99);
+  }
+
+  90% {
+    transform: translate3d(3px, 0, 0) rotate(0deg) scale(1.01);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes mascot-side-trail {
+  0% {
+    opacity: 0.8;
+    transform: translate3d(-55vw, -50%, 0) scaleX(1.8);
+  }
+
+  65% {
+    opacity: 0.5;
+    transform: translate3d(55px, -50%, 0) scaleX(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(130px, -50%, 0) scaleX(0.25);
+  }
+}
+
+@keyframes mascot-shadow-arrival {
+  0%,
+  48% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.25);
+  }
+
+  78% {
+    opacity: 0.28;
+    transform: translateX(-50%) scale(1.12);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@keyframes mascot-hover {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+@media (max-width: 639px) {
+  .phoneFrame {
+    min-height: 760px;
+    border-radius: 3rem;
+  }
+
+  .phoneScreen {
+    min-height: 744px;
+    border-radius: 2.55rem;
+  }
+
+  .mascotStage {
+    min-height: 190px;
+  }
+
+  .rocketTrail {
+    width: 160px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascotLanding,
+  .rocketTrail,
+  .landingShadow {
+    animation: none;
+  }
+
+  .rocketTrail {
+    display: none;
+  }
+}

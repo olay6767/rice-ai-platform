@@ -1,0 +1,6 @@
+﻿rice_type,Forecast_Min,Forecast_Max,Forecast_Mean,Forecast_SD,Jan_2569,Dec_2569,Change,Change_Pct,reliability,status
+ข้าวขาว,2191.22,2304.34,2236.59,35.76,2247.87,2304.34,56.47,2.51,Medium,FINAL
+ข้าวนึ่ง,1967.39,2037.72,2015.38,20.57,1967.39,2024.26,56.87,2.89,Low,FINAL_WITH_CAUTION
+ข้าวหอมปทุมธานี,1894.04,2099.69,2026.97,60.5,1894.04,2005.78,111.74,5.9,Medium,FINAL_WITH_CAUTION
+ข้าวหอมมะลิ,3230.05,3486.04,3401.06,83.13,3230.05,3401.0,170.95,5.29,High,FINAL
+ข้าวเหนียว,2450.0,2450.0,2450.0,0.0,2450.0,2450.0,0.0,0.0,Low,FINAL_BASELINE

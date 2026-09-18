@@ -1,0 +1,16 @@
+﻿file,size_mb
+00_Documentation/data_dictionary.csv,0.002
+00_Documentation/data_sources.csv,0.0
+00_Documentation/README.txt,0.001
+00_Documentation/validation_report.csv,0.0
+01_Master/province_master.csv,0.004
+02_Monthly_Data/province_monthly_environment.csv,3.955
+03_Yield/province_yearly_yield.csv,0.091
+04_Prediction/province_yearly_predictions.csv,0.024
+04_Prediction/prediction_intervals.csv,0.025
+05_Map/thailand_provinces.geojson,25.395
+06_Explainability/shap_global.csv,0.006
+06_Explainability/shap_group.csv,0.0
+07_Model/feature_list.csv,0.001
+07_Model/model_metadata.json,0.001
+08_Research/FINAL_RESEARCH_TABLES.xlsx,0.012
