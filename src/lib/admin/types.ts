@@ -65,10 +65,22 @@ export interface AdminRecommendation {
 
 export interface AdminActivityLog {
   id: string;
-  action: "create" | "update" | "delete" | "role_update" | "upload";
+  action:
+    | "create"
+    | "update"
+    | "delete"
+    | "role_update"
+    | "upload"
+    | "publish"
+    | "archive"
+    | "set_default"
+    | "enable"
+    | "disable";
   resource_type: string;
   resource_id: string | null;
   summary: string;
+  old_value?: Record<string, unknown> | null;
+  new_value?: Record<string, unknown> | null;
   created_at: string;
 }
 
