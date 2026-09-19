@@ -88,7 +88,11 @@ export default async function ProfilePage() {
     metadataText(user.user_metadata?.full_name) ||
     user.email ||
     "ผู้ใช้งาน Rice AI";
-  const role = user.app_metadata?.role === "admin" ? "ผู้ดูแลระบบ" : "ผู้ใช้งาน";
+  const role = user.app_metadata?.role === "superadmin"
+    ? "ผู้ดูแลระบบสูงสุด"
+    : user.app_metadata?.role === "admin"
+      ? "ผู้ดูแลระบบ"
+      : "ผู้ใช้งาน";
 
   const summaryCards = [
     {

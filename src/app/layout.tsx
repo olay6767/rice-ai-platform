@@ -11,6 +11,7 @@ import Footer from "@/components/layout/Footer/Footer";
 import Navbar, {
   type NavbarUser,
 } from "@/components/layout/Navbar/Navbar";
+import RouteAwareShell from "@/components/layout/RouteAwareShell";
 import UserBehaviorTracker from "@/components/recommendations/UserBehaviorTracker";
 import { createClient } from "@/lib/supabase/server";
 
@@ -136,7 +137,8 @@ async function getNavbarUser(): Promise<NavbarUser | null> {
       email: user.email || "",
       avatarUrl,
       role:
-        user.app_metadata?.role === "admin"
+        user.app_metadata?.role === "admin" ||
+        user.app_metadata?.role === "superadmin"
           ? "admin"
           : "user",
     };
@@ -182,25 +184,29 @@ export default async function RootLayout({
             overflow-x-clip
           "
         >
-          <Navbar
-            user={navbarUser}
-            onSignOut={signOutAction}
-          />
+          <RouteAwareShell
+            navigation={
+              <Navbar
+                user={navbarUser}
+                onSignOut={signOutAction}
+              />
+            }
+            footer={<Footer />}
+            overlays={
+              <>
+                <GlobalRiceAssistant
+                  isAuthenticated={Boolean(navbarUser)}
+                  displayName={navbarUser?.fullName}
+                />
 
-          <div className="flex-1">
+                <UserBehaviorTracker
+                  isAuthenticated={Boolean(navbarUser)}
+                />
+              </>
+            }
+          >
             {children}
-          </div>
-
-          <Footer />
-
-          <GlobalRiceAssistant
-            isAuthenticated={Boolean(navbarUser)}
-            displayName={navbarUser?.fullName}
-          />
-
-          <UserBehaviorTracker
-            isAuthenticated={Boolean(navbarUser)}
-          />
+          </RouteAwareShell>
         </div>
       </body>
     </html>

@@ -139,7 +139,8 @@ export async function loginAction(
   }
 
   if (
-    data.user?.app_metadata?.role === "admin"
+    data.user?.app_metadata?.role === "admin" ||
+    data.user?.app_metadata?.role === "superadmin"
   ) {
     const { error: signOutError } =
       await supabase.auth.signOut();

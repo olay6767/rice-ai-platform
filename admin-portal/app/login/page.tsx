@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import AdminThemeToggle from "@/components/admin/AdminThemeToggle";
 
 const userLoginUrl = `${(
   process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
@@ -51,10 +52,9 @@ export default function AdminLoginPage() {
         return;
       }
 
-      if (
-        data.user?.app_metadata?.role !==
-        "admin"
-      ) {
+      const role = data.user?.app_metadata?.role;
+
+      if (role !== "admin" && role !== "superadmin") {
         const { error: signOutError } =
           await supabase.auth.signOut();
 
@@ -81,25 +81,29 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-10">
-      <section className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.05] p-7 shadow-floating backdrop-blur-xl sm:p-9">
+    <main className="relative flex min-h-dvh items-center justify-center bg-[var(--app-background)] px-4 py-10 text-[var(--app-text)]">
+      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+        <AdminThemeToggle />
+      </div>
+
+      <section className="w-full max-w-md rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface-glass)] p-7 shadow-floating backdrop-blur-xl sm:p-9">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rice-mint/90 text-rice-forest">
             <Sprout className="h-6 w-6" aria-hidden="true" />
           </span>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-rice-mint-light">Rice AI</p>
-            <h1 className="mt-1 font-heading text-2xl font-bold text-white">ระบบผู้ดูแล</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-rice-leaf dark:text-rice-mint-light">Rice AI</p>
+            <h1 className="mt-1 font-heading text-2xl font-bold text-[var(--app-text)]">ระบบผู้ดูแล</h1>
           </div>
         </div>
 
-        <p className="mt-6 text-sm leading-6 text-white/60">
+        <p className="mt-6 text-sm leading-6 text-[var(--app-text-secondary)]">
           สำหรับบัญชีที่ได้รับสิทธิ์ผู้ดูแลระบบเท่านั้น
           บัญชีผู้ใช้งานทั่วไปไม่สามารถเข้าสู่หน้านี้ได้
         </p>
 
         <form className="mt-7 space-y-5" onSubmit={handleSubmit}>
-          <label className="block text-sm font-semibold text-white">
+          <label className="block text-sm font-semibold text-[var(--app-text)]">
             อีเมล
             <input
               type="email"
@@ -107,29 +111,29 @@ export default function AdminLoginPage() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm outline-none transition focus:border-rice-mint/70 focus:ring-4 focus:ring-rice-mint/15"
+              className="mt-2 w-full rounded-2xl border border-[var(--app-border-strong)] bg-[var(--app-background)] px-4 py-3 text-sm text-[var(--app-text)] outline-none transition placeholder:text-[var(--app-text-muted)] focus:border-rice-leaf focus:ring-4 focus:ring-rice-mint/20"
               placeholder="name@example.com"
             />
           </label>
 
-          <label className="block text-sm font-semibold text-white">
+          <label className="block text-sm font-semibold text-[var(--app-text)]">
             รหัสผ่าน
             <span className="relative mt-2 block">
-              <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/45" aria-hidden="true" />
+              <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--app-text-muted)]" aria-hidden="true" />
               <input
                 type="password"
                 required
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-white/[0.06] py-3 pl-11 pr-4 text-sm outline-none transition focus:border-rice-mint/70 focus:ring-4 focus:ring-rice-mint/15"
+                className="w-full rounded-2xl border border-[var(--app-border-strong)] bg-[var(--app-background)] py-3 pl-11 pr-4 text-sm text-[var(--app-text)] outline-none transition placeholder:text-[var(--app-text-muted)] focus:border-rice-leaf focus:ring-4 focus:ring-rice-mint/20"
                 placeholder="กรอกรหัสผ่าน"
               />
             </span>
           </label>
 
           {error && (
-            <p role="alert" className="rounded-2xl border border-rose-300/25 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
+            <p role="alert" className="rounded-2xl border border-rose-300/40 bg-rose-100/70 px-4 py-3 text-sm text-rose-800 dark:border-rose-300/25 dark:bg-rose-400/10 dark:text-rose-100">
               {error}
             </p>
           )}
@@ -137,17 +141,17 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rice-mint px-5 py-3 text-sm font-bold text-rice-forest transition hover:bg-rice-mint-light disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-rice-forest px-5 py-3 text-sm font-bold text-white transition hover:bg-rice-dark disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rice-mint dark:text-rice-forest dark:hover:bg-rice-mint-light"
           >
             <LogIn className="h-4 w-4" aria-hidden="true" />
             {pending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบผู้ดูแล"}
           </button>
         </form>
 
-        <div className="mt-6 border-t border-white/10 pt-5 text-center">
+        <div className="mt-6 border-t border-[var(--app-border)] pt-5 text-center">
           <a
             href={userLoginUrl}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-white/55 transition hover:text-rice-mint focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rice-mint"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--app-text-muted)] transition hover:text-rice-leaf focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rice-leaf dark:hover:text-rice-mint"
           >
             <ArrowLeft
               className="h-4 w-4"

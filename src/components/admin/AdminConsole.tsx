@@ -9,6 +9,7 @@ import {
   ImageUp,
   LayoutDashboard,
   LoaderCircle,
+  LogOut,
   Newspaper,
   Pencil,
   Plus,
@@ -33,6 +34,7 @@ import type {
   AdminRecommendation,
   AdminResource,
   AdminRicePrice,
+  AdminRole,
 } from "@/lib/admin/types";
 import {
   ActivityPanel,
@@ -41,6 +43,8 @@ import {
   ModelsPanel,
   UsersPanel,
 } from "@/components/admin/AdminOperations";
+import AdminThemeToggle from "@/components/admin/AdminThemeToggle";
+import { createClient } from "@/lib/supabase/client";
 
 type AdminTab =
   | "overview"
@@ -512,7 +516,15 @@ function ContentForm({
   );
 }
 
-export default function AdminConsole({ administratorName }: { administratorName: string }) {
+export default function AdminConsole({
+  administratorId,
+  administratorName,
+  administratorRole,
+}: {
+  administratorId: string;
+  administratorName: string;
+  administratorRole: Exclude<AdminRole, "user">;
+}) {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [records, setRecords] = useState(EMPTY_RECORDS);
@@ -527,9 +539,29 @@ export default function AdminConsole({ administratorName }: { administratorName:
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncingPrices, setIsSyncingPrices] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const resource = isResource(activeTab) ? activeTab : null;
   const currentItems = resource ? records[resource] : [];
+
+  async function signOut(): Promise<void> {
+    setIsSigningOut(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+      const { error: signOutError } = await supabase.auth.signOut();
+
+      if (signOutError) {
+        throw signOutError;
+      }
+
+      window.location.assign("/login");
+    } catch {
+      setError("ออกจากระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      setIsSigningOut(false);
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -757,40 +789,144 @@ export default function AdminConsole({ administratorName }: { administratorName:
   }
 
   return (
-    <main className="relative isolate min-h-dvh overflow-hidden py-5 sm:py-7">
-      <div aria-hidden="true" className="ambient-orb -right-20 top-10 h-80 w-80 bg-rice-mint/35 dark:bg-rice-leaf/10" />
-      <div className="dashboard-container relative z-10">
-        <header className="mb-5 flex flex-col gap-4 rounded-[2rem] bg-rice-forest p-5 text-white shadow-[0_20px_55px_rgba(11,46,28,0.2)] sm:p-7 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-rice-mint-light">
-              <ShieldCheck className="h-3.5 w-3.5" /> พื้นที่ผู้ดูแลระบบ
+    <main className="relative isolate min-h-dvh overflow-x-clip bg-[var(--app-background)] py-3 sm:py-5">
+      <div
+        aria-hidden="true"
+        className="ambient-orb -right-24 -top-20 h-96 w-96 bg-rice-mint/25 dark:bg-rice-leaf/10"
+      />
+      <div
+        aria-hidden="true"
+        className="ambient-orb -bottom-40 -left-24 h-96 w-96 bg-rice-gold/10 dark:bg-rice-gold/[0.04]"
+      />
+
+      <div className="relative z-10 mx-auto w-full max-w-[1660px] px-3 sm:px-5 lg:px-7">
+        <header className="mb-4 flex flex-col gap-4 rounded-3xl border border-white/10 bg-rice-forest px-4 py-4 text-white shadow-[0_18px_50px_rgba(0,24,11,0.18)] sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-rice-mint-light text-rice-dark shadow-sm">
+              <ShieldCheck
+                aria-hidden="true"
+                className="h-5 w-5"
+              />
             </span>
-            <h1 className="mt-3 font-heading text-3xl font-bold tracking-[-0.035em] sm:text-4xl">Rice AI Admin</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">จัดการผู้ใช้ ข้อมูลการเกษตร AI Model โรคข้าว และเนื้อหาจากศูนย์กลางเดียว</p>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h1 className="font-heading text-xl font-bold tracking-[-0.025em] !text-white sm:text-2xl">
+                  Rice AI Admin
+                </h1>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-semibold text-rice-mint-light">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                  {administratorRole === "superadmin" ? "Super Admin" : "ระบบพร้อมใช้งาน"}
+                </span>
+              </div>
+              <p className="mt-1 truncate text-xs text-white/55 sm:text-sm">
+                ศูนย์จัดการข้อมูล ผู้ใช้ และบริการ AI
+              </p>
+            </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-            <p className="text-xs font-semibold text-white/55">ผู้ดูแลที่กำลังใช้งาน</p>
-            <p className="mt-1 font-bold text-rice-mint-light">{administratorName}</p>
+
+          <div className="flex min-w-0 items-center gap-2">
+            <AdminThemeToggle
+              variant="header"
+              showLabel={false}
+            />
+
+            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] px-3 py-2.5 lg:max-w-sm">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-xs font-bold text-rice-mint-light">
+                {administratorName.slice(0, 2).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium text-white/50">
+                  ผู้ดูแลที่กำลังใช้งาน
+                </p>
+                <p className="truncate text-sm font-semibold text-white">
+                  {administratorName}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              disabled={isSigningOut}
+              aria-label="ออกจากระบบผู้ดูแล"
+              title="ออกจากระบบ"
+              className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.08] text-white transition-colors hover:bg-white/[0.14] disabled:cursor-wait disabled:opacity-60"
+            >
+              {isSigningOut ? (
+                <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut aria-hidden="true" className="h-4 w-4" />
+              )}
+            </button>
           </div>
         </header>
 
-        <div className="grid min-w-0 gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-          <aside className="min-w-0 lg:sticky lg:top-5 lg:self-start">
-            <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-rice-forest/10 bg-white/80 p-2 shadow-sm lg:flex-col dark:border-white/10 dark:bg-white/[0.04]" role="tablist" aria-label="เมนูผู้ดูแลระบบ">
-              {TAB_ITEMS.map((tab) => {
-                const Icon = tab.icon;
-                const selected = activeTab === tab.id;
-                return <button key={tab.id} type="button" role="tab" aria-selected={selected} onClick={() => { setActiveTab(tab.id); setIsFormOpen(false); setSuccess(null); setError(null); }} className={`inline-flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-xs font-bold transition sm:text-sm ${selected ? "bg-rice-forest text-white shadow-md dark:bg-rice-mint-light dark:text-rice-dark" : "text-rice-forest hover:bg-rice-mint/25 dark:text-white"}`}><Icon className="h-4 w-4" />{tab.label}</button>;
-              })}
-            </nav>
+        <div className="grid min-w-0 gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
+          <aside className="min-w-0 lg:sticky lg:top-4 lg:self-start">
+            <div className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 shadow-[0_10px_28px_rgba(0,24,11,0.07)] lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:overscroll-contain">
+              <div className="hidden px-2.5 pb-3 pt-1 lg:block">
+                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--app-text-muted)]">
+                  เมนูจัดการ
+                </p>
+              </div>
+              <nav
+                className="flex gap-1.5 overflow-x-auto lg:flex-col"
+                role="tablist"
+                aria-label="เมนูผู้ดูแลระบบ"
+              >
+                {TAB_ITEMS.map((tab) => {
+                  const Icon = tab.icon;
+                  const selected = activeTab === tab.id;
+
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setIsFormOpen(false);
+                        setSuccess(null);
+                        setError(null);
+                      }}
+                      className={`group inline-flex min-h-12 shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-rice-leaf lg:w-full ${
+                        selected
+                          ? "bg-rice-mint/45 text-rice-dark dark:bg-rice-leaf/20 dark:text-rice-mint-light"
+                          : "text-[var(--app-text-secondary)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]"
+                      }`}
+                    >
+                      <span
+                        className={`grid h-8 w-8 shrink-0 place-items-center transition-colors ${
+                          selected
+                            ? "text-rice-leaf dark:text-rice-mint-light"
+                            : "text-[var(--app-text-muted)] group-hover:text-rice-leaf"
+                        }`}
+                      >
+                        <Icon
+                          aria-hidden="true"
+                          className="h-5 w-5"
+                        />
+                      </span>
+                      <span className="whitespace-nowrap leading-5">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
           </aside>
 
-          <div className="min-w-0">
+          <div className="min-w-0 rounded-3xl border border-[var(--app-border)] bg-[var(--app-surface-glass)] p-4 shadow-[0_12px_40px_rgba(0,24,11,0.05)] sm:p-5 lg:p-6">
             <ErrorNotice message={error} />
-            {success && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /><p>{success}</p></div>}
+            {success && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /><p>{success}</p></div>}
 
             {activeTab === "overview" && (loading && !overview ? <LoadingPanel /> : <OverviewPanel overview={overview} />)}
-            {activeTab === "users" && <UsersPanel />}
+            {activeTab === "users" && (
+              <UsersPanel
+                viewerId={administratorId}
+                viewerRole={administratorRole}
+              />
+            )}
             {activeTab === "agriculture" && <AgriculturalDataPanel />}
             {activeTab === "models" && <ModelsPanel />}
             {activeTab === "diseases" && <DiseasesPanel />}
@@ -826,20 +962,124 @@ function LoadingPanel() {
 
 function OverviewPanel({ overview }: { overview: AdminOverview | null }) {
   if (!overview) return <LoadingPanel />;
+
   const cards = [
-    { label: "ผู้ใช้งาน", value: overview.counts.users, detail: "บัญชีในระบบทั้งหมด", icon: UsersRound, tone: "bg-emerald-100 text-emerald-700" },
-    { label: "ตรวจโรค", value: overview.counts.diseaseChecks, detail: "การตรวจใน 7 วันล่าสุด", icon: Bug, tone: "bg-amber-100 text-amber-700" },
-    { label: "Nong Serm AI", value: overview.counts.assistantUses, detail: "การใช้งานใน 7 วันล่าสุด", icon: BrainCircuit, tone: "bg-violet-100 text-violet-700" },
-    { label: "ข่าวและข้อมูล", value: overview.counts.content, detail: `ข่าวเผยแพร่ ${overview.counts.publishedPosts} รายการ`, icon: Newspaper, tone: "bg-sky-100 text-sky-700" },
+    { label: "ผู้ใช้งาน", value: overview.counts.users, detail: "บัญชีในระบบทั้งหมด", icon: UsersRound, tone: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" },
+    { label: "ตรวจโรค", value: overview.counts.diseaseChecks, detail: "การตรวจใน 7 วันล่าสุด", icon: Bug, tone: "bg-amber-500/10 text-amber-700 dark:text-amber-300" },
+    { label: "Nong Serm AI", value: overview.counts.assistantUses, detail: "การใช้งานใน 7 วันล่าสุด", icon: BrainCircuit, tone: "bg-violet-500/10 text-violet-700 dark:text-violet-300" },
+    { label: "ข่าวและข้อมูล", value: overview.counts.content, detail: `ข่าวเผยแพร่ ${overview.counts.publishedPosts} รายการ`, icon: Newspaper, tone: "bg-sky-500/10 text-sky-700 dark:text-sky-300" },
   ];
+
   const maximum = Math.max(1, ...overview.dailyUsage.flatMap((item) => [item.diseaseChecks, item.assistantUses]));
-  return <div className="space-y-5">
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map((card) => { const Icon = card.icon; return <article key={card.label} className="glass-card p-5"><span className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.tone}`}><Icon className="h-5 w-5" /></span><p className="mt-4 text-3xl font-bold text-rice-forest dark:text-white">{card.value.toLocaleString("th-TH")}</p><h3 className="mt-1 text-sm font-bold text-rice-forest dark:text-white">{card.label}</h3><p className="mt-1 text-xs text-rice-muted dark:text-white/45">{card.detail}</p></article>; })}</div>
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,.6fr)]">
-      <section className="glass-card p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold text-rice-leaf">ภาพรวม 7 วัน</p><h2 className="mt-1 font-heading text-lg font-bold">จำนวนการใช้งานรายวัน</h2></div><div className="flex gap-3 text-xs"><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rice-leaf" />ตรวจโรค</span><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rice-gold" />Nong Serm AI</span></div></div><div className="mt-6 grid h-56 grid-cols-7 items-end gap-2 border-b border-rice-forest/10 px-1">{overview.dailyUsage.map((item) => <div key={item.date} className="flex h-full min-w-0 flex-col justify-end gap-2"><div className="flex flex-1 items-end justify-center gap-1"><span title={`ตรวจโรค ${item.diseaseChecks}`} className="w-3 rounded-t-md bg-rice-leaf/85" style={{ height: `${Math.max(item.diseaseChecks ? 8 : 2, item.diseaseChecks / maximum * 100)}%` }} /><span title={`Nong Serm AI ${item.assistantUses}`} className="w-3 rounded-t-md bg-rice-gold" style={{ height: `${Math.max(item.assistantUses ? 8 : 2, item.assistantUses / maximum * 100)}%` }} /></div><span className="truncate text-center text-[10px] text-rice-muted">{new Date(item.date).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</span></div>)}</div></section>
-      <section className="glass-card p-5"><div className="flex items-center gap-2"><Activity className="h-4 w-4 text-rice-leaf" /><h2 className="font-heading text-base font-bold">กิจกรรมล่าสุด</h2></div><div className="mt-4 space-y-4">{overview.recentActivity.length ? overview.recentActivity.map((item) => <div key={item.id} className="flex gap-3"><span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rice-mint/45"><Clock3 className="h-4 w-4" /></span><div><p className="text-xs font-bold">{item.summary}</p><p className="mt-1 text-[11px] text-rice-muted">{formatDate(item.created_at)}</p></div></div>) : <p className="rounded-2xl bg-rice-surface-soft/70 p-3 text-sm text-rice-muted">ยังไม่มีกิจกรรม</p>}</div></section>
+  const hasUsage = overview.dailyUsage.some(
+    (item) =>
+      item.diseaseChecks > 0 ||
+      item.assistantUses > 0
+  );
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
+
+          return (
+            <article
+              key={card.label}
+              className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-sm"
+            >
+              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.tone}`}>
+                <Icon
+                  aria-hidden="true"
+                  className="h-5 w-5"
+                />
+              </span>
+              <p className="mt-4 text-3xl font-bold text-[var(--app-text)]">
+                {card.value.toLocaleString("th-TH")}
+              </p>
+              <h3 className="mt-1 text-sm font-bold text-[var(--app-text)]">
+                {card.label}
+              </h3>
+              <p className="mt-1 text-xs text-[var(--app-text-muted)]">
+                {card.detail}
+              </p>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,.6fr)]">
+        <section className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-rice-leaf dark:text-rice-mint-light">
+                ภาพรวม 7 วัน
+              </p>
+              <h2 className="mt-1 font-heading text-lg font-bold">
+                จำนวนการใช้งานรายวัน
+              </h2>
+            </div>
+            <div className="flex gap-3 text-xs text-[var(--app-text-secondary)]">
+              <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rice-leaf" />ตรวจโรค</span>
+              <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rice-gold" />Nong Serm AI</span>
+            </div>
+          </div>
+
+          {hasUsage ? (
+            <div className="mt-6 grid h-56 grid-cols-7 items-end gap-2 border-b border-[var(--app-border)] px-1">
+              {overview.dailyUsage.map((item) => (
+                <div key={item.date} className="flex h-full min-w-0 flex-col justify-end gap-2">
+                  <div className="flex flex-1 items-end justify-center gap-1">
+                    <span title={`ตรวจโรค ${item.diseaseChecks}`} className="w-3 rounded-t-md bg-rice-leaf/85" style={{ height: `${Math.max(item.diseaseChecks ? 8 : 2, item.diseaseChecks / maximum * 100)}%` }} />
+                    <span title={`Nong Serm AI ${item.assistantUses}`} className="w-3 rounded-t-md bg-rice-gold" style={{ height: `${Math.max(item.assistantUses ? 8 : 2, item.assistantUses / maximum * 100)}%` }} />
+                  </div>
+                  <span className="truncate text-center text-[10px] text-[var(--app-text-muted)]">
+                    {new Date(item.date).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 flex h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--app-border-strong)] bg-[var(--app-surface-soft)] px-6 text-center">
+              <span className="grid h-11 w-11 place-items-center rounded-2xl bg-rice-mint/35 text-rice-leaf dark:bg-rice-leaf/15 dark:text-rice-mint-light">
+                <Activity aria-hidden="true" className="h-5 w-5" />
+              </span>
+              <p className="mt-3 text-sm font-semibold">ยังไม่มีการใช้งานในช่วง 7 วันนี้</p>
+              <p className="mt-1 text-xs text-[var(--app-text-muted)]">กราฟจะแสดงเมื่อมีการตรวจโรคหรือใช้งาน Nong Serm AI</p>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Activity aria-hidden="true" className="h-4 w-4 text-rice-leaf dark:text-rice-mint-light" />
+              <h2 className="font-heading text-base font-bold">กิจกรรมล่าสุด</h2>
+            </div>
+            <span className="rounded-full bg-[var(--app-surface-soft)] px-2.5 py-1 text-[11px] text-[var(--app-text-muted)]">
+              {overview.recentActivity.length} รายการ
+            </span>
+          </div>
+
+          <div className="mt-3 max-h-[22rem] space-y-1 overflow-y-auto pr-1">
+            {overview.recentActivity.length ? overview.recentActivity.map((item) => (
+              <div key={item.id} className="flex gap-3 rounded-xl px-2 py-2.5 hover:bg-[var(--app-surface-soft)]">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rice-mint/35 text-rice-leaf dark:bg-rice-leaf/15 dark:text-rice-mint-light">
+                  <Clock3 aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="break-words text-xs font-semibold leading-5">{item.summary}</p>
+                  <p className="mt-0.5 text-[11px] text-[var(--app-text-muted)]">{formatDate(item.created_at)}</p>
+                </div>
+              </div>
+            )) : (
+              <p className="rounded-xl bg-[var(--app-surface-soft)] p-4 text-sm text-[var(--app-text-muted)]">ยังไม่มีกิจกรรม</p>
+            )}
+          </div>
+        </section>
+      </div>
     </div>
-  </div>;
+  );
 }
 
 function RecordList({
