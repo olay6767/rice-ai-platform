@@ -229,6 +229,15 @@ function dateValue(
   return new Date(value).toISOString();
 }
 
+function bangkokDate(value: string | Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
+}
+
 function validateTimeRange(startsAt: string, expiresAt: string | null): void {
   if (expiresAt && new Date(expiresAt).getTime() <= new Date(startsAt).getTime()) {
     throw new Error("วันสิ้นสุดต้องอยู่หลังวันเริ่มต้น");
@@ -237,11 +246,16 @@ function validateTimeRange(startsAt: string, expiresAt: string | null): void {
 
 function parsePost(value: InputRecord, user: User, isUpdate: boolean) {
   const status = enumValue(value.status ?? "draft", ["draft", "published"] as const, "สถานะ");
-  const publishedAt = dateValue(
+  const requestedPublishedAt = dateValue(
     value.publishedAt,
     "วันเผยแพร่",
     status === "published" ? new Date().toISOString() : undefined
   );
+  const publishedAt =
+    status === "published" && requestedPublishedAt &&
+    bangkokDate(requestedPublishedAt) === bangkokDate(new Date())
+      ? new Date().toISOString()
+      : requestedPublishedAt;
 
   if (status === "published" && !publishedAt) {
     throw new Error("กรุณาระบุวันเผยแพร่");
@@ -250,7 +264,7 @@ function parsePost(value: InputRecord, user: User, isUpdate: boolean) {
   return {
     title: requiredText(value.title, "หัวข้อ", 180),
     summary: requiredText(value.summary, "สรุปข่าว", 600),
-    body: optionalText(value.body, 20_000) ?? "",
+    body: optionalText(value.body, 100_000) ?? "",
     category: enumValue(value.category, POST_CATEGORIES, "หมวดข่าว"),
     source_name: optionalText(value.sourceName, 120) ?? "Rice AI",
     image_url: imageUrl(value.imageUrl),

@@ -223,7 +223,7 @@ export default function ThailandFloodMap({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[18px] bg-[#f8faf5] shadow-[inset_0_0_0_1px_rgba(11,46,28,0.08)] dark:bg-[#0b2013] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+    <div className="relative overflow-hidden rounded-[18px] bg-white shadow-[inset_0_0_0_1px_rgba(11,46,28,0.08)] dark:bg-white dark:shadow-[inset_0_0_0_1px_rgba(11,46,28,0.16)]">
       <svg
         role="img"
         aria-label="แผนที่ประเทศไทยแสดงจำนวนเหตุการณ์น้ำท่วมรายจังหวัด"
@@ -242,7 +242,7 @@ export default function ThailandFloodMap({
               key={feature.id}
               d={path}
               fill={mapColor(value, maximum)}
-              stroke={isActive || isSelected ? "#f59e0b" : "#ffffff"}
+              stroke={isActive || isSelected ? "#f59e0b" : "#17211b"}
               strokeWidth={isActive || isSelected ? 2.3 : 0.8}
               vectorEffect="non-scaling-stroke"
               fillRule="evenodd"

@@ -1,3 +1,5 @@
+import { parseNewsContent } from "@/lib/infographic/news-content";
+
 export const INFOGRAPHIC_CATEGORIES = [
   { id: "all", label: "ทั้งหมด" },
   { id: "rice-knowledge", label: "ความรู้เรื่องข้าว" },
@@ -23,12 +25,14 @@ export interface InfographicArticle {
   image: string;
   imageAlt: string;
   gallery?: string[];
+  richBody?: import("@/lib/infographic/news-content").NewsContentBlock[];
 }
 
 export interface AdminPostSummary {
   id: string;
   title: string;
   summary: string;
+  body?: string;
   category: "weather" | "disease" | "pest" | "price" | "knowledge" | "disaster";
   image_url: string | null;
   image_alt: string;
@@ -199,7 +203,8 @@ export function defaultArticleImage(category: InfographicCategory): string {
 }
 
 export function adminPostToArticle(post: AdminPostSummary): InfographicArticle {
-  const category = inferArticleCategory(
+  const storedContent = post.body ? parseNewsContent(post.body) : null;
+  const category = storedContent?.category ?? inferArticleCategory(
     post.category,
     post.title,
     post.summary
@@ -215,6 +220,12 @@ export function adminPostToArticle(post: AdminPostSummary): InfographicArticle {
     viewCount: stableViewCount(post.id),
     image: post.image_url || defaultArticleImage(category),
     imageAlt: post.image_alt || post.title,
+    ...(storedContent
+      ? {
+          richBody: storedContent.blocks,
+          gallery: storedContent.gallery.map((image) => image.src),
+        }
+      : {}),
   };
 }
 

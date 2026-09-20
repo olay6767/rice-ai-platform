@@ -173,7 +173,7 @@ export function ThailandYieldChoropleth({
   return (
     <div
       ref={containerRef}
-      className="relative min-w-0 overflow-hidden rounded-xl bg-[#f4f6ed] shadow-[0_12px_32px_rgba(40,79,51,0.12)] dark:bg-[#091a10]"
+      className="relative min-w-0 overflow-hidden rounded-xl bg-white shadow-[0_12px_32px_rgba(40,79,51,0.12)] dark:bg-white"
     >
         <svg
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}

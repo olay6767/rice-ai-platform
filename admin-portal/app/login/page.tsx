@@ -81,7 +81,7 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center px-4 py-10">
+    <main className="flex min-h-dvh items-center justify-center bg-rice-dark px-4 py-10">
       <section className="w-full max-w-md rounded-[2rem] border border-white/10 bg-white/[0.05] p-7 shadow-floating backdrop-blur-xl sm:p-9">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rice-mint/90 text-rice-forest">

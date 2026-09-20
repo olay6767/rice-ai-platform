@@ -19,8 +19,9 @@ export default function RicePricePage() {
       eyebrow="Rice Price Thailand"
       title="ราคาข้าวไทย"
       description="ติดตามแนวโน้มราคาข้าว 5 ชนิด ทั้งข้อมูลจริงและพยากรณ์รายเดือน"
-      heroImage="/images/22.png"
-      heroImageAlt="เกษตรกรกับข้าวและกราฟแนวโน้มราคาข้าว"
+      heroImage="/images/59.jpg"
+      heroImageAlt="เกษตรกรกำลังเก็บเกี่ยวและรวบรวมผลผลิตข้าว"
+      heroImageMode="background"
     >
       <Suspense fallback={<RiceLoadingState label="กำลังเตรียมแดชบอร์ดราคาข้าว…" />}>
         <RicePriceDashboard />

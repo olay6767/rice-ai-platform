@@ -64,8 +64,8 @@ const DISASTER_CONFIG: Array<{
   color: string;
   icon: typeof CloudRain;
 }> = [
-  { name: "น้ำท่วม", key: "flood", color: "#237A57", icon: CloudRain },
-  { name: "ภัยแล้ง", key: "drought", color: "#C58B13", icon: SunMedium },
+  { name: "น้ำท่วม", key: "flood", color: "#1E5A8A", icon: CloudRain },
+  { name: "ภัยแล้ง", key: "drought", color: "#E87524", icon: SunMedium },
   { name: "พายุ", key: "storm", color: "#5F6B66", icon: Wind },
 ];
 
@@ -1183,9 +1183,9 @@ export default function DisasterOverviewDashboard() {
                             {formatNumber(item.total)} ครั้ง
                           </p>
                         </div>
-                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#eef4dd]">
+                        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            className="h-full rounded-full bg-gradient-to-r from-[#ECF39E] via-[#90A955] to-[#40916C]"
+                            className="flex h-full overflow-hidden rounded-full"
                             style={{
                               width:
                                 Math.max(
@@ -1193,7 +1193,18 @@ export default function DisasterOverviewDashboard() {
                                   (item.total / rankingMaximum) * 100
                                 ) + "%",
                             }}
-                          />
+                          >
+                            {DISASTER_CONFIG.map((config) => (
+                              <span
+                                key={config.key}
+                                className="h-full"
+                                style={{
+                                  width: `${item.total > 0 ? ((item[config.key] ?? 0) / item.total) * 100 : 0}%`,
+                                  backgroundColor: config.color,
+                                }}
+                              />
+                            ))}
+                          </div>
                         </div>
                         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-semibold text-emerald-950/55">
                           {DISASTER_CONFIG.map((config) => (

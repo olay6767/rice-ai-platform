@@ -15,10 +15,10 @@ const pageSource = await readFile(
   "utf8"
 );
 
-test("uses storm image 33 as a blended hero with shorter copy", () => {
-  assert.match(pageSource, /heroImage="\/images\/33\.jpg"/);
+test("uses storm image 61 as a blended hero with shorter copy", () => {
+  assert.match(pageSource, /heroImage="\/images\/61\.png"/);
   assert.match(pageSource, /heroImageMode="background"/);
-  assert.match(pageSource, /heroImagePosition="center 28%"/);
+  assert.match(pageSource, /heroImagePosition="center 48%"/);
   assert.match(
     pageSource,
     /description="ดูแนวโน้มบันทึกพายุรายเดือนและรายปี พร้อมสำรวจข้อมูลแต่ละจังหวัดบนแผนที่"/

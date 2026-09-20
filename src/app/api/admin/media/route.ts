@@ -1,6 +1,5 @@
 import { getAdminContext } from "@/lib/admin/auth";
 import { logAdminActivity } from "@/lib/admin/content";
-import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -51,9 +50,8 @@ export async function POST(request: Request): Promise<Response> {
       return jsonError(400, "INVALID_FILE_SIZE", "ไฟล์รูปภาพต้องมีขนาดไม่เกิน 8 MB");
     }
 
-    const adminClient = createAdminClient();
     const path = `news/${context.user.id}/${crypto.randomUUID()}.${extensionFor(uploaded)}`;
-    const { error: uploadError } = await adminClient.storage
+    const { error: uploadError } = await context.supabase.storage
       .from("admin-media")
       .upload(path, uploaded, {
         contentType: uploaded.type,
@@ -66,7 +64,7 @@ export async function POST(request: Request): Promise<Response> {
       return jsonError(500, "UPLOAD_FAILED", "ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่");
     }
 
-    const { data: publicUrlData } = adminClient.storage
+    const { data: publicUrlData } = context.supabase.storage
       .from("admin-media")
       .getPublicUrl(path);
 
@@ -83,14 +81,6 @@ export async function POST(request: Request): Promise<Response> {
       { status: 201, headers: { "Cache-Control": "no-store" } }
     );
   } catch (error) {
-    if (error instanceof Error && error.message.includes("SUPABASE_SERVICE_ROLE_KEY")) {
-      return jsonError(
-        503,
-        "ADMIN_SERVICE_KEY_REQUIRED",
-        error.message
-      );
-    }
-
     console.error("Unexpected admin media upload error", error);
     return jsonError(500, "INTERNAL_ERROR", "ไม่สามารถอัปโหลดรูปภาพได้ กรุณาลองใหม่");
   }

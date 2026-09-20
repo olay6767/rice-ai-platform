@@ -19,8 +19,9 @@ export default function DisasterOverviewPage() {
       title="ภาพรวมภัยพิบัติ"
       description="น้ำท่วม ภัยแล้ง และพายุในมุมมองเดียว"
       notice={null}
-      heroImage="/images/8.png"
-      heroImageAlt=""
+      heroImage="/images/60.png"
+      heroImageAlt="ภาพรวมสถานการณ์น้ำท่วม ภัยแล้ง และพายุ"
+      heroImageMode="background"
     >
       <Suspense
         fallback={

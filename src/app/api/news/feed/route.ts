@@ -15,7 +15,7 @@ export async function GET(): Promise<Response> {
     const [posts, alerts, prices, recommendations] = await Promise.all([
       supabase
         .from("news_posts")
-        .select("id, title, summary, category, source_name, image_url, image_alt, is_featured, published_at")
+        .select("id, title, summary, body, category, source_name, image_url, image_alt, is_featured, published_at")
         .eq("status", "published")
         .lte("published_at", new Date().toISOString())
         .order("published_at", { ascending: false }),

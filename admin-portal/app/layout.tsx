@@ -25,7 +25,7 @@ export default function AdminPortalLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th" className="dark">
+    <html lang="th">
       <body className={ibmPlexSansThai.variable}>{children}</body>
     </html>
   );

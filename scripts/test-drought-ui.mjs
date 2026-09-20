@@ -80,6 +80,9 @@ test("keeps drought map colors and shows in-map detail with connector", () => {
   }
   assert.match(mapSource, /dashboard-map-detail-card absolute bottom-3 right-3/);
   assert.match(mapSource, /dashboard-map-connector-line/);
-  assert.match(mapSource, /stroke-\[#b57a05\]/);
-  assert.match(mapSource, /compact[\s\S]*?bg-\[#fffaf5\]/);
+  assert.match(
+    mapSource,
+    /stroke=\{isHovered \|\| isSelected \? "#b57a05" : "#17211b"\}/
+  );
+  assert.match(mapSource, /: compact\s*\? "bg-white"/);
 });

@@ -19,10 +19,10 @@ export default function StormAnalyticsPage() {
       title="แดชบอร์ดวิเคราะห์บันทึกพายุ"
       description="ดูแนวโน้มบันทึกพายุรายเดือนและรายปี พร้อมสำรวจข้อมูลแต่ละจังหวัดบนแผนที่"
       notice={null}
-      heroImage="/images/33.jpg"
-      heroImageAlt="คลื่นลมแรงและต้นไม้เอนจากพายุบริเวณชายฝั่ง"
+      heroImage="/images/61.png"
+      heroImageAlt="นาข้าวได้รับความเสียหายจากพายุและลมแรง"
       heroImageMode="background"
-      heroImagePosition="center 28%"
+      heroImagePosition="center 48%"
     >
       <Suspense
         fallback={

@@ -435,7 +435,7 @@ export default function ThailandYieldMap({
       {error ? <RiceErrorState message={error} /> : null}
       {!loading && !error ? (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-[#f8faf5] dark:border-white/10 dark:bg-[#0b2013]">
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-950/10 bg-white dark:border-emerald-950/20 dark:bg-white">
             <svg
               ref={svgRef}
               role="img"
@@ -457,7 +457,7 @@ export default function ThailandYieldMap({
                     data-feature-id={feature.id}
                     d={path}
                     fill={colorFor(metric, feature.properties.value, minimum, maximum)}
-                    stroke={isActive ? "#f2b536" : "#ffffff"}
+                    stroke={isActive ? "#f2b536" : "#17211b"}
                     strokeWidth={isActive ? 2.4 : 0.8}
                     vectorEffect="non-scaling-stroke"
                     fillRule="evenodd"

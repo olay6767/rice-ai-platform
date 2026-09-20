@@ -52,12 +52,13 @@ const MONTHS = [
   "ธันวาคม",
 ];
 const FLOOD_YEAR_COLORS: Record<number, string> = {
-  2563: "#4E79A7",
-  2564: "#59A89C",
-  2565: "#A38AC7",
-  2566: "#E08E79",
-  2567: "#D45D79",
+  2563: "#123B5D",
+  2564: "#1672B8",
+  2565: "#00A6C7",
+  2566: "#58B7D3",
+  2567: "#5267B2",
 };
+const FLOOD_CHART_BLUE = "#168FB2";
 
 function isFloodAnnualRecord(value: unknown): value is FloodAnnualRecord {
   if (!value || typeof value !== "object") return false;
@@ -426,7 +427,7 @@ export default function FloodDashboard() {
                     items={visibleMonths.map((month) => ({
                       label: String(month),
                       value: monthTotals.get(String(month)) ?? 0,
-                      color: "#3E6F8E",
+                      color: FLOOD_CHART_BLUE,
                     }))}
                   />
                 )}
@@ -462,7 +463,7 @@ export default function FloodDashboard() {
                     items={topTenProvinces.map((item) => ({
                       label: item.province,
                       value: item.total,
-                      color: "#3E6F8E",
+                      color: FLOOD_CHART_BLUE,
                     }))}
                   />
                 ) : (
@@ -580,7 +581,7 @@ function FloodKpiCard({
         />
       </div>
       <div className="min-w-0">
-        <p className="break-words text-xl font-bold leading-none tracking-tight text-emerald-800 tabular-nums sm:text-2xl dark:text-emerald-300">
+        <p className="break-words text-xl font-bold leading-none tracking-tight text-sky-700 tabular-nums sm:text-2xl dark:text-sky-300">
           {value}
         </p>
         <p className="mt-1.5 line-clamp-2 text-[11px] font-semibold leading-4 text-emerald-950/75 dark:text-white/75">

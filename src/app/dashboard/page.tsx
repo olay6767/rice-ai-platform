@@ -18,8 +18,9 @@ export default function DashboardPage() {
       title="วิเคราะห์ผลผลิตข้าวไทย"
       description="ติดตามผลผลิตข้าวรายปีและแนวโน้มรายจังหวัด"
       notice="ผลผลิตเป็นข้อมูลรายปี ส่วนภูมิอากาศ NDVI และความชื้นในดินเป็นข้อมูลรายเดือน"
-      heroImage="/images/15.png"
-      heroImageAlt="ภาพรวงข้าวและชาวนา สื่อถึงการเติบโตของผลผลิตข้าวไทย"
+      heroImage="/images/58.jpg"
+      heroImageAlt="รถเกี่ยวข้าวกำลังเก็บเกี่ยวผลผลิตในนาข้าว"
+      heroImageMode="background"
     >
       <Suspense fallback={<RiceLoadingState label="กำลังเตรียมแดชบอร์ด…" />}>
         <RiceYieldDashboard />

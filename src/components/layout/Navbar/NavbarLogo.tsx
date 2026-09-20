@@ -7,7 +7,7 @@ export default function NavbarLogo() {
   return (
     <Link
       href="/"
-      aria-label="Rice AI Platform"
+      aria-label="SmartRice Hub"
       className="
         group
         flex
@@ -40,8 +40,8 @@ export default function NavbarLogo() {
         "
       >
         <Image
-          src="/logo/rice-ai-farmer-mark.png"
-          alt="โลโก้ Rice AI Platform"
+          src="/images/44.png"
+          alt="โลโก้ SmartRice Hub"
           fill
           priority
           sizes="44px"
@@ -61,34 +61,24 @@ export default function NavbarLogo() {
             text-lg
             font-bold
             tracking-tight
-            text-[#166534]
+            text-[#B7791F]
             transition-colors
             duration-300
-            dark:text-white
+            dark:text-[#F6D365]
           "
         >
-          Rice
-        </span>
-
-        <span
-          className="
-            ml-1 text-lg
-            font-bold tracking-tight
-            text-[#16A34A]
-          "
-        >
-          AI
+          SmartRice
         </span>
 
         <span
           className="
             ml-1.5 text-lg
             font-medium tracking-tight
-            text-[#166534]
-            dark:text-green-100
+            text-[#E9B949]
+            dark:text-[#FFE8A3]
           "
         >
-          Platform
+          Hub
         </span>
       </div>
     </Link>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CalendarDays, Eye } from "lucide-react";
+import type { ReactNode } from "react";
 
 import {
   defaultArticleImage,
@@ -13,6 +14,11 @@ import {
   type InfographicArticle,
 } from "@/lib/infographic/articles";
 import { createClient } from "@/lib/supabase/server";
+import {
+  parseNewsContent,
+  type NewsContentBlock,
+  type NewsTextRun,
+} from "@/lib/infographic/news-content";
 
 export const metadata: Metadata = {
   title: "รายละเอียดข่าว",
@@ -45,13 +51,14 @@ async function getArticle(id: string): Promise<InfographicArticle | undefined> {
 
     if (error || !data?.published_at) return undefined;
 
-    const category = inferArticleCategory(
+    const rawBody = typeof data.body === "string" ? data.body.trim() : "";
+    const storedContent = rawBody ? parseNewsContent(rawBody) : null;
+    const category = storedContent?.category ?? inferArticleCategory(
       data.category,
       data.title,
       data.summary
     );
-    const rawBody = typeof data.body === "string" ? data.body.trim() : "";
-    const body = rawBody
+    const body = rawBody && !storedContent
       ? rawBody
           .split(/\n{2,}/)
           .map((paragraph) => paragraph.trim())
@@ -68,6 +75,12 @@ async function getArticle(id: string): Promise<InfographicArticle | undefined> {
       viewCount: stableViewCount(data.id),
       image: data.image_url || defaultArticleImage(category),
       imageAlt: data.image_alt || data.title,
+      ...(storedContent
+        ? {
+            richBody: storedContent.blocks,
+            gallery: storedContent.gallery.map((image) => image.src),
+          }
+        : {}),
     };
   } catch {
     return undefined;
@@ -90,6 +103,100 @@ function RichParagraph({ text }: { text: string }) {
       )}
     </p>
   );
+}
+
+function RichRuns({ runs }: { runs: NewsTextRun[] }) {
+  return runs.map((run, index) => {
+    let content: ReactNode = run.text;
+    if (run.bold) content = <strong>{content}</strong>;
+    if (run.italic) content = <em>{content}</em>;
+    if (run.underline) content = <u>{content}</u>;
+    if (run.link) {
+      content = (
+        <a
+          href={run.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-sky-700 underline underline-offset-2"
+        >
+          {content}
+        </a>
+      );
+    }
+    return (
+      <span key={`${run.text}-${index}`} style={run.color ? { color: run.color } : undefined}>
+        {content}
+      </span>
+    );
+  });
+}
+
+function RichNewsBody({ blocks }: { blocks: NewsContentBlock[] }) {
+  const alignClass = (align?: "left" | "center" | "right" | "justify") =>
+    align === "center"
+      ? "text-center"
+      : align === "right"
+        ? "text-right"
+        : align === "justify"
+          ? "text-justify"
+          : "text-left";
+
+  return blocks.map((block, index) => {
+    if (block.type === "image") {
+      return (
+        <div
+          key={`${block.src}-${index}`}
+          className="relative my-7 aspect-[16/10] overflow-hidden rounded-2xl bg-rice-surface-soft"
+        >
+          <Image
+            src={block.src}
+            alt={block.alt}
+            fill
+            sizes="(max-width: 1023px) 100vw, 42vw"
+            className="object-cover"
+          />
+        </div>
+      );
+    }
+
+    if ("items" in block) {
+      const ListTag = block.type === "bullet-list" ? "ul" : "ol";
+      return (
+        <ListTag
+          key={`${block.type}-${index}`}
+          className={`space-y-2 pl-6 ${block.type === "bullet-list" ? "list-disc" : "list-decimal"}`}
+        >
+          {block.items.map((item, itemIndex) => (
+            <li key={`${index}-${itemIndex}`} className="whitespace-pre-line">
+              <RichRuns runs={item} />
+            </li>
+          ))}
+        </ListTag>
+      );
+    }
+
+    if (block.type === "heading") {
+      return (
+        <h2
+          key={`${block.type}-${index}`}
+          className={`pt-2 font-heading text-2xl font-bold leading-tight text-rice-forest dark:text-white ${alignClass(block.align)}`}
+          style={block.lineHeight ? { lineHeight: block.lineHeight } : undefined}
+        >
+          <RichRuns runs={block.runs} />
+        </h2>
+      );
+    }
+
+    return (
+      <p
+        key={`${block.type}-${index}`}
+        className={`whitespace-pre-line ${alignClass(block.align)}`}
+        style={block.lineHeight ? { lineHeight: block.lineHeight } : undefined}
+      >
+        <RichRuns runs={block.runs} />
+      </p>
+    );
+  });
 }
 
 export default async function InfographicArticlePage({
@@ -151,9 +258,13 @@ export default async function InfographicArticlePage({
             </span>
           </div>
           <div className="mt-7 space-y-5 text-base leading-8 text-rice-text sm:text-lg sm:leading-9 dark:text-white/75">
-            {article.body.map((paragraph, index) => (
-              <RichParagraph key={`${article.id}-${index}`} text={paragraph} />
-            ))}
+            {article.richBody?.length ? (
+              <RichNewsBody blocks={article.richBody} />
+            ) : (
+              article.body.map((paragraph, index) => (
+                <RichParagraph key={`${article.id}-${index}`} text={paragraph} />
+              ))
+            )}
           </div>
         </div>
       </article>

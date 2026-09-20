@@ -364,10 +364,10 @@ export default function ThailandDroughtMap({
         <div
           className={`relative overflow-hidden rounded-lg ${
             isGreen
-              ? "bg-[#f2f7e9]"
+              ? "bg-white"
               : compact
-                ? "bg-[#fffaf5] dark:bg-[#1b120c]"
-                : "border border-orange-950/10 bg-[#fffaf5] dark:border-white/10 dark:bg-[#1b120c]"
+                ? "bg-white"
+                : "border border-orange-950/10 bg-white dark:border-orange-950/20 dark:bg-white"
           }`}
         >
           <svg
@@ -407,6 +407,7 @@ export default function ThailandDroughtMap({
                       : undefined
                   }
                   fillRule="evenodd"
+                  stroke={isHovered || isSelected ? "#b57a05" : "#17211b"}
                   vectorEffect="non-scaling-stroke"
                   tabIndex={0}
                   aria-label={
@@ -426,9 +427,9 @@ export default function ThailandDroughtMap({
                     event.preventDefault();
                     onSelectProvince(isSelected ? null : province);
                   }}
-                  className={`cursor-pointer transition-[opacity,filter,stroke,stroke-width] duration-300 focus:outline-none ${isGreen ? "stroke-white" : "stroke-white dark:stroke-[#07140c]"} ${usesCompactGreenBands ? "" : fillClasses[band]} ${
+                  className={`cursor-pointer transition-[opacity,filter,stroke,stroke-width] duration-300 focus:outline-none ${usesCompactGreenBands ? "" : fillClasses[band]} ${
                     isHovered || isSelected
-                      ? "stroke-[#b57a05] stroke-[3.5] drop-shadow-[0_0_7px_rgba(181,122,5,0.58)]"
+                      ? "stroke-[3.5] drop-shadow-[0_0_7px_rgba(181,122,5,0.58)]"
                       : "stroke-[0.8]"
                   } ${isDimmed ? "opacity-35" : "opacity-100"}`}
                 />

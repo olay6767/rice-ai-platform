@@ -9,6 +9,7 @@ import {
   ImageUp,
   LayoutDashboard,
   LoaderCircle,
+  LogOut,
   Newspaper,
   Pencil,
   Plus,
@@ -23,6 +24,8 @@ import {
   ScrollText,
   X,
 } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 
@@ -41,6 +44,8 @@ import {
   ModelsPanel,
   UsersPanel,
 } from "@/components/admin/AdminOperations";
+import AdminNewsEditor from "@/components/admin/AdminNewsEditor";
+import { createClient } from "@/lib/supabase/client";
 
 type AdminTab =
   | "overview"
@@ -513,6 +518,7 @@ function ContentForm({
 }
 
 export default function AdminConsole({ administratorName }: { administratorName: string }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [records, setRecords] = useState(EMPTY_RECORDS);
@@ -527,6 +533,8 @@ export default function AdminConsole({ administratorName }: { administratorName:
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSyncingPrices, setIsSyncingPrices] = useState(false);
+  const [isNewsEditorOpen, setIsNewsEditorOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const resource = isResource(activeTab) ? activeTab : null;
   const currentItems = resource ? records[resource] : [];
@@ -574,6 +582,11 @@ export default function AdminConsole({ administratorName }: { administratorName:
     if (!resource) return;
     setError(null);
     setSuccess(null);
+    if (resource === "posts") {
+      setIsNewsEditorOpen(true);
+      setIsFormOpen(false);
+      return;
+    }
     setEditingId(null);
     setDraft(getInitialDraft(resource));
     setIsFormOpen(true);
@@ -756,34 +769,118 @@ export default function AdminConsole({ administratorName }: { administratorName:
     }
   }
 
-  return (
-    <main className="relative isolate min-h-dvh overflow-hidden py-5 sm:py-7">
-      <div aria-hidden="true" className="ambient-orb -right-20 top-10 h-80 w-80 bg-rice-mint/35 dark:bg-rice-leaf/10" />
-      <div className="dashboard-container relative z-10">
-        <header className="mb-5 flex flex-col gap-4 rounded-[2rem] bg-rice-forest p-5 text-white shadow-[0_20px_55px_rgba(11,46,28,0.2)] sm:p-7 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-rice-mint-light">
-              <ShieldCheck className="h-3.5 w-3.5" /> พื้นที่ผู้ดูแลระบบ
-            </span>
-            <h1 className="mt-3 font-heading text-3xl font-bold tracking-[-0.035em] sm:text-4xl">Rice AI Admin</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70">จัดการผู้ใช้ ข้อมูลการเกษตร AI Model โรคข้าว และเนื้อหาจากศูนย์กลางเดียว</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm">
-            <p className="text-xs font-semibold text-white/55">ผู้ดูแลที่กำลังใช้งาน</p>
-            <p className="mt-1 font-bold text-rice-mint-light">{administratorName}</p>
-          </div>
-        </header>
+  async function signOut(): Promise<void> {
+    setIsSigningOut(true);
+    setError(null);
 
-        <div className="grid min-w-0 gap-5 lg:grid-cols-[250px_minmax(0,1fr)]">
-          <aside className="min-w-0 lg:sticky lg:top-5 lg:self-start">
-            <nav className="flex gap-2 overflow-x-auto rounded-2xl border border-rice-forest/10 bg-white/80 p-2 shadow-sm lg:flex-col dark:border-white/10 dark:bg-white/[0.04]" role="tablist" aria-label="เมนูผู้ดูแลระบบ">
-              {TAB_ITEMS.map((tab) => {
-                const Icon = tab.icon;
-                const selected = activeTab === tab.id;
-                return <button key={tab.id} type="button" role="tab" aria-selected={selected} onClick={() => { setActiveTab(tab.id); setIsFormOpen(false); setSuccess(null); setError(null); }} className={`inline-flex min-h-11 shrink-0 items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-xs font-bold transition sm:text-sm ${selected ? "bg-rice-forest text-white shadow-md dark:bg-rice-mint-light dark:text-rice-dark" : "text-rice-forest hover:bg-rice-mint/25 dark:text-white"}`}><Icon className="h-4 w-4" />{tab.label}</button>;
-              })}
-            </nav>
-          </aside>
+    try {
+      const supabase = createClient();
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) throw signOutError;
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      setError("ไม่สามารถออกจากระบบได้ กรุณาลองใหม่อีกครั้ง");
+      setIsSigningOut(false);
+    }
+  }
+
+  return (
+    <main className="min-h-dvh bg-[#f4f5ef] p-2 sm:p-3 lg:py-0 lg:pl-0 lg:pr-4">
+      <div className="grid min-h-dvh w-full min-w-0 gap-3 lg:grid-cols-[270px_minmax(0,1fr)] lg:gap-4">
+        <aside className="flex min-w-0 flex-col rounded-[22px] border border-rice-forest/10 bg-white shadow-[0_12px_36px_rgba(11,46,28,0.07)] lg:sticky lg:top-0 lg:h-dvh lg:self-start lg:rounded-l-none">
+          <div className="flex items-center gap-3 px-4 py-4 sm:px-5 lg:px-6 lg:py-6">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[#fff0dc] text-[#b94f0b]">
+              <Wheat className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate font-heading text-xl font-bold tracking-[-0.025em] text-rice-forest">Rice AI Admin</h1>
+              <p className="mt-0.5 text-xs font-medium text-rice-muted">ระบบผู้ดูแล</p>
+            </div>
+          </div>
+
+          <div className="mx-5 h-px bg-gradient-to-r from-orange-400/70 via-rice-forest/10 to-transparent" />
+
+          <nav className="flex gap-2 overflow-x-auto p-3 sm:p-4 lg:flex-1 lg:flex-col lg:overflow-y-auto lg:px-4 lg:py-5" role="tablist" aria-label="เมนูผู้ดูแลระบบ">
+            {TAB_ITEMS.map((tab) => {
+              const Icon = tab.icon;
+              const selected = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setIsFormOpen(false);
+                    setIsNewsEditorOpen(false);
+                    setSuccess(null);
+                    setError(null);
+                  }}
+                  className={`relative inline-flex min-h-12 shrink-0 items-center gap-3 rounded-xl px-4 text-left text-sm font-bold transition-all duration-200 lg:w-full ${selected ? "bg-[#fff0dc] text-[#b94f0b] shadow-[0_8px_22px_rgba(234,88,12,0.10)] before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-r-full before:bg-orange-500" : "text-[#53627b] hover:bg-[#f5f7f1] hover:text-rice-forest"}`}
+                >
+                  <Icon className="h-[18px] w-[18px] shrink-0" />
+                  <span className="whitespace-nowrap">{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="m-4 mt-1 rounded-2xl border border-rice-forest/10 bg-[#faf9f6] p-3 lg:mt-auto">
+            <p className="truncate px-1 text-[11px] font-semibold text-rice-muted">{administratorName}</p>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              disabled={isSigningOut}
+              className="mt-2 inline-flex min-h-11 w-full items-center gap-3 rounded-xl bg-white px-3.5 text-sm font-bold text-[#53627b] shadow-sm transition hover:text-rice-forest disabled:cursor-wait disabled:opacity-60"
+            >
+              {isSigningOut ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+              {isSigningOut ? "กำลังออกจากระบบ..." : "ออกจากระบบ"}
+            </button>
+          </div>
+        </aside>
+
+        <div className="min-w-0 rounded-[22px] border border-rice-forest/8 bg-[#fbfaf7] p-3 shadow-[0_12px_36px_rgba(11,46,28,0.05)] sm:p-5 lg:my-4 lg:p-6">
+          <header className="relative mb-5 grid min-h-[230px] overflow-hidden rounded-[24px] border border-rice-forest/10 bg-gradient-to-br from-white via-[#fffdf7] to-[#edf5e9] shadow-[0_14px_38px_rgba(11,46,28,0.08)] lg:grid-cols-[minmax(0,1.18fr)_minmax(300px,0.82fr)]">
+            <div className="relative z-10 flex flex-col justify-center p-6 sm:p-8 lg:p-10">
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#fff0dc] px-3 py-1.5 text-xs font-bold text-[#b85a15]">
+                <ShieldCheck className="h-4 w-4" /> พื้นที่ผู้ดูแลระบบ
+              </span>
+              <h2 className="mt-4 font-heading text-3xl font-bold tracking-[-0.035em] text-rice-forest sm:text-4xl lg:text-[2.75rem]">
+                {TAB_ITEMS.find((item) => item.id === activeTab)?.label}
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-rice-muted sm:text-base">
+                เลือกเมนูเพื่อจัดการข้อมูล ติดตามการใช้งาน และดูแลระบบได้อย่างสะดวก
+              </p>
+              <div className="mt-5 inline-flex w-fit items-center gap-3 rounded-xl border border-rice-forest/8 bg-white/85 px-4 py-2.5 shadow-sm backdrop-blur">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-rice-mint/55 text-rice-forest">
+                  <ShieldCheck className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold text-rice-muted">ผู้ดูแลที่กำลังใช้งาน</p>
+                  <p className="truncate text-xs font-bold text-rice-forest sm:text-sm">{administratorName}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative min-h-[180px] sm:min-h-[210px] lg:min-h-[230px]">
+              <Image
+                src="/images/62.jpg"
+                alt="เกษตรกรกำลังดูแลต้นกล้าข้าวในแปลงนา"
+                fill
+                priority
+                sizes="(max-width: 1023px) 100vw, 38vw"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf7] via-[#fffdf7]/10 to-transparent lg:bg-gradient-to-r" />
+              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-rice-forest/35 to-transparent" />
+              <div className="absolute bottom-5 right-5 rounded-xl border border-white/30 bg-rice-forest/75 px-4 py-3 text-white shadow-lg backdrop-blur-md">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/65">Rice AI Platform</p>
+                <p className="mt-1 text-sm font-bold">ข้อมูลเพื่อการเกษตรที่จัดการได้ง่าย</p>
+              </div>
+            </div>
+          </header>
 
           <div className="min-w-0">
             <ErrorNotice message={error} />
@@ -796,7 +893,15 @@ export default function AdminConsole({ administratorName }: { administratorName:
             {activeTab === "diseases" && <DiseasesPanel />}
             {activeTab === "activity" && <ActivityPanel />}
 
-            {resource && (
+            {resource === "posts" && isNewsEditorOpen ? (
+              <AdminNewsEditor
+                onClose={() => setIsNewsEditorOpen(false)}
+                onSaved={() => {
+                  setRefreshKey((value) => value + 1);
+                  void refreshOverview();
+                }}
+              />
+            ) : resource && (
           <section>
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -806,7 +911,7 @@ export default function AdminConsole({ administratorName }: { administratorName:
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="inline-flex items-center gap-2 rounded-xl border border-rice-forest/10 bg-white/70 px-3 py-2.5 text-xs font-bold text-rice-forest hover:bg-rice-mint/20 dark:border-white/10 dark:bg-white/[0.05] dark:text-white"><RefreshCw className="h-4 w-4" /> รีเฟรช</button>
                 {resource === "prices" && <button type="button" onClick={() => void syncRicePrices()} disabled={isSyncingPrices} className="inline-flex items-center gap-2 rounded-xl border border-rice-leaf/30 bg-rice-mint/35 px-3 py-2.5 text-xs font-bold text-rice-forest hover:bg-rice-mint/60 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rice-mint-light/25 dark:bg-rice-leaf/20 dark:text-rice-mint-light"><RefreshCw className={`h-4 w-4 ${isSyncingPrices ? "animate-spin" : ""}`} /> {isSyncingPrices ? "กำลังดึงราคา..." : "ดึงจาก Agri-Map"}</button>}
-                <button type="button" onClick={openNewForm} className="inline-flex items-center gap-2 rounded-xl bg-rice-forest px-4 py-2.5 text-sm font-bold text-white hover:bg-rice-dark dark:bg-rice-mint-light dark:text-rice-dark"><Plus className="h-4 w-4" /> เพิ่มรายการ</button>
+                <button type="button" onClick={openNewForm} className="inline-flex items-center gap-2 rounded-xl bg-rice-forest px-4 py-2.5 text-sm font-bold text-white hover:bg-rice-dark dark:bg-rice-mint-light dark:text-rice-dark"><Plus className="h-4 w-4" /> {resource === "posts" ? "สร้างข่าวสารใหม่" : "เพิ่มรายการ"}</button>
               </div>
             </div>
             {isFormOpen && <ContentForm resource={resource} draft={draft} onChange={updateDraft} onSubmit={submitForm} onCancel={resetForm} onUpload={uploadImage} isSaving={isSaving} isUploading={isUploading} editing={Boolean(editingId)} />}
