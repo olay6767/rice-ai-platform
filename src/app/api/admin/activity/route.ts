@@ -8,7 +8,7 @@ export async function GET(): Promise<Response> {
   if (context.errorResponse) return context.errorResponse;
   const result = await context.supabase
     .from("admin_activity_logs")
-    .select("id,actor_id,action,resource_type,resource_id,summary,created_at")
+    .select("id,actor_id,action,resource_type,resource_id,summary,old_value,new_value,created_at")
     .order("created_at", { ascending: false })
     .limit(200);
   if (result.error) return Response.json({ error: { code: "ACTIVITY_ERROR", message: "ไม่สามารถโหลด Activity Log ได้" } }, { status: 500 });

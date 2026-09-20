@@ -65,10 +65,22 @@ export interface AdminRecommendation {
 
 export interface AdminActivityLog {
   id: string;
-  action: "create" | "update" | "delete" | "role_update" | "upload";
+  action:
+    | "create"
+    | "update"
+    | "delete"
+    | "role_update"
+    | "upload"
+    | "publish"
+    | "archive"
+    | "set_default"
+    | "enable"
+    | "disable";
   resource_type: string;
   resource_id: string | null;
   summary: string;
+  old_value?: Record<string, unknown> | null;
+  new_value?: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -92,13 +104,41 @@ export interface AdminOverview {
   recentActivity: AdminActivityLog[];
 }
 
+export type AdminRole = "user" | "admin" | "superadmin";
+
 export interface AdminUser {
   id: string;
   email: string;
-  role: "user" | "admin";
+  role: AdminRole;
   disabled: boolean;
   createdAt: string;
   lastSignInAt: string | null;
+}
+
+export interface AdminUserFarmField {
+  id: string;
+  name: string;
+  province: string;
+  district: string | null;
+  subdistrict: string | null;
+  areaRai: number;
+  riceVariety: string;
+  plantingDate: string | null;
+  expectedHarvestDate: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  isPrimary: boolean;
+}
+
+export interface AdminUserDetails extends AdminUser {
+  fullName: string | null;
+  phone: string | null;
+  province: string | null;
+  district: string | null;
+  farmName: string | null;
+  emailConfirmedAt: string | null;
+  updatedAt: string;
+  farmFields: AdminUserFarmField[];
 }
 
 export interface AdminAiModel {

@@ -25,7 +25,6 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 
@@ -36,6 +35,7 @@ import type {
   AdminRecommendation,
   AdminResource,
   AdminRicePrice,
+  AdminRole,
 } from "@/lib/admin/types";
 import {
   ActivityPanel,
@@ -45,6 +45,7 @@ import {
   UsersPanel,
 } from "@/components/admin/AdminOperations";
 import AdminNewsEditor from "@/components/admin/AdminNewsEditor";
+import AdminThemeToggle from "@/components/admin/AdminThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 
 type AdminTab =
@@ -517,8 +518,15 @@ function ContentForm({
   );
 }
 
-export default function AdminConsole({ administratorName }: { administratorName: string }) {
-  const router = useRouter();
+export default function AdminConsole({
+  administratorId,
+  administratorName,
+  administratorRole,
+}: {
+  administratorId: string;
+  administratorName: string;
+  administratorRole: Exclude<AdminRole, "user">;
+}) {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [records, setRecords] = useState(EMPTY_RECORDS);
@@ -777,8 +785,7 @@ export default function AdminConsole({ administratorName }: { administratorName:
       const supabase = createClient();
       const { error: signOutError } = await supabase.auth.signOut();
       if (signOutError) throw signOutError;
-      router.replace("/login");
-      router.refresh();
+      window.location.assign("/login");
     } catch {
       setError("ไม่สามารถออกจากระบบได้ กรุณาลองใหม่อีกครั้ง");
       setIsSigningOut(false);
@@ -829,6 +836,12 @@ export default function AdminConsole({ administratorName }: { administratorName:
 
           <div className="m-4 mt-1 rounded-2xl border border-rice-forest/10 bg-[#faf9f6] p-3 lg:mt-auto">
             <p className="truncate px-1 text-[11px] font-semibold text-rice-muted">{administratorName}</p>
+            <p className="mt-1 px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#b94f0b]">
+              {administratorRole === "superadmin" ? "Super Admin" : "Admin"}
+            </p>
+            <div className="mt-2">
+              <AdminThemeToggle showLabel={false} />
+            </div>
             <button
               type="button"
               onClick={() => void signOut()}
@@ -887,7 +900,12 @@ export default function AdminConsole({ administratorName }: { administratorName:
             {success && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /><p>{success}</p></div>}
 
             {activeTab === "overview" && (loading && !overview ? <LoadingPanel /> : <OverviewPanel overview={overview} />)}
-            {activeTab === "users" && <UsersPanel />}
+            {activeTab === "users" && (
+              <UsersPanel
+                viewerId={administratorId}
+                viewerRole={administratorRole}
+              />
+            )}
             {activeTab === "agriculture" && <AgriculturalDataPanel />}
             {activeTab === "models" && <ModelsPanel />}
             {activeTab === "diseases" && <DiseasesPanel />}
