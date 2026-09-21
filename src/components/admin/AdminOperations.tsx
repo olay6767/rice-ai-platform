@@ -25,6 +25,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import DashboardDataManager from "@/components/admin/DashboardDataManager";
+import AgriculturalDatasetImport from "@/components/admin/AgriculturalDatasetImport";
 import { button, errorText, input, panel, primary, request } from "@/components/admin/dashboard/shared";
 import type {
   AdminAiModel,
@@ -548,7 +549,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h3 className="font-bold">เวอร์ชันข้อมูลและการเผยแพร่</h3>
-        <p className="mt-1 text-sm text-[var(--app-text-secondary)]">แก้ข้อมูลใน Draft แล้วจึง Publish; หน้า User อ่านเฉพาะ Published Default</p>
+        <p className="mt-1 text-sm text-[var(--app-text-secondary)]">แก้ข้อมูลใน Draft แล้วจึง Publish; API ข้อมูลการเกษตรส่งเฉพาะ Published Default ส่วนหน้า User จะสลับมาใช้ API หลังตรวจความครบถ้วนของทุกหน้า</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={button} onClick={() => void load()} disabled={loading}><RefreshCw className="h-4 w-4" />รีเฟรช</button>
@@ -591,6 +592,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
           <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ปัญหา Validation</dt><dd className="mt-1 text-xl font-bold">{(validation.missingCount ?? 0) + (validation.unknownProvinceCount ?? 0)}</dd></div>
         </dl>
         {!!version.import_files.length && <div className="mt-4 rounded-xl border border-[var(--app-border)] p-3"><p className="text-xs font-bold">ไฟล์ต้นทาง</p><div className="mt-2 flex flex-wrap gap-2">{version.import_files.map((file) => <span key={file.file_name} className="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs text-[var(--app-text-secondary)]">{file.file_name} · {file.row_count.toLocaleString("th-TH")} แถว</span>)}</div></div>}
+        {version.status === "draft" && <AgriculturalDatasetImport type={type} version={version} onSaved={load} />}
       </article>;
     })}</div>}
   </div>;

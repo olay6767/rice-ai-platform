@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/admin/auth";
+import { parseAgriculturalFile } from "@/lib/admin/agricultural-import";
 import { inferDashboardDatasetType, inspectDashboardCsv, inspectDashboardRecord, isDashboardDatasetType } from "@/lib/admin/dashboard-import";
 import { DASHBOARD_DATASETS, getDashboardDataset, type DashboardDatasetType, type DashboardRow, type AdminDashboardVersion, type DashboardImportFile, type ImportPreview } from "@/lib/admin/dashboard-types";
 
@@ -381,13 +382,22 @@ export async function POST(request: Request): Promise<Response> {
     const type = form.get("datasetType");
     if (!isDashboardDatasetType(type)) throw new RequestError("กรุณาเลือกประเภทข้อมูล");
     const file = form.get("file");
-    if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".csv")) throw new RequestError("กรุณาเลือกไฟล์ .csv");
+    if (!(file instanceof File) || !/\.(csv|json|xlsx|xls)$/i.test(file.name)) throw new RequestError("กรุณาเลือกไฟล์ JSON, CSV, XLSX หรือ XLS");
     if (!file.size || file.size > MAX_SIZE) throw new RequestError("ขนาดไฟล์ต้องมากกว่า 0 และไม่เกิน 10 MB");
     const version = await versionById(db,uuid(form.get("versionId")));
     if (version.status !== "draft") throw new RequestError("อัปโหลดได้เฉพาะฉบับร่าง กรุณาคัดลอกเวอร์ชันเดิมเพื่อแก้ไข",409);
     const provinces = await db.from("rice_provinces").select("id");
     if (provinces.error) throw provinces.error;
-    const source = await file.text();
+    let source: string;
+    if (file.name.toLowerCase().endsWith(".csv")) source = await file.text();
+    else {
+      const records = parseAgriculturalFile(file.name, new Uint8Array(await file.arrayBuffer()));
+      const columns = getDashboardDataset(type).columns.map((column) => column.key);
+      const headers = [...new Set(records.flatMap((record) => Object.keys(record)))];
+      const csvValue = (value: unknown) => '"' + (value === null || value === undefined ? "" : String(value)).replace(/"/g, '""') + '"';
+      source = [headers.join(","), ...records.map((record) => headers.map((header) => csvValue(record[header])).join(","))].join("\n");
+      if (!columns.some((column) => headers.includes(column))) throw new RequestError("คอลัมน์ไม่ตรงกับประเภทข้อมูลที่เลือก");
+    }
     let report: ReturnType<typeof inspectDashboardCsv>;
     try { report = inspectDashboardCsv(type,source,new Set((provinces.data ?? []).map(row=>Number(row.id)))); }
     catch (error) {
