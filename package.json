@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:dashboard": "node scripts/test-dashboard-import.mjs",
+    "test:agriculture:import": "node --experimental-strip-types scripts/test-agricultural-import.mjs",
     "test:dashboard:ui": "node scripts/test-dashboard-ui.mjs",
     "test:flood:ui": "node --test --test-isolation=none scripts/test-flood-ui.mjs",
     "test:drought:ui": "node --test --test-isolation=none scripts/test-drought-ui.mjs",
@@ -17,8 +18,10 @@
     "test:disease:ui": "node --test --test-isolation=none scripts/test-disease-ui.mjs",
     "test:rice-price:ui": "node --test --test-isolation=none scripts/test-rice-price-ui.mjs",
     "rice:data:check": "node scripts/import-rice-yield-data.mjs --dry-run",
+    "rice:data:verify": "node scripts/verify-yield-live.mjs",
     "rice:data:import": "node scripts/import-rice-yield-data.mjs",
     "agriculture:data:check": "node scripts/import-agricultural-static-data.mjs",
+    "agriculture:data:verify": "node scripts/import-agricultural-static-data.mjs --verify",
     "agriculture:data:import": "node scripts/import-agricultural-static-data.mjs --apply"
   },
   "dependencies": {
@@ -30,7 +33,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.10.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

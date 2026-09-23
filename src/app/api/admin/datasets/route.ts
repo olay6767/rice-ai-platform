@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/admin/auth";
 import {
   inspectAgriculturalRows,
-  type AgriculturalDatasetType,
-  type ProvinceLookup,
+  type AgriculturalType,
 } from "@/lib/admin/agricultural-import";
 import { isSupportedDataFile, parseUploadFile } from "@/lib/admin/tabular-upload";
 
@@ -18,7 +17,7 @@ const TABLES = {
   drought: "drought_records",
   storm: "storm_records",
 } as const;
-type DatasetType = AgriculturalDatasetType;
+type DatasetType = AgriculturalType;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -144,16 +143,7 @@ async function uploadDataset(
     .from("rice_provinces")
     .select("id,province_th,province_en");
   if (provinceResult.error) throw provinceResult.error;
-  const provinces: ProvinceLookup = { ids: new Set<number>(), names: new Map<string, number>() };
-  for (const province of provinceResult.data ?? []) {
-    const id = Number(province.id);
-    provinces.ids.add(id);
-    for (const name of [province.province_th, province.province_en]) {
-      if (name) provinces.names.set(String(name).trim().replace(/\s+/g, "").toLowerCase(), id);
-    }
-  }
-
-  const report = inspectAgriculturalRows(type, parsed.rows, provinces);
+  const report = inspectAgriculturalRows(type, parsed.rows, provinceResult.data ?? []);
   const emptyDatasetError = report.rows.length === 0 && report.errorCount === 0
     ? [{ row: null, message: "ไม่พบแถวข้อมูลที่ตรงกับ dataset ที่เลือก" }]
     : [];
@@ -161,20 +151,20 @@ async function uploadDataset(
     .update(JSON.stringify([version.id, version.revision, type, parsed.digest]))
     .digest("hex");
   const preview = {
-    valid: report.errorCount === 0 && report.rows.length > 0,
+    valid: report.valid && report.rows.length > 0,
     fileName: file.name,
     fileType: parsed.fileType,
     receivedRows: report.receivedRows,
-    validRows: report.rows.length,
+    validRows: report.validRows,
     errorCount: report.errorCount + emptyDatasetError.length,
     errors: [...report.errors, ...emptyDatasetError],
-    warnings: report.warnings,
+    warnings: [],
     provinceCount: report.provinceCount,
-    years: report.years,
-    duplicateCount: report.duplicateCount,
-    unknownProvinceCount: report.unknownProvinceCount,
+    years: [report.minYear, report.maxYear].filter((year): year is number => year !== null),
+    duplicateCount: 0,
+    unknownProvinceCount: 0,
     previewRows: report.rows.slice(0, 10),
-    columns: report.columns,
+    columns: Object.keys(report.rows[0] ?? {}),
     token,
     revision: version.revision,
   };
@@ -189,12 +179,12 @@ async function uploadDataset(
   const validation = {
     rowCount: report.rows.length,
     provinceCount: report.provinceCount,
-    minYear: report.years.at(0) ?? null,
-    maxYear: report.years.at(-1) ?? null,
+    minYear: report.minYear,
+    maxYear: report.maxYear,
     missingCount: report.errorCount,
-    duplicateCount: report.duplicateCount,
-    unknownProvinceCount: report.unknownProvinceCount,
-    warnings: report.warnings,
+    duplicateCount: 0,
+    unknownProvinceCount: 0,
+    warnings: [],
   };
   const result = await context.supabase.rpc("agricultural_dataset_import", {
     p_id: version.id,
@@ -203,7 +193,7 @@ async function uploadDataset(
     p_revision: version.revision,
     p_file_name: file.name,
     p_file_type: parsed.fileType,
-    p_validation: validation,
+    p_validation_summary: validation,
   });
   if (result.error) throw result.error;
   invalidate(type);

@@ -1,9 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 
 const ROOT = process.cwd();
 const APPLY = process.argv.includes("--apply");
+const VERIFY = process.argv.includes("--verify");
 const CHUNK_SIZE = 500;
 const VERSION_SPECS = {
   rice_price: {
@@ -304,6 +306,39 @@ async function replaceDraftData(client, definition) {
   if (event.error) throw new Error(event.error.message);
 }
 
+async function verifyDraftData(client, definition) {
+  const spec = VERSION_SPECS[definition.datasetType];
+  const version = await client.from("agricultural_dataset_versions").select("id,status,is_default")
+    .eq("dataset_type", definition.datasetType).eq("version_key", spec.key).single();
+  if (version.error) throw new Error(`${definition.datasetType}: ${version.error.message}`);
+  const actual = [];
+  for (let start = 0; ; start += 1000) {
+    const page = await client.from(definition.table).select("*").eq("version_id", version.data.id)
+      .order("id").range(start, start + 999);
+    if (page.error) throw new Error(`${definition.datasetType}: ${page.error.message}`);
+    actual.push(...page.data);
+    if (page.data.length < 1000) break;
+  }
+  if (actual.length !== definition.rows.length) throw new Error(`${definition.datasetType}: expected ${definition.rows.length}, found ${actual.length}`);
+  const key = (row) => definition.datasetType === "rice_price"
+    ? `${row.rice_type_code}|${row.observed_on}|${row.data_type}`
+    : definition.datasetType === "storm"
+      ? `${row.occurred_on}|${row.province_id}|${row.storm_type}`
+      : `${row.year}|${row.month}|${row.province_id}`;
+  const found = new Map(actual.map((row) => [key(row), row]));
+  for (const expected of definition.rows) {
+    const row = found.get(key(expected));
+    if (!row) throw new Error(`${definition.datasetType}: missing ${key(expected)}`);
+    for (const [field, value] of Object.entries(expected)) {
+      const actualValue = row[field];
+      if (typeof value === "number" ? Number(actualValue) !== value : !isDeepStrictEqual(actualValue, value)) {
+        throw new Error(`${definition.datasetType}: ${key(expected)}.${field} differs from source`);
+      }
+    }
+  }
+  console.log(`${definition.datasetType}: ${actual.length} exact source rows; status=${version.data.status}; default=${version.data.is_default}`);
+}
+
 async function main() {
   loadLocalEnv();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -328,6 +363,11 @@ async function main() {
   ];
   for (const definition of definitions) {
     console.log(`${definition.datasetType}:`, summary(definition.rows, definition.duplicateCount ?? 0));
+  }
+  if (VERIFY) {
+    for (const definition of definitions) await verifyDraftData(client, definition);
+    console.log("Static source parity verified without database writes.");
+    return;
   }
   if (!APPLY) {
     console.log("Validation complete. No database writes (pass --apply to import drafts). ");

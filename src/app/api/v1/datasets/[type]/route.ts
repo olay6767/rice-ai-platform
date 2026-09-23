@@ -100,6 +100,6 @@ export async function GET(
         total: rowsResult.count ?? 0,
       },
     },
-    { headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" } }
+    { headers: { "Cache-Control": "no-store" } }
   );
 }
