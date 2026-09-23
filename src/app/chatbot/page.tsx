@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = {
   title: "Nong Serm ผู้ช่วยเกษตรกร",
   description:
-    "ปรึกษาเรื่องโรคข้าว ปุ๋ย น้ำ แมลง และการวางแผนแปลงนากับ Nong Serm",
+    "ปรึกษาการทำเกษตรข้าวครบวงจร ตั้งแต่เตรียมดินจนถึงเก็บเกี่ยว ต้นทุน และการขายกับ Nong Serm",
 };
 
 async function getChatbotUser(): Promise<{

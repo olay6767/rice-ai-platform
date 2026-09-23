@@ -3,8 +3,6 @@ import { ApiError, GoogleGenAI } from "@google/genai";
 import { RICE_ASSISTANT_INSTRUCTIONS } from "@/lib/chatbot/prompt";
 import {
   buildSiteKnowledgeContext,
-  isRiceAssistantScope,
-  OUT_OF_SCOPE_REPLY,
 } from "@/lib/chatbot/site-knowledge";
 import type {
   ChatbotApiError,
@@ -99,6 +97,14 @@ function isValidInteractionId(value: string): boolean {
   return /^[A-Za-z0-9_-]{8,1000}$/.test(value);
 }
 
+function isPlausibleGeminiApiKey(value: string): boolean {
+  const isStandardKey = /^AIza[0-9A-Za-z_-]{30,}$/.test(value);
+  const isAuthorizationKey = /^AQ\.[0-9A-Za-z_-]{30,}$/.test(value);
+
+  return (isStandardKey || isAuthorizationKey) &&
+    !/(your[_ -]?key|replace|example|placeholder)/i.test(value);
+}
+
 function checkRateLimit(userId: string): {
   allowed: boolean;
   retryAfterSeconds: number;
@@ -141,29 +147,6 @@ function encodeEvent(
   event: ChatbotStreamEvent
 ): Uint8Array {
   return encoder.encode(`${JSON.stringify(event)}\n`);
-}
-
-function localAssistantResponse(message: string): Response {
-  const events: ChatbotStreamEvent[] = [
-    { type: "delta", delta: message },
-    {
-      type: "done",
-      interactionId: "",
-      model: "local-policy",
-      knowledgeTopics: [],
-    },
-  ];
-
-  return new Response(
-    `${events.map((event) => JSON.stringify(event)).join("\n")}\n`,
-    {
-      headers: {
-        "Content-Type": "application/x-ndjson; charset=utf-8",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "X-Accel-Buffering": "no",
-      },
-    }
-  );
 }
 
 function getErrorStatus(error: unknown): number | undefined {
@@ -217,6 +200,20 @@ function classifyGeminiError(error: unknown): SafeProviderError {
   const status = getErrorStatus(error);
   const providerCode = getErrorCode(error);
   const normalizedMessage = getErrorMessage(error).toLowerCase();
+
+  if (
+    providerCode === "API_KEY_INVALID" ||
+    normalizedMessage.includes("api key not valid") ||
+    normalizedMessage.includes("api_key_invalid")
+  ) {
+    return {
+      status: 503,
+      code: "GEMINI_AUTH_ERROR",
+      message:
+        "GEMINI_API_KEY ไม่ถูกต้อง กรุณาสร้าง API key จาก Google AI Studio แล้วเริ่มเซิร์ฟเวอร์ใหม่",
+      providerCode,
+    };
+  }
 
   if (
     status === 429 ||
@@ -416,16 +413,6 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  if (
-    !isRiceAssistantScope(
-      message,
-      pagePath,
-      previousKnowledgeTopics
-    )
-  ) {
-    return localAssistantResponse(OUT_OF_SCOPE_REPLY);
-  }
-
   const rateLimit = checkRateLimit(userId);
 
   if (!rateLimit.allowed) {
@@ -455,6 +442,14 @@ export async function POST(request: Request): Promise<Response> {
       503,
       "GEMINI_NOT_CONFIGURED",
       "ระบบยังไม่ได้ตั้งค่า GEMINI_API_KEY กรุณาติดต่อผู้ดูแลระบบ"
+    );
+  }
+
+  if (!isPlausibleGeminiApiKey(apiKey)) {
+    return jsonError(
+      503,
+      "GEMINI_KEY_INVALID",
+      "GEMINI_API_KEY ไม่ใช่คีย์ที่ถูกต้อง กรุณาใส่ API key จริงจาก Google AI Studio แล้วเริ่มเซิร์ฟเวอร์ใหม่"
     );
   }
 

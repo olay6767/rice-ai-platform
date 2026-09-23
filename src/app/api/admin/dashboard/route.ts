@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/admin/auth";
 import { inferDashboardDatasetType, inspectDashboardCsv, inspectDashboardRecord, isDashboardDatasetType } from "@/lib/admin/dashboard-import";
 import { DASHBOARD_DATASETS, getDashboardDataset, type DashboardDatasetType, type DashboardRow, type AdminDashboardVersion, type DashboardImportFile, type ImportPreview } from "@/lib/admin/dashboard-types";
+import { isSupportedDataFile, parseUploadFile } from "@/lib/admin/tabular-upload";
 
 export const runtime = "nodejs";
 const HEADERS = { "Cache-Control": "no-store" };
@@ -95,9 +96,9 @@ interface PreparedBatchFile {
   report: ReturnType<typeof inspectDashboardCsv>;
 }
 
-function validCsvFile(file: File): void {
-  if (!file.name.toLowerCase().endsWith(".csv")) {
-    throw new RequestError(`ไฟล์ “${file.name}” ต้องเป็น .csv`);
+function validDataFile(file: File): void {
+  if (!isSupportedDataFile(file.name)) {
+    throw new RequestError(`ไฟล์ “${file.name}” ต้องเป็น JSON, CSV หรือ Excel`);
   }
   if (!file.size || file.size > MAX_SIZE) {
     throw new RequestError(`ไฟล์ “${file.name}” ต้องมีขนาดไม่เกิน 10 MB`);
@@ -109,14 +110,15 @@ async function prepareBatchFiles(
   provinceIds: Set<number>
 ): Promise<PreparedBatchFile[]> {
   if (!files.length || files.length > DASHBOARD_DATASETS.length) {
-    throw new RequestError("เลือกไฟล์ CSV ได้ครั้งละ 1–3 ไฟล์", 400, "INVALID_BATCH");
+    throw new RequestError("เลือกไฟล์ JSON, CSV หรือ Excel ได้ครั้งละ 1–3 ไฟล์", 400, "INVALID_BATCH");
   }
 
   const prepared: PreparedBatchFile[] = [];
   const types = new Set<DashboardDatasetType>();
   for (const file of files) {
-    validCsvFile(file);
-    const source = await file.text();
+    validDataFile(file);
+    const parsed = await parseUploadFile(file);
+    const source = parsed.csvText;
     let datasetType: DashboardDatasetType;
     try {
       datasetType = inferDashboardDatasetType(source);
@@ -381,13 +383,14 @@ export async function POST(request: Request): Promise<Response> {
     const type = form.get("datasetType");
     if (!isDashboardDatasetType(type)) throw new RequestError("กรุณาเลือกประเภทข้อมูล");
     const file = form.get("file");
-    if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".csv")) throw new RequestError("กรุณาเลือกไฟล์ .csv");
-    if (!file.size || file.size > MAX_SIZE) throw new RequestError("ขนาดไฟล์ต้องมากกว่า 0 และไม่เกิน 10 MB");
+    if (!(file instanceof File) || !isSupportedDataFile(file.name)) throw new RequestError("กรุณาเลือกไฟล์ JSON, CSV หรือ Excel");
+    validDataFile(file);
     const version = await versionById(db,uuid(form.get("versionId")));
     if (version.status !== "draft") throw new RequestError("อัปโหลดได้เฉพาะฉบับร่าง กรุณาคัดลอกเวอร์ชันเดิมเพื่อแก้ไข",409);
     const provinces = await db.from("rice_provinces").select("id");
     if (provinces.error) throw provinces.error;
-    const source = await file.text();
+    const parsed = await parseUploadFile(file);
+    const source = parsed.csvText;
     let report: ReturnType<typeof inspectDashboardCsv>;
     try { report = inspectDashboardCsv(type,source,new Set((provinces.data ?? []).map(row=>Number(row.id)))); }
     catch (error) {

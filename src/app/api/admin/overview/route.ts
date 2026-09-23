@@ -1,5 +1,6 @@
 import { getAdminContext } from "@/lib/admin/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { AdminDashboardVersion } from "@/lib/admin/dashboard-types";
 import type { AdminActivityLog, AdminOverview } from "@/lib/admin/types";
 
 export const runtime = "nodejs";
@@ -11,7 +12,7 @@ function jsonError(status: number, code: string, message: string): Response {
   );
 }
 
-export async function GET(): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
   try {
     const context = await getAdminContext();
 
@@ -19,8 +20,10 @@ export async function GET(): Promise<Response> {
       return context.errorResponse ?? jsonError(401, "AUTH_REQUIRED", "กรุณาเข้าสู่ระบบ");
     }
 
-    const sevenDaysAgo = new Date(Date.now() - 6 * 86_400_000);
-    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
+    const requestedDays = Number(new URL(request.url).searchParams.get("days") ?? "7");
+    const days = [7, 14, 30, 90].includes(requestedDays) ? requestedDays : 7;
+    const rangeStart = new Date(Date.now() - (days - 1) * 86_400_000);
+    rangeStart.setUTCHours(0, 0, 0, 0);
 
     const [posts, publishedPosts, activeAlerts, prices, recommendations, activity, diseaseChecks, assistantUses] =
       await Promise.all([
@@ -48,11 +51,11 @@ export async function GET(): Promise<Response> {
         context.supabase
           .from("disease_predictions")
           .select("created_at")
-          .gte("created_at", sevenDaysAgo.toISOString()),
+          .gte("created_at", rangeStart.toISOString()),
         context.supabase
           .from("assistant_usage_logs")
           .select("created_at")
-          .gte("created_at", sevenDaysAgo.toISOString()),
+          .gte("created_at", rangeStart.toISOString()),
       ]);
 
     const firstError = [
@@ -87,8 +90,75 @@ export async function GET(): Promise<Response> {
       console.error("Unable to count admin users", error);
     }
 
-    const dailyUsage = Array.from({ length: 7 }, (_, index) => {
-      const date = new Date(sevenDaysAgo.getTime() + index * 86_400_000)
+    const [dashboardSummary, latestPrice, stormImports] = await Promise.all([
+      context.supabase.rpc("rice_dashboard_admin_summary"),
+      context.supabase
+        .from("rice_price_updates")
+        .select("observed_at")
+        .order("observed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      context.supabase
+        .from("agricultural_import_files")
+        .select("id,validation_summary")
+        .eq("dataset_type", "storm")
+        .order("imported_at", { ascending: false })
+        .limit(50),
+    ]);
+
+    const versions = dashboardSummary.error
+      ? []
+      : (dashboardSummary.data ?? []) as AdminDashboardVersion[];
+    const defaultVersion = versions.find((version) => version.is_default) ?? null;
+    const yearlyDataset = defaultVersion?.datasets.find((dataset) => dataset.type === "yearly-yield") ?? null;
+    const datasetStatus = defaultVersion && yearlyDataset
+      ? {
+          versionKey: defaultVersion.version_key,
+          provinceCount: yearlyDataset.provinceCount,
+          yearCount: yearlyDataset.years.length,
+          recordCount: yearlyDataset.count,
+          ready: defaultVersion.status === "published" && yearlyDataset.count > 0,
+        }
+      : null;
+
+    const systemAlerts: AdminOverview["systemAlerts"] = [];
+    if (!latestPrice.error) {
+      const observedAt = latestPrice.data?.observed_at
+        ? Date.parse(String(latestPrice.data.observed_at))
+        : Number.NaN;
+      if (!Number.isFinite(observedAt) || Date.now() - observedAt > 7 * 86_400_000) {
+        systemAlerts.push({
+          id: "rice-price-stale",
+          severity: "warning",
+          message: latestPrice.data ? "ข้อมูลราคาข้าวยังไม่อัปเดต" : "ยังไม่มีข้อมูลราคาข้าว",
+        });
+      }
+    }
+
+    if (!stormImports.error) {
+      const failedStormUploads = (stormImports.data ?? []).filter((row) => {
+        const summary = row.validation_summary as Record<string, unknown> | null;
+        return Number(summary?.errorCount ?? summary?.error_count ?? 0) > 0;
+      }).length;
+      if (failedStormUploads > 0) {
+        systemAlerts.push({
+          id: "storm-upload-failed",
+          severity: "error",
+          message: `Upload พายุล้มเหลว ${failedStormUploads.toLocaleString("th-TH")} รายการ`,
+        });
+      }
+    }
+
+    if (!systemAlerts.length) {
+      systemAlerts.push({
+        id: "systems-normal",
+        severity: "success",
+        message: "ระบบข้อมูลทำงานปกติ",
+      });
+    }
+
+    const dailyUsage = Array.from({ length: days }, (_, index) => {
+      const date = new Date(rangeStart.getTime() + index * 86_400_000)
         .toISOString()
         .slice(0, 10);
       return { date, diseaseChecks: 0, assistantUses: 0 };
@@ -122,6 +192,8 @@ export async function GET(): Promise<Response> {
         recommendations: recommendations.count ?? 0,
       },
       dailyUsage,
+      datasetStatus,
+      systemAlerts,
       recentActivity: (activity.data ?? []) as AdminActivityLog[],
     };
 

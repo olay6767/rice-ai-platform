@@ -25,6 +25,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import DashboardDataManager from "@/components/admin/DashboardDataManager";
+import AgriculturalDatasetUpload from "@/components/admin/AgriculturalDatasetUpload";
 import { button, errorText, input, panel, primary, request } from "@/components/admin/dashboard/shared";
 import type {
   AdminAiModel,
@@ -590,6 +591,14 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
           <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ช่วงปี ค.ศ.</dt><dd className="mt-1 text-xl font-bold">{validation.minYear && validation.maxYear ? `${validation.minYear}–${validation.maxYear}` : "—"}</dd></div>
           <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ปัญหา Validation</dt><dd className="mt-1 text-xl font-bold">{(validation.missingCount ?? 0) + (validation.unknownProvinceCount ?? 0)}</dd></div>
         </dl>
+        {version.status === "draft" && <AgriculturalDatasetUpload
+          type={type}
+          version={version}
+          onSaved={async (message) => {
+            setSuccess(message);
+            await load();
+          }}
+        />}
         {!!version.import_files.length && <div className="mt-4 rounded-xl border border-[var(--app-border)] p-3"><p className="text-xs font-bold">ไฟล์ต้นทาง</p><div className="mt-2 flex flex-wrap gap-2">{version.import_files.map((file) => <span key={file.file_name} className="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs text-[var(--app-text-secondary)]">{file.file_name} · {file.row_count.toLocaleString("th-TH")} แถว</span>)}</div></div>}
       </article>;
     })}</div>}

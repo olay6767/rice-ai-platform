@@ -1,6 +1,13 @@
+import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { getAdminContext } from "@/lib/admin/auth";
+import {
+  inspectAgriculturalRows,
+  type AgriculturalDatasetType,
+  type ProvinceLookup,
+} from "@/lib/admin/agricultural-import";
+import { isSupportedDataFile, parseUploadFile } from "@/lib/admin/tabular-upload";
 
 export const runtime = "nodejs";
 
@@ -11,7 +18,9 @@ const TABLES = {
   drought: "drought_records",
   storm: "storm_records",
 } as const;
-type DatasetType = keyof typeof TABLES;
+type DatasetType = AgriculturalDatasetType;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 class RequestError extends Error {
   constructor(message: string, public readonly status = 400) {
@@ -61,6 +70,8 @@ function fail(error: unknown): Response {
     PUBLISHED_REQUIRED: "เลือกเป็นค่าเริ่มต้นได้เฉพาะเวอร์ชันที่เผยแพร่แล้ว",
     ARCHIVED_REQUIRED: "เวอร์ชันนี้ไม่ได้อยู่ในคลัง",
     DEFAULT_PROTECTED: "กรุณาเลือกเวอร์ชันเริ่มต้นอื่นก่อนเก็บเวอร์ชันนี้เข้าคลัง",
+    INVALID_FILE_TYPE: "รองรับเฉพาะไฟล์ JSON, CSV และ Excel",
+    ROW_LIMIT_EXCEEDED: "ไฟล์มีข้อมูลเกิน 20,000 แถว",
   };
   if (databaseError.message && known[databaseError.message]) {
     return Response.json(
@@ -85,6 +96,118 @@ function invalidate(type: DatasetType) {
   const path = type === "rice_price" ? "/analytics/rice-price" : `/analytics/${type}`;
   revalidatePath(path);
   revalidatePath(`/api/v1/datasets/${type}`);
+}
+
+function requiredUuid(value: unknown): string {
+  const id = requiredText(value, "รหัสเวอร์ชัน", 100);
+  if (!UUID.test(id)) throw new RequestError("รหัสเวอร์ชันไม่ถูกต้อง");
+  return id;
+}
+
+async function uploadDataset(
+  request: Request,
+  context: Awaited<ReturnType<typeof getAdminContext>>
+): Promise<Response> {
+  const form = await request.formData();
+  const action = requiredText(form.get("action"), "คำสั่ง", 20);
+  if (action !== "preview" && action !== "commit") {
+    throw new RequestError("กรุณาตรวจไฟล์ก่อนยืนยันบันทึก");
+  }
+  const type = datasetType(form.get("type"));
+  const versionId = requiredUuid(form.get("versionId"));
+  const file = form.get("file");
+  if (!(file instanceof File) || !isSupportedDataFile(file.name)) {
+    throw new RequestError("กรุณาเลือกไฟล์ JSON, CSV หรือ Excel");
+  }
+  if (!file.size || file.size > MAX_FILE_SIZE) {
+    throw new RequestError("ไฟล์ต้องมีขนาดมากกว่า 0 และไม่เกิน 10 MB");
+  }
+
+  const versionResult = await context.supabase
+    .from("agricultural_dataset_versions")
+    .select("id,dataset_type,label,status,revision")
+    .eq("id", versionId)
+    .eq("dataset_type", type)
+    .maybeSingle();
+  if (versionResult.error) throw versionResult.error;
+  const version = versionResult.data;
+  if (!version) throw new RequestError("ไม่พบเวอร์ชันที่เลือก", 404);
+  if (version.status !== "draft") throw new RequestError("อัปโหลดได้เฉพาะฉบับร่าง", 409);
+
+  let parsed: Awaited<ReturnType<typeof parseUploadFile>>;
+  try {
+    parsed = await parseUploadFile(file);
+  } catch (error) {
+    throw new RequestError(error instanceof Error ? error.message : "ไฟล์ไม่ถูกต้อง");
+  }
+  const provinceResult = await context.supabase
+    .from("rice_provinces")
+    .select("id,province_th,province_en");
+  if (provinceResult.error) throw provinceResult.error;
+  const provinces: ProvinceLookup = { ids: new Set<number>(), names: new Map<string, number>() };
+  for (const province of provinceResult.data ?? []) {
+    const id = Number(province.id);
+    provinces.ids.add(id);
+    for (const name of [province.province_th, province.province_en]) {
+      if (name) provinces.names.set(String(name).trim().replace(/\s+/g, "").toLowerCase(), id);
+    }
+  }
+
+  const report = inspectAgriculturalRows(type, parsed.rows, provinces);
+  const emptyDatasetError = report.rows.length === 0 && report.errorCount === 0
+    ? [{ row: null, message: "ไม่พบแถวข้อมูลที่ตรงกับ dataset ที่เลือก" }]
+    : [];
+  const token = createHash("sha256")
+    .update(JSON.stringify([version.id, version.revision, type, parsed.digest]))
+    .digest("hex");
+  const preview = {
+    valid: report.errorCount === 0 && report.rows.length > 0,
+    fileName: file.name,
+    fileType: parsed.fileType,
+    receivedRows: report.receivedRows,
+    validRows: report.rows.length,
+    errorCount: report.errorCount + emptyDatasetError.length,
+    errors: [...report.errors, ...emptyDatasetError],
+    warnings: report.warnings,
+    provinceCount: report.provinceCount,
+    years: report.years,
+    duplicateCount: report.duplicateCount,
+    unknownProvinceCount: report.unknownProvinceCount,
+    previewRows: report.rows.slice(0, 10),
+    columns: report.columns,
+    token,
+    revision: version.revision,
+  };
+  if (action === "preview") {
+    return Response.json({ data: preview }, { headers: HEADERS });
+  }
+  if (!preview.valid) throw new RequestError("ไฟล์ยังมีข้อผิดพลาด กรุณาแก้ไขและตรวจใหม่");
+  if (form.get("token") !== token) {
+    throw new RequestError("ไฟล์หรือเวอร์ชันเปลี่ยนหลังตรวจ กรุณาตรวจไฟล์ใหม่", 409);
+  }
+
+  const validation = {
+    rowCount: report.rows.length,
+    provinceCount: report.provinceCount,
+    minYear: report.years.at(0) ?? null,
+    maxYear: report.years.at(-1) ?? null,
+    missingCount: report.errorCount,
+    duplicateCount: report.duplicateCount,
+    unknownProvinceCount: report.unknownProvinceCount,
+    warnings: report.warnings,
+  };
+  const result = await context.supabase.rpc("agricultural_dataset_import", {
+    p_id: version.id,
+    p_dataset_type: type,
+    p_rows: report.rows,
+    p_revision: version.revision,
+    p_file_name: file.name,
+    p_file_type: parsed.fileType,
+    p_validation: validation,
+  });
+  if (result.error) throw result.error;
+  invalidate(type);
+  return Response.json({ data: { ...result.data, preview } }, { headers: HEADERS });
 }
 
 export async function GET(request: Request): Promise<Response> {
@@ -128,6 +251,9 @@ export async function POST(request: Request): Promise<Response> {
   const context = await getAdminContext();
   if (context.errorResponse) return context.errorResponse;
   try {
+    if (request.headers.get("content-type")?.includes("multipart/form-data")) {
+      return await uploadDataset(request, context);
+    }
     const body = await request.json() as Record<string, unknown>;
     const type = datasetType(body.type);
     const result = await context.supabase.rpc("agricultural_dataset_create_version", {

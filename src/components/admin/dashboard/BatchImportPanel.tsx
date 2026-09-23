@@ -22,7 +22,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const MAX_FILES = 3;
 
 function fileIssue(file: File): string | null {
-  if (!file.name.toLowerCase().endsWith(".csv")) return "รองรับเฉพาะไฟล์ .csv";
+  if (!/\.(csv|json|xlsx|xls)$/i.test(file.name)) return "รองรับไฟล์ JSON, CSV หรือ Excel";
   if (file.size === 0) return "ไฟล์ไม่มีข้อมูล";
   if (file.size > MAX_FILE_SIZE) return "ไฟล์เกิน 10 MB";
   return null;
@@ -138,7 +138,7 @@ export default function BatchImportPanel({
         ref={inputRef}
         key={inputKey}
         type="file"
-        accept=".csv,text/csv"
+        accept=".csv,.json,.xlsx,.xls,text/csv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
         multiple
         className="sr-only"
         disabled={Boolean(busy)}
@@ -164,7 +164,7 @@ export default function BatchImportPanel({
             <UploadCloud className="h-5 w-5" />
           </span>
           <p className="mt-3 text-sm font-bold">
-            ลากไฟล์ CSV มาวาง หรือเลือกจากเครื่อง
+            ลากไฟล์ JSON / CSV / Excel มาวาง หรือเลือกจากเครื่อง
           </p>
           <p className={`mt-1 ${muted}`}>
             ผลผลิตรายปี · สภาพแวดล้อมรายเดือน · ผลพยากรณ์ผลผลิต
@@ -175,7 +175,7 @@ export default function BatchImportPanel({
             disabled={Boolean(busy)}
             onClick={() => inputRef.current?.click()}
           >
-            <UploadCloud className="h-4 w-4" /> เลือกไฟล์ CSV
+            <UploadCloud className="h-4 w-4" /> เลือกไฟล์ข้อมูล
           </button>
         </div>
       </div>

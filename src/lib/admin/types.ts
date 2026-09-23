@@ -101,6 +101,18 @@ export interface AdminOverview {
     diseaseChecks: number;
     assistantUses: number;
   }>;
+  datasetStatus: {
+    versionKey: string;
+    provinceCount: number;
+    yearCount: number;
+    recordCount: number;
+    ready: boolean;
+  } | null;
+  systemAlerts: Array<{
+    id: string;
+    severity: "success" | "warning" | "error";
+    message: string;
+  }>;
   recentActivity: AdminActivityLog[];
 }
 

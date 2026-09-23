@@ -22,43 +22,6 @@ const TOPIC_KEYWORDS: Record<KnowledgeTopic, string[]> = {
   price: ["ราคาข้าว", "ราคา ข้าว", "ราคาตลาด", "rice price"],
 };
 
-const RICE_SCOPE_KEYWORDS = [
-  "ข้าว",
-  "ชาวนา",
-  "นาข้าว",
-  "แปลงนา",
-  "ทำนา",
-  "ปลูกข้าว",
-  "ปักดำ",
-  "หว่านข้าว",
-  "ต้นกล้า",
-  "รวง",
-  "กาบใบ",
-  "ใบข้าว",
-  "เมล็ดพันธุ์",
-  "ปุ๋ย",
-  "ศัตรูพืช",
-  "วัชพืช",
-  "แมลง",
-  "เพลี้ย",
-  "หนอนกอ",
-  "หอยเชอรี่",
-  "เก็บเกี่ยว",
-  "ไถนา",
-  "คันนา",
-  "น้ำในนา",
-  "โรคไหม้",
-  "โรคขอบใบแห้ง",
-  "โรคใบจุด",
-  "ต้นทุนการปลูก",
-  "rice",
-  "paddy",
-  "rice farm",
-  "rice disease",
-  ...Object.values(TOPIC_KEYWORDS).flat(),
-];
-
-const GREETING_PATTERN = /^(สวัสดี|หวัดดี|ดีครับ|ดีค่ะ|ขอบคุณ|hello|hi|hey)[\s!?.]*$/i;
 const FOLLOW_UP_PATTERN = /(แล้ว|เทียบ|มากสุด|น้อยสุด|อันดับ|ปี|เดือน|จังหวัด|ต่อ|อีก|ก่อนหน้า|ล่าสุด|แนวโน้ม|\d)/i;
 
 const MONTHS = [
@@ -243,26 +206,6 @@ export function detectKnowledgeTopics(
 
   return [];
 }
-
-export function isRiceAssistantScope(
-  message: string,
-  pagePath?: string,
-  previousTopics: KnowledgeTopic[] = []
-): boolean {
-  const trimmed = message.trim();
-
-  if (GREETING_PATTERN.test(trimmed)) return true;
-  if (includesAny(trimmed, RICE_SCOPE_KEYWORDS)) return true;
-  if (isDisasterOverviewPath(pagePath) && FOLLOW_UP_PATTERN.test(trimmed)) {
-    return true;
-  }
-  if (topicFromPath(pagePath) && FOLLOW_UP_PATTERN.test(trimmed)) return true;
-
-  return previousTopics.length > 0 && FOLLOW_UP_PATTERN.test(trimmed);
-}
-
-export const OUT_OF_SCOPE_REPLY =
-  "น้องเสริมตอบเฉพาะเรื่องข้าวและการทำแปลงนาครับ ลองถามเรื่องโรคข้าว ปุ๋ย น้ำ แมลง น้ำท่วม พายุ ภัยแล้ง ผลผลิต หรือราคาข้าวได้เลย";
 
 function queryYears(message: string): number[] {
   const years = Array.from(message.matchAll(/(?:^|\D)(25\d{2}|20\d{2})(?!\d)/g))

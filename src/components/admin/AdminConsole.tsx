@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  Activity,
   AlertTriangle,
   CheckCircle2,
-  Clock3,
   FileText,
   ImageUp,
   LayoutDashboard,
@@ -319,7 +317,7 @@ function ErrorNotice({ message }: { message: string | null }) {
 function FormField({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs font-bold text-rice-forest dark:text-white/80">
+      <span className="mb-2.5 block text-[15px] font-semibold text-[#153b24] dark:text-white/80">
         {label}
       </span>
       {children}
@@ -328,7 +326,7 @@ function FormField({ label, children }: { label: string; children: ReactNode }) 
 }
 
 const inputClassName =
-  "w-full rounded-xl border border-rice-forest/15 bg-white px-3 py-2.5 text-sm text-rice-forest outline-none transition placeholder:text-rice-muted/60 focus:border-rice-leaf focus:ring-4 focus:ring-rice-mint/35 dark:border-white/10 dark:bg-white/[0.06] dark:text-white";
+  "min-h-11 w-full rounded-lg border border-[#dce5de] bg-white px-4 py-2.5 text-base text-[#153b24] outline-none transition placeholder:text-[#7b8b80] focus:border-[#15803d] focus:ring-2 focus:ring-[#15803d]/15 dark:border-white/10 dark:bg-white/[0.06] dark:text-white";
 
 function Toggle({
   label,
@@ -377,13 +375,13 @@ function ContentForm({
   const checked = (key: string) => draft[key] === true;
 
   return (
-    <form onSubmit={onSubmit} className="mb-6 rounded-3xl border border-rice-leaf/20 bg-white/80 p-5 shadow-sm dark:border-white/10 dark:bg-white/[0.04] sm:p-6">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+    <form onSubmit={onSubmit} className="mb-7 rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)] dark:border-white/10 dark:bg-white/[0.04] sm:p-7">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-bold text-rice-leaf dark:text-rice-mint-light">
             {editing ? "แก้ไขข้อมูล" : "เพิ่มข้อมูลใหม่"}
           </p>
-          <h2 className="font-heading text-xl font-bold text-rice-forest dark:text-white">
+          <h2 className="font-heading text-xl font-bold text-[#14532d] dark:text-white">
             {resource === "posts" && "ข่าวหรืออินโฟกราฟิก"}
             {resource === "alerts" && "การแจ้งเตือน"}
             {resource === "prices" && "ราคาข้าว"}
@@ -396,8 +394,8 @@ function ContentForm({
       </div>
 
       {resource === "posts" && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-4 md:col-span-2">
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="space-y-5 md:col-span-2">
             <FormField label="หัวข้อข่าว">
               <input className={inputClassName} value={text("title")} onChange={(event) => onChange("title", event.target.value)} maxLength={180} required />
             </FormField>
@@ -437,7 +435,7 @@ function ContentForm({
               <input className={inputClassName} value={text("imageUrl")} onChange={(event) => onChange("imageUrl", event.target.value)} placeholder="อัปโหลดรูป หรือใช้ /images/..." />
             </FormField>
             <label className="flex cursor-pointer items-end">
-              <span className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-rice-mint px-4 py-2.5 text-sm font-bold text-rice-forest transition hover:bg-rice-mint-light">
+              <span className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#edf5ef] px-4 py-2.5 text-[15px] font-semibold text-[#14532d] transition hover:bg-[#dcecdf]">
                 {isUploading ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <ImageUp className="h-4 w-4" />}
                 อัปโหลดรูป
               </span>
@@ -453,7 +451,7 @@ function ContentForm({
           </FormField>
           <div className="md:col-span-2">
             <FormField label="เนื้อหาฉบับเต็ม (ไม่บังคับ)">
-              <textarea className={inputClassName} value={text("body")} onChange={(event) => onChange("body", event.target.value)} rows={5} maxLength={20000} />
+              <textarea className={`${inputClassName} h-[360px] resize-y overflow-y-auto sm:h-[440px]`} value={text("body")} onChange={(event) => onChange("body", event.target.value)} maxLength={20000} />
             </FormField>
           </div>
           <Toggle label="แสดงเป็นข่าวเด่น" checked={checked("isFeatured")} onChange={(value) => onChange("isFeatured", value)} />
@@ -509,7 +507,7 @@ function ContentForm({
       )}
 
       <div className="mt-6 flex justify-end">
-        <button type="submit" disabled={isSaving || isUploading} className="inline-flex items-center gap-2 rounded-xl bg-rice-forest px-4 py-2.5 text-sm font-bold text-white transition hover:bg-rice-dark disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rice-mint-light dark:text-rice-dark">
+        <button type="submit" disabled={isSaving || isUploading} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#14532d] px-5 text-[15px] font-semibold text-white shadow-[0_3px_10px_rgba(20,83,45,0.16)] transition hover:bg-[#15803d] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-rice-mint-light dark:text-rice-dark">
           {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {editing ? "บันทึกการแก้ไข" : "บันทึกข้อมูล"}
         </button>
@@ -529,6 +527,7 @@ export default function AdminConsole({
 }) {
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [overviewDays, setOverviewDays] = useState(7);
   const [records, setRecords] = useState(EMPTY_RECORDS);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -556,7 +555,7 @@ export default function AdminConsole({
 
       try {
         if (activeTab === "overview") {
-          const data = await requestJson<AdminOverview>("/api/admin/overview");
+          const data = await requestJson<AdminOverview>(`/api/admin/overview?days=${overviewDays}`);
           if (active) setOverview(data);
         } else if (isResource(activeTab)) {
           const data = await requestJson<typeof currentItems>(`/api/admin/content/${activeTab}`);
@@ -577,7 +576,7 @@ export default function AdminConsole({
     return () => {
       active = false;
     };
-  }, [activeTab, refreshKey]);
+  }, [activeTab, overviewDays, refreshKey]);
 
   function resetForm(): void {
     if (!resource) return;
@@ -615,7 +614,7 @@ export default function AdminConsole({
 
   async function refreshOverview(): Promise<void> {
     try {
-      setOverview(await requestJson<AdminOverview>("/api/admin/overview"));
+      setOverview(await requestJson<AdminOverview>(`/api/admin/overview?days=${overviewDays}`));
     } catch {
       // ภาพรวมจะโหลดใหม่เมื่อผู้ดูแลกลับไปที่แท็บนี้
     }
@@ -854,20 +853,31 @@ export default function AdminConsole({
           </div>
         </aside>
 
-        <div className="min-w-0 rounded-[22px] border border-rice-forest/8 bg-[#fbfaf7] p-3 shadow-[0_12px_36px_rgba(11,46,28,0.05)] sm:p-5 lg:my-4 lg:p-6">
-          <header className="relative mb-5 grid min-h-[230px] overflow-hidden rounded-[24px] border border-rice-forest/10 bg-gradient-to-br from-white via-[#fffdf7] to-[#edf5e9] shadow-[0_14px_38px_rgba(11,46,28,0.08)] lg:grid-cols-[minmax(0,1.18fr)_minmax(300px,0.82fr)]">
-            <div className="relative z-10 flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#fff0dc] px-3 py-1.5 text-xs font-bold text-[#b85a15]">
+        <div className="min-w-0 w-full max-w-[1500px] justify-self-center rounded-[22px] border border-rice-forest/8 bg-[#f7f9f7] p-3 shadow-[0_12px_36px_rgba(11,46,28,0.05)] sm:p-5 lg:my-4 lg:p-6">
+          <header className={`relative mb-6 overflow-hidden rounded-[16px] border border-rice-forest/10 bg-rice-forest shadow-[0_10px_28px_rgba(11,46,28,0.12)] ${activeTab === "posts" ? "min-h-[240px] sm:min-h-[250px]" : "min-h-[300px] sm:min-h-[320px]"}`}>
+            <Image
+              src="/images/62.jpg"
+              alt="เกษตรกรกำลังดูแลต้นกล้าข้าวในแปลงนา"
+              fill
+              priority
+              sizes="(max-width: 1023px) 100vw, 82vw"
+              className="object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(5,29,17,0.96)_0%,rgba(7,40,23,0.86)_34%,rgba(9,46,27,0.44)_64%,rgba(9,46,27,0.08)_100%)]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-rice-forest/45 via-transparent to-black/10" />
+
+            <div className={`relative z-10 flex max-w-3xl flex-col justify-center p-6 sm:p-8 ${activeTab === "posts" ? "min-h-[240px] sm:min-h-[250px] lg:p-8" : "min-h-[300px] sm:min-h-[320px] lg:p-10"}`}>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-[#fff0dc]/95 px-3 py-1.5 text-xs font-bold text-[#b85a15] shadow-sm backdrop-blur">
                 <ShieldCheck className="h-4 w-4" /> พื้นที่ผู้ดูแลระบบ
               </span>
-              <h2 className="mt-4 font-heading text-3xl font-bold tracking-[-0.035em] text-rice-forest sm:text-4xl lg:text-[2.75rem]">
+              <h2 className={`mt-4 max-w-2xl font-heading font-bold tracking-[-0.035em] text-white drop-shadow-sm ${activeTab === "posts" ? "text-[28px]" : "text-3xl sm:text-4xl lg:text-[2.75rem]"}`}>
                 {TAB_ITEMS.find((item) => item.id === activeTab)?.label}
               </h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-rice-muted sm:text-base">
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/85 drop-shadow-sm sm:text-base">
                 เลือกเมนูเพื่อจัดการข้อมูล ติดตามการใช้งาน และดูแลระบบได้อย่างสะดวก
               </p>
-              <div className="mt-5 inline-flex w-fit items-center gap-3 rounded-xl border border-rice-forest/8 bg-white/85 px-4 py-2.5 shadow-sm backdrop-blur">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-rice-mint/55 text-rice-forest">
+              <div className="mt-5 inline-flex w-fit max-w-full items-center gap-3 rounded-xl border border-white/25 bg-white/90 px-4 py-2.5 shadow-lg backdrop-blur-md">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-rice-mint/55 text-rice-forest">
                   <ShieldCheck className="h-4 w-4" />
                 </span>
                 <div className="min-w-0">
@@ -877,21 +887,9 @@ export default function AdminConsole({
               </div>
             </div>
 
-            <div className="relative min-h-[180px] sm:min-h-[210px] lg:min-h-[230px]">
-              <Image
-                src="/images/62.jpg"
-                alt="เกษตรกรกำลังดูแลต้นกล้าข้าวในแปลงนา"
-                fill
-                priority
-                sizes="(max-width: 1023px) 100vw, 38vw"
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-[#fffdf7] via-[#fffdf7]/10 to-transparent lg:bg-gradient-to-r" />
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-rice-forest/35 to-transparent" />
-              <div className="absolute bottom-5 right-5 rounded-xl border border-white/30 bg-rice-forest/75 px-4 py-3 text-white shadow-lg backdrop-blur-md">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/65">Rice AI Platform</p>
-                <p className="mt-1 text-sm font-bold">ข้อมูลเพื่อการเกษตรที่จัดการได้ง่าย</p>
-              </div>
+            <div className={`absolute bottom-5 right-5 z-10 rounded-lg border border-white/25 bg-rice-forest/75 px-4 py-3 text-white shadow-lg backdrop-blur-md ${activeTab === "posts" ? "hidden lg:block" : "hidden sm:block"}`}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/65">Rice AI Platform</p>
+              <p className="mt-1 text-sm font-bold">ข้อมูลเพื่อการเกษตรที่จัดการได้ง่าย</p>
             </div>
           </header>
 
@@ -899,7 +897,7 @@ export default function AdminConsole({
             <ErrorNotice message={error} />
             {success && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" /><p>{success}</p></div>}
 
-            {activeTab === "overview" && (loading && !overview ? <LoadingPanel /> : <OverviewPanel overview={overview} />)}
+            {activeTab === "overview" && (loading && !overview ? <LoadingPanel /> : <OverviewPanel overview={overview} days={overviewDays} onDaysChange={setOverviewDays} onViewAllActivity={() => setActiveTab("activity")} loading={loading} />)}
             {activeTab === "users" && (
               <UsersPanel
                 viewerId={administratorId}
@@ -920,16 +918,16 @@ export default function AdminConsole({
                 }}
               />
             ) : resource && (
-          <section>
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <section className="mx-auto max-w-[1500px]">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-xs font-bold text-rice-leaf dark:text-rice-mint-light">จัดการข้อมูล</p>
-                <h2 className="mt-1 font-heading text-2xl font-bold text-rice-forest dark:text-white">{TAB_ITEMS.find((item) => item.id === resource)?.label}</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#15803d] dark:text-rice-mint-light">จัดการข้อมูล</p>
+                <h2 className="mt-1 font-heading text-[28px] font-bold leading-tight text-[#14532d] dark:text-white">{TAB_ITEMS.find((item) => item.id === resource)?.label}</h2>
               </div>
               <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="inline-flex items-center gap-2 rounded-xl border border-rice-forest/10 bg-white/70 px-3 py-2.5 text-xs font-bold text-rice-forest hover:bg-rice-mint/20 dark:border-white/10 dark:bg-white/[0.05] dark:text-white"><RefreshCw className="h-4 w-4" /> รีเฟรช</button>
+                <button type="button" onClick={() => setRefreshKey((value) => value + 1)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#dce5de] bg-white px-4 text-[15px] font-semibold text-[#14532d] hover:bg-[#f0f7f2] dark:border-white/10 dark:bg-white/[0.05] dark:text-white"><RefreshCw className="h-4 w-4" /> รีเฟรช</button>
                 {resource === "prices" && <button type="button" onClick={() => void syncRicePrices()} disabled={isSyncingPrices} className="inline-flex items-center gap-2 rounded-xl border border-rice-leaf/30 bg-rice-mint/35 px-3 py-2.5 text-xs font-bold text-rice-forest hover:bg-rice-mint/60 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rice-mint-light/25 dark:bg-rice-leaf/20 dark:text-rice-mint-light"><RefreshCw className={`h-4 w-4 ${isSyncingPrices ? "animate-spin" : ""}`} /> {isSyncingPrices ? "กำลังดึงราคา..." : "ดึงจาก Agri-Map"}</button>}
-                <button type="button" onClick={openNewForm} className="inline-flex items-center gap-2 rounded-xl bg-rice-forest px-4 py-2.5 text-sm font-bold text-white hover:bg-rice-dark dark:bg-rice-mint-light dark:text-rice-dark"><Plus className="h-4 w-4" /> {resource === "posts" ? "สร้างข่าวสารใหม่" : "เพิ่มรายการ"}</button>
+                <button type="button" onClick={openNewForm} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#14532d] px-5 text-[15px] font-semibold text-white shadow-[0_3px_10px_rgba(20,83,45,0.16)] hover:bg-[#15803d] dark:bg-rice-mint-light dark:text-rice-dark"><Plus className="h-4 w-4" /> {resource === "posts" ? "สร้างข่าวสารใหม่" : "เพิ่มรายการ"}</button>
               </div>
             </div>
             {isFormOpen && <ContentForm resource={resource} draft={draft} onChange={updateDraft} onSubmit={submitForm} onCancel={resetForm} onUpload={uploadImage} isSaving={isSaving} isUploading={isUploading} editing={Boolean(editingId)} />}
@@ -947,20 +945,155 @@ function LoadingPanel() {
   return <div className="flex min-h-48 items-center justify-center rounded-3xl border border-rice-forest/10 bg-white/65 text-sm font-semibold text-rice-muted dark:border-white/10 dark:bg-white/[0.04] dark:text-white/60"><LoaderCircle className="mr-2 h-5 w-5 animate-spin" /> กำลังโหลดข้อมูล...</div>;
 }
 
-function OverviewPanel({ overview }: { overview: AdminOverview | null }) {
+function OverviewPanel({
+  overview,
+  days,
+  onDaysChange,
+  onViewAllActivity,
+  loading,
+}: {
+  overview: AdminOverview | null;
+  days: number;
+  onDaysChange: (days: number) => void;
+  onViewAllActivity: () => void;
+  loading: boolean;
+}) {
+  const [series, setSeries] = useState<"all" | "disease" | "assistant">("all");
   if (!overview) return <LoadingPanel />;
   const cards = [
     { label: "ผู้ใช้งาน", value: overview.counts.users, detail: "บัญชีในระบบทั้งหมด", icon: UsersRound, tone: "bg-emerald-100 text-emerald-700" },
-    { label: "ตรวจโรค", value: overview.counts.diseaseChecks, detail: "การตรวจใน 7 วันล่าสุด", icon: Bug, tone: "bg-amber-100 text-amber-700" },
-    { label: "Nong Serm AI", value: overview.counts.assistantUses, detail: "การใช้งานใน 7 วันล่าสุด", icon: BrainCircuit, tone: "bg-violet-100 text-violet-700" },
+    { label: "ตรวจโรค", value: overview.counts.diseaseChecks, detail: `การตรวจใน ${days} วันล่าสุด`, icon: Bug, tone: "bg-amber-100 text-amber-700" },
+    { label: "Nong Serm AI", value: overview.counts.assistantUses, detail: `การใช้งานใน ${days} วันล่าสุด`, icon: BrainCircuit, tone: "bg-violet-100 text-violet-700" },
     { label: "ข่าวและข้อมูล", value: overview.counts.content, detail: `ข่าวเผยแพร่ ${overview.counts.publishedPosts} รายการ`, icon: Newspaper, tone: "bg-sky-100 text-sky-700" },
   ];
-  const maximum = Math.max(1, ...overview.dailyUsage.flatMap((item) => [item.diseaseChecks, item.assistantUses]));
+  const showDisease = series !== "assistant";
+  const showAssistant = series !== "disease";
+  const maximum = Math.max(
+    1,
+    ...overview.dailyUsage.flatMap((item) => [
+      ...(showDisease ? [item.diseaseChecks] : []),
+      ...(showAssistant ? [item.assistantUses] : []),
+    ])
+  );
+  const labelEvery = days <= 14 ? 1 : days <= 30 ? 3 : 7;
+  const chartMinimumWidth = Math.max(860, overview.dailyUsage.length * 46);
+
   return <div className="space-y-5">
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map((card) => { const Icon = card.icon; return <article key={card.label} className="glass-card p-5"><span className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.tone}`}><Icon className="h-5 w-5" /></span><p className="mt-4 text-3xl font-bold text-rice-forest dark:text-white">{card.value.toLocaleString("th-TH")}</p><h3 className="mt-1 text-sm font-bold text-rice-forest dark:text-white">{card.label}</h3><p className="mt-1 text-xs text-rice-muted dark:text-white/45">{card.detail}</p></article>; })}</div>
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,.6fr)]">
-      <section className="glass-card p-5 sm:p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold text-rice-leaf">ภาพรวม 7 วัน</p><h2 className="mt-1 font-heading text-lg font-bold">จำนวนการใช้งานรายวัน</h2></div><div className="flex gap-3 text-xs"><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rice-leaf" />ตรวจโรค</span><span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-full bg-rice-gold" />Nong Serm AI</span></div></div><div className="mt-6 grid h-56 grid-cols-7 items-end gap-2 border-b border-rice-forest/10 px-1">{overview.dailyUsage.map((item) => <div key={item.date} className="flex h-full min-w-0 flex-col justify-end gap-2"><div className="flex flex-1 items-end justify-center gap-1"><span title={`ตรวจโรค ${item.diseaseChecks}`} className="w-3 rounded-t-md bg-rice-leaf/85" style={{ height: `${Math.max(item.diseaseChecks ? 8 : 2, item.diseaseChecks / maximum * 100)}%` }} /><span title={`Nong Serm AI ${item.assistantUses}`} className="w-3 rounded-t-md bg-rice-gold" style={{ height: `${Math.max(item.assistantUses ? 8 : 2, item.assistantUses / maximum * 100)}%` }} /></div><span className="truncate text-center text-[10px] text-rice-muted">{new Date(item.date).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</span></div>)}</div></section>
-      <section className="glass-card p-5"><div className="flex items-center gap-2"><Activity className="h-4 w-4 text-rice-leaf" /><h2 className="font-heading text-base font-bold">กิจกรรมล่าสุด</h2></div><div className="mt-4 space-y-4">{overview.recentActivity.length ? overview.recentActivity.map((item) => <div key={item.id} className="flex gap-3"><span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rice-mint/45"><Clock3 className="h-4 w-4" /></span><div><p className="text-xs font-bold">{item.summary}</p><p className="mt-1 text-[11px] text-rice-muted">{formatDate(item.created_at)}</p></div></div>) : <p className="rounded-2xl bg-rice-surface-soft/70 p-3 text-sm text-rice-muted">ยังไม่มีกิจกรรม</p>}</div></section>
+    <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)] sm:p-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-xs font-bold text-[#15803d]">ภาพรวม {days} วัน</p>
+          <h2 className="mt-1 font-heading text-xl font-bold text-[#14532d]">จำนวนการใช้งานรายวัน</h2>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="sr-only" htmlFor="overview-series">เลือกข้อมูล</label>
+          <select id="overview-series" value={series} onChange={(event) => setSeries(event.target.value as typeof series)} className="min-h-10 rounded-lg border border-[#dce5de] bg-white px-3 text-sm font-semibold text-[#315d42] outline-none focus:border-[#15803d] focus:ring-2 focus:ring-[#15803d]/15">
+            <option value="all">แสดงทั้งหมด</option>
+            <option value="disease">ตรวจโรค</option>
+            <option value="assistant">Nong Serm AI</option>
+          </select>
+          <label className="sr-only" htmlFor="overview-days">เลือกช่วงเวลา</label>
+          <select id="overview-days" value={days} disabled={loading} onChange={(event) => onDaysChange(Number(event.target.value))} className="min-h-10 rounded-lg border border-[#dce5de] bg-white px-3 text-sm font-semibold text-[#315d42] outline-none focus:border-[#15803d] focus:ring-2 focus:ring-[#15803d]/15 disabled:opacity-60">
+            <option value={7}>ย้อนหลัง 7 วัน</option>
+            <option value={14}>ย้อนหลัง 14 วัน</option>
+            <option value={30}>ย้อนหลัง 30 วัน</option>
+            <option value={90}>ย้อนหลัง 90 วัน</option>
+          </select>
+          {loading ? <LoaderCircle className="h-4 w-4 animate-spin text-[#15803d]" aria-label="กำลังโหลดกราฟ" /> : null}
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-4 text-sm text-[#52645a]">
+        {showDisease ? <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm bg-[#14532d]" />ตรวจโรค</span> : null}
+        {showAssistant ? <span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm bg-[#e0b83f]" />Nong Serm AI</span> : null}
+      </div>
+
+      <div className="mt-3 overflow-x-auto pb-1">
+        <div
+          className="grid h-52 w-full items-end gap-2 border-b border-[#dce5de] px-2"
+          style={{
+            gridTemplateColumns: `repeat(${overview.dailyUsage.length}, minmax(34px, 1fr))`,
+            minWidth: `${chartMinimumWidth}px`,
+          }}
+        >
+          {overview.dailyUsage.map((item, index) => (
+            <div key={item.date} className="flex h-full min-w-0 flex-col justify-end gap-2">
+              <div className="flex flex-1 items-end justify-center gap-1.5">
+                {showDisease ? <span title={`ตรวจโรค ${item.diseaseChecks}`} className="w-5 max-w-7 flex-1 rounded-t-[4px] bg-[#14532d]" style={{ height: `${Math.max(item.diseaseChecks ? 10 : 2, item.diseaseChecks / maximum * 100)}%` }} /> : null}
+                {showAssistant ? <span title={`Nong Serm AI ${item.assistantUses}`} className="w-5 max-w-7 flex-1 rounded-t-[4px] bg-[#e0b83f]" style={{ height: `${Math.max(item.assistantUses ? 10 : 2, item.assistantUses / maximum * 100)}%` }} /> : null}
+              </div>
+              <span className="h-5 truncate text-center text-[11px] text-[#6b7c70]">
+                {index % labelEvery === 0 || index === overview.dailyUsage.length - 1
+                  ? new Date(item.date).toLocaleDateString("th-TH", { day: "numeric", month: "short" })
+                  : ""}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <div className="grid gap-4 xl:grid-cols-3">
+      <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)]">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-[#15803d]" />
+          <h2 className="text-lg font-bold text-[#14532d]">Dataset Status</h2>
+        </div>
+        {overview.datasetStatus ? (
+          <div className="mt-4 space-y-3 text-sm text-[#52645a]">
+            <p className="text-base font-bold text-[#153b24]">{overview.datasetStatus.versionKey}</p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              <span>{overview.datasetStatus.provinceCount.toLocaleString("th-TH")} จังหวัด</span>
+              <span>{overview.datasetStatus.yearCount.toLocaleString("th-TH")} ปี</span>
+              <span>{overview.datasetStatus.recordCount.toLocaleString("th-TH")} Records</span>
+            </div>
+            <p className={`flex items-center gap-2 font-semibold ${overview.datasetStatus.ready ? "text-[#15803d]" : "text-amber-700"}`}>
+              <i className={`h-2.5 w-2.5 rounded-full ${overview.datasetStatus.ready ? "bg-[#15803d]" : "bg-amber-500"}`} />
+              {overview.datasetStatus.ready ? "พร้อมใช้งาน" : "ยังไม่พร้อมใช้งาน"}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm leading-6 text-[#6b7c70]">ยังไม่พบชุดข้อมูลเริ่มต้นที่พร้อมใช้งาน</p>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <h2 className="text-lg font-bold text-[#14532d]">System Alerts</h2>
+          </div>
+          <button type="button" onClick={onViewAllActivity} className="text-sm font-semibold text-[#15803d] hover:text-[#14532d]">ดูทั้งหมด</button>
+        </div>
+        <div className="mt-4 space-y-3">
+          {overview.systemAlerts.map((alert) => (
+            <p key={alert.id} className="flex items-start gap-2 text-sm leading-6 text-[#52645a]">
+              <i className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${alert.severity === "error" ? "bg-red-500" : alert.severity === "warning" ? "bg-amber-400" : "bg-[#15803d]"}`} />
+              {alert.message}
+            </p>
+          ))}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ScrollText className="h-5 w-5 text-[#15803d]" />
+            <h2 className="text-lg font-bold text-[#14532d]">Recent Activity</h2>
+          </div>
+          <button type="button" onClick={onViewAllActivity} className="text-sm font-semibold text-[#15803d] hover:text-[#14532d]">ดูทั้งหมด</button>
+        </div>
+        <div className="mt-4 space-y-3">
+          {overview.recentActivity.slice(0, 3).map((item) => (
+            <div key={item.id} className="grid grid-cols-[46px_minmax(0,1fr)] gap-2 text-sm leading-6">
+              <time className="font-semibold tabular-nums text-[#15803d]">{new Date(item.created_at).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}</time>
+              <p className="line-clamp-2 text-[#52645a]">{item.summary}</p>
+            </div>
+          ))}
+          {!overview.recentActivity.length ? <p className="text-sm text-[#6b7c70]">ยังไม่มีกิจกรรมล่าสุด</p> : null}
+        </div>
+      </section>
     </div>
   </div>;
 }
@@ -995,11 +1128,12 @@ function RecordList({
   }
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-4">
       {items.map((item) => {
         const isPost = resource === "posts";
         const isPrice = resource === "prices";
         const post = isPost ? (item as AdminNewsPost) : null;
+        const postDate = post?.published_at ?? post?.updated_at;
         const title = isPrice
           ? (item as AdminRicePrice).rice_type
           : (item as AdminNewsPost | AdminAlert | AdminRecommendation).title;
@@ -1015,11 +1149,11 @@ function RecordList({
         return (
           <article
             key={item.id}
-            className="flex flex-col gap-4 rounded-2xl border border-rice-forest/10 bg-white/75 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between"
+            className="grid gap-5 rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_12px_rgba(20,83,45,0.04)] transition hover:border-[#b8cabc] hover:shadow-[0_5px_18px_rgba(20,83,45,0.07)] dark:border-white/10 dark:bg-white/[0.04] md:grid-cols-[minmax(0,1fr)_150px_170px_auto] md:items-center lg:p-6"
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${visibility.className}`}>
+                <span className={`rounded-md px-2.5 py-1 text-xs font-semibold ${visibility.className}`}>
                   {visibility.label}
                 </span>
                 {post?.is_featured && (
@@ -1028,13 +1162,27 @@ function RecordList({
                   </span>
                 )}
               </div>
-              <h3 className="mt-2 truncate text-sm font-bold text-rice-forest dark:text-white">
+              <h3 className="mt-3 truncate text-lg font-bold text-[#14532d] dark:text-white">
                 {title}
               </h3>
-              <p className="mt-1 line-clamp-1 text-xs text-rice-muted dark:text-white/50">
+              <p className="mt-1.5 line-clamp-2 text-[15px] leading-6 text-[#607066] dark:text-white/50">
                 {detail}
               </p>
             </div>
+
+            {post ? (
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-[#7b8b80]">หมวดหมู่</p>
+                <p className="mt-1.5 truncate text-[15px] font-semibold text-[#315d42]">{post.category}</p>
+              </div>
+            ) : <span className="hidden md:block" />}
+
+            {post ? (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.06em] text-[#7b8b80]">วันที่เผยแพร่</p>
+                <p className="mt-1.5 text-[15px] font-medium text-[#315d42]">{formatDate(postDate)}</p>
+              </div>
+            ) : <span className="hidden md:block" />}
 
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               {post?.status === "draft" && (
@@ -1042,7 +1190,7 @@ function RecordList({
                   type="button"
                   onClick={() => onPublish(post)}
                   disabled={publishingId === post.id}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-[#15803d] px-3.5 text-sm font-semibold text-white transition hover:bg-[#14532d] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {publishingId === post.id ? (
                     <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
@@ -1055,14 +1203,14 @@ function RecordList({
               <button
                 type="button"
                 onClick={() => onEdit(item)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-rice-forest/10 px-3 py-2 text-xs font-bold text-rice-forest hover:bg-rice-mint/25 dark:border-white/10 dark:text-white"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-[#dce5de] px-3.5 text-sm font-semibold text-[#14532d] hover:bg-[#f0f7f2] dark:border-white/10 dark:text-white"
               >
                 <Pencil className="h-3.5 w-3.5" /> แก้ไข
               </button>
               <button
                 type="button"
                 onClick={() => onDelete(item)}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 dark:border-rose-400/20 dark:text-rose-200"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-rose-200 px-3.5 text-sm font-semibold text-rose-700 hover:bg-rose-50 dark:border-rose-400/20 dark:text-rose-200"
               >
                 <Trash2 className="h-3.5 w-3.5" /> ลบ
               </button>

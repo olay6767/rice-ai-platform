@@ -43,7 +43,7 @@ function welcomeMessage(displayName?: string): WidgetMessage {
   return {
     id: "widget-welcome",
     role: "assistant",
-    content: `${greeting} ผมคือน้องเสริม\nถามเรื่องข้าวหรือข้อมูลในหน้าที่กำลังดูได้เลยครับ`,
+    content: `${greeting} ผมคือน้องเสริม\nถามเรื่องการทำเกษตรข้าวได้ตลอดกระบวนการ หรือถามข้อมูลในหน้าที่กำลังดูได้เลยครับ`,
   };
 }
 

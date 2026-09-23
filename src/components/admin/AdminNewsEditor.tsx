@@ -93,7 +93,7 @@ const DATABASE_CATEGORY_VALUES = {
 } as const satisfies Record<EditorCategory, string>;
 
 const fieldClass =
-  "min-h-11 w-full rounded-xl border border-[#173b28]/12 bg-white px-3.5 py-2.5 text-sm text-[#173523] outline-none transition placeholder:text-[#718078] focus:border-[#347846]/55 focus:ring-4 focus:ring-[#beeecf]/45";
+  "min-h-11 w-full rounded-lg border border-[#dce5de] bg-white px-4 py-2.5 text-base text-[#153b24] outline-none transition placeholder:text-[#7b8b80] focus:border-[#15803d] focus:ring-2 focus:ring-[#15803d]/15";
 
 function todayInputValue(): string {
   const now = new Date();
@@ -254,12 +254,12 @@ function FieldLabel({
   hint?: string;
 }) {
   return (
-    <div className="mb-2 flex items-end justify-between gap-3">
-      <label className="text-sm font-bold text-[#173523]">
+    <div className="mb-2.5 flex items-end justify-between gap-3">
+      <label className="text-[15px] font-semibold text-[#153b24]">
         {children}
         {required ? <span className="ml-1 text-orange-600">*</span> : null}
       </label>
-      {hint ? <span className="text-[11px] text-[#728078]">{hint}</span> : null}
+      {hint ? <span className="text-xs text-[#6b7c70]">{hint}</span> : null}
     </div>
   );
 }
@@ -282,7 +282,7 @@ function ToolbarButton({
         event.preventDefault();
         onAction();
       }}
-      className="grid h-9 w-9 place-items-center rounded-lg text-[#385747] transition hover:bg-[#e9f4e8] hover:text-[#0b2e1c]"
+      className="grid h-9 w-9 place-items-center rounded-md text-[#315d42] transition hover:bg-[#edf5ef] hover:text-[#14532d]"
     >
       {children}
     </button>
@@ -319,17 +319,17 @@ function UploadZone({
       onDragOver={(event) => event.preventDefault()}
       onDragLeave={() => onDragActive(false)}
       onDrop={acceptDrop}
-      className={`flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed px-5 py-6 text-center transition ${
+      className={`flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-5 py-7 text-center transition ${
         dragActive
           ? "border-orange-500 bg-orange-50 shadow-[0_12px_30px_rgba(234,88,12,0.12)]"
-          : "border-[#315d42]/25 bg-[#fbfcf8] hover:border-[#5e8c4a]/55 hover:bg-[#f4f8ef]"
+          : "border-[#9fb4a5] bg-[#f7f9f7] hover:border-[#15803d] hover:bg-[#f0f7f2]"
       }`}
     >
       <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#e8f2e4] text-[#315d42]">
         <UploadCloud className="h-5 w-5" />
       </span>
-      <strong className="mt-3 text-sm text-[#173523]">{title}</strong>
-      <span className="mt-1 text-xs text-[#728078]">{description}</span>
+      <strong className="mt-3 text-[15px] text-[#153b24]">{title}</strong>
+      <span className="mt-1 text-[13px] text-[#6b7c70]">{description}</span>
       <input
         type="file"
         accept="image/jpeg,image/png,image/webp"
@@ -667,7 +667,7 @@ export default function AdminNewsEditor({
   }
 
   return (
-    <div className="relative text-[#173523]">
+    <div className="relative mx-auto max-w-[1500px] text-[#173523]">
       {toast ? (
         <div className={`fixed right-5 top-5 z-[100] flex max-w-sm items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-white shadow-[0_18px_45px_rgba(11,46,28,0.24)] ${toast.tone === "success" ? "bg-[#24633f]" : toast.tone === "error" ? "bg-rose-600" : "bg-[#3f6f8f]"}`}>
           <CheckCircle2 className="h-5 w-5 shrink-0" />
@@ -675,50 +675,50 @@ export default function AdminNewsEditor({
         </div>
       ) : null}
 
-      <header className="mb-5 rounded-[20px] border border-[#173b28]/10 bg-[#fffdf8] p-4 shadow-[0_12px_34px_rgba(28,63,42,0.08)] sm:p-5">
+      <header className="mb-6 rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_4px_16px_rgba(20,83,45,0.05)] sm:p-6">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <button type="button" onClick={onClose} aria-label="กลับไปรายการข่าว" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#edf4e9] text-[#315d42] transition hover:bg-[#dfeeda]">
+            <button type="button" onClick={onClose} aria-label="กลับไปรายการข่าว" className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#edf5ef] text-[#14532d] transition hover:bg-[#dcecdf]">
               <ArrowLeft className="h-4 w-4" />
             </button>
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#5e8c4a]">News Editor</p>
-              <h1 className="mt-0.5 truncate text-2xl font-bold tracking-tight text-[#0b2e1c]">สร้างข่าวสารใหม่</h1>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-[#15803d]">News Editor</p>
+              <h1 className="mt-1 truncate text-[28px] font-bold leading-tight tracking-tight text-[#14532d]">สร้างข่าวสารใหม่</h1>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={saveDraft} disabled={isSaving} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#315d42]/15 bg-white px-3.5 text-sm font-bold text-[#315d42] shadow-sm transition hover:bg-[#f2f7ef] disabled:cursor-not-allowed disabled:opacity-55">
+            <button type="button" onClick={saveDraft} disabled={isSaving} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#dce5de] bg-white px-4 text-[15px] font-semibold text-[#14532d] transition hover:bg-[#f0f7f2] disabled:cursor-not-allowed disabled:opacity-55">
               {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} บันทึกฉบับร่าง
             </button>
-            <button type="button" onClick={openPreview} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#315d42]/15 bg-white px-3.5 text-sm font-bold text-[#315d42] shadow-sm transition hover:bg-[#f2f7ef]">
+            <button type="button" onClick={openPreview} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#dce5de] bg-white px-4 text-[15px] font-semibold text-[#14532d] transition hover:bg-[#f0f7f2]">
               <Eye className="h-4 w-4" /> ดูตัวอย่าง
             </button>
-            <button type="button" onClick={publish} disabled={!canPublish || isSaving} title={!canPublish ? "กรุณากรอกชื่อข่าวอย่างน้อย 3 ตัวอักษรและเพิ่มภาพปก" : undefined} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#0b2e1c] px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(11,46,28,0.18)] transition hover:bg-[#164d32] disabled:cursor-not-allowed disabled:opacity-40">
+            <button type="button" onClick={publish} disabled={!canPublish || isSaving} title={!canPublish ? "กรุณากรอกชื่อข่าวอย่างน้อย 3 ตัวอักษรและเพิ่มภาพปก" : undefined} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#14532d] px-5 text-[15px] font-semibold text-white shadow-[0_3px_10px_rgba(20,83,45,0.16)] transition hover:bg-[#15803d] disabled:cursor-not-allowed disabled:opacity-40">
               {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} เผยแพร่
             </button>
           </div>
         </div>
       </header>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
-        <div className="space-y-5">
-          <section className="rounded-[18px] border border-[#173b28]/10 bg-white p-5 shadow-[0_10px_30px_rgba(28,63,42,0.06)] sm:p-6">
-            <div className="mb-5 flex items-center justify-between gap-3">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2.1fr)_minmax(340px,1fr)]">
+        <div className="space-y-6">
+          <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)] sm:p-7">
+            <div className="mb-6 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-orange-600">ข้อมูลข่าว</p>
-                <h2 className="mt-1 text-lg font-bold text-[#0b2e1c]">รายละเอียดพื้นฐาน</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#15803d]">ข้อมูลข่าว</p>
+                <h2 className="mt-1 text-xl font-bold text-[#14532d]">รายละเอียดพื้นฐาน</h2>
               </div>
               <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${status === "published" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-800"}`}>
                 {status === "published" ? "Published" : "Draft"}
               </span>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
                 <FieldLabel required>ชื่อข่าว</FieldLabel>
                 <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={180} placeholder="กรอกชื่อข่าวสาร" className={fieldClass} />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <FieldLabel>หมวดหมู่</FieldLabel>
                   <select value={category} onChange={(event) => setCategory(event.target.value as EditorCategory)} className={fieldClass}>
@@ -736,9 +736,9 @@ export default function AdminNewsEditor({
               </div>
               <div>
                 <FieldLabel>สถานะ</FieldLabel>
-                <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#f4f6f1] p-1.5">
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-[#f7f9f7] p-1.5">
                   {(["draft", "published"] as NewsStatus[]).map((item) => (
-                    <button key={item} type="button" onClick={() => setStatus(item)} disabled={item === "published" && !canPublish} className={`min-h-10 rounded-lg text-sm font-bold transition ${status === item ? "bg-white text-[#0b2e1c] shadow-sm" : "text-[#728078] hover:text-[#315d42]"} disabled:cursor-not-allowed disabled:opacity-40`}>
+                    <button key={item} type="button" onClick={() => setStatus(item)} disabled={item === "published" && !canPublish} className={`min-h-11 rounded-md text-[15px] font-semibold transition ${status === item ? "bg-white text-[#14532d] shadow-sm" : "text-[#6b7c70] hover:text-[#15803d]"} disabled:cursor-not-allowed disabled:opacity-40`}>
                       {item === "draft" ? "Draft" : "Published"}
                     </button>
                   ))}
@@ -747,12 +747,12 @@ export default function AdminNewsEditor({
             </div>
           </section>
 
-          <section className="rounded-[18px] border border-[#173b28]/10 bg-white p-5 shadow-[0_10px_30px_rgba(28,63,42,0.06)] sm:p-6">
-            <p className="text-xs font-bold text-orange-600">ภาพประกอบ</p>
-            <h2 className="mt-1 text-lg font-bold text-[#0b2e1c]">ภาพปก <span className="text-orange-600">*</span></h2>
+          <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)] sm:p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#15803d]">ภาพประกอบ</p>
+            <h2 className="mt-1 text-xl font-bold text-[#14532d]">ภาพปก <span className="text-orange-600">*</span></h2>
             <div className="mt-4">
               {coverImage ? (
-                <div className="relative overflow-hidden rounded-2xl bg-[#f4f6f1] shadow-sm">
+                <div className="relative overflow-hidden rounded-lg bg-[#f4f6f1] shadow-sm">
                   {/* Blob URLs are local-only previews and intentionally use a native image element. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={coverImage.url} alt="ตัวอย่างภาพปก" className="aspect-[16/8] w-full object-cover" />
@@ -772,14 +772,14 @@ export default function AdminNewsEditor({
             </div>
           </section>
 
-          <section className="rounded-[18px] border border-[#173b28]/10 bg-white p-5 shadow-[0_10px_30px_rgba(28,63,42,0.06)] sm:p-6">
+          <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)] sm:p-7">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-xs font-bold text-orange-600">Media Library</p>
-                <h2 className="mt-1 text-lg font-bold text-[#0b2e1c]">ภาพภายในข่าว</h2>
-                <p className="mt-1 text-xs text-[#728078]">ลาก Thumbnail เพื่อเรียงลำดับ แล้วเลือกรูปเพื่อแทรกในเนื้อหา</p>
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#15803d]">Media Library</p>
+                <h2 className="mt-1 text-xl font-bold text-[#14532d]">ภาพภายในข่าว</h2>
+                <p className="mt-1 text-[13px] text-[#6b7c70]">ลาก Thumbnail เพื่อเรียงลำดับ แล้วเลือกรูปเพื่อแทรกในเนื้อหา</p>
               </div>
-              <label className="inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-[#edf4e9] px-3.5 text-sm font-bold text-[#315d42] transition hover:bg-[#dfeeda]">
+              <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-[#edf5ef] px-4 text-[15px] font-semibold text-[#14532d] transition hover:bg-[#dcecdf]">
                 <Plus className="h-4 w-4" /> เพิ่มรูป
                 <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="sr-only" onChange={(event) => addContentImages(Array.from(event.target.files ?? []))} />
               </label>
@@ -792,7 +792,7 @@ export default function AdminNewsEditor({
             {contentImages.length ? (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {contentImages.map((image, index) => (
-                  <article key={image.id} draggable onDragStart={() => setDraggedImageId(image.id)} onDragEnd={() => setDraggedImageId(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderImage(image.id)} className={`group relative overflow-hidden rounded-xl bg-[#f4f6f1] shadow-sm transition ${draggedImageId === image.id ? "opacity-45" : "opacity-100"}`}>
+                  <article key={image.id} draggable onDragStart={() => setDraggedImageId(image.id)} onDragEnd={() => setDraggedImageId(null)} onDragOver={(event) => event.preventDefault()} onDrop={() => reorderImage(image.id)} className={`group relative overflow-hidden rounded-lg bg-[#f4f6f1] shadow-sm transition ${draggedImageId === image.id ? "opacity-45" : "opacity-100"}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={image.url} alt={image.name} className="aspect-square w-full object-cover" />
                     <span className="absolute left-2 top-2 grid h-7 w-7 cursor-grab place-items-center rounded-lg bg-white/90 text-[#315d42] shadow-sm"><GripVertical className="h-4 w-4" /></span>
@@ -804,11 +804,11 @@ export default function AdminNewsEditor({
             ) : null}
           </section>
 
-          <section className="rounded-[18px] border border-[#173b28]/10 bg-white p-5 shadow-[0_10px_30px_rgba(28,63,42,0.06)] sm:p-6">
-            <p className="text-xs font-bold text-orange-600">Content</p>
-            <h2 className="mt-1 text-lg font-bold text-[#0b2e1c]">เนื้อหาข่าว</h2>
+          <section className="rounded-lg border border-[#dce5de] bg-white p-5 shadow-[0_3px_14px_rgba(20,83,45,0.04)] sm:p-7">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#15803d]">Content</p>
+            <h2 className="mt-1 text-xl font-bold text-[#14532d]">เนื้อหาข่าว</h2>
 
-            <div className="mt-4 overflow-hidden rounded-2xl border border-[#173b28]/12 bg-white">
+            <div className="mt-5 overflow-hidden rounded-lg border border-[#dce5de] bg-white">
               <div className="overflow-x-auto border-b border-[#173b28]/10 bg-[#fbfcf8]">
                 <div className="flex min-w-max items-center gap-1 p-2">
                   <select
@@ -902,31 +902,31 @@ export default function AdminNewsEditor({
 
               <div className="relative">
                 {!contentHtml ? <span className="pointer-events-none absolute left-4 top-4 text-sm text-[#8a958f]">เริ่มเขียนเนื้อหาข่าวที่นี่...</span> : null}
-                <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="เนื้อหาข่าว" onInput={(event) => setContentHtml(event.currentTarget.innerHTML)} onKeyUp={saveEditorSelection} onMouseUp={saveEditorSelection} onFocus={saveEditorSelection} className="admin-news-editor-content min-h-72 px-4 py-4 text-sm leading-7 text-[#273c30] outline-none sm:min-h-96 [&_a]:font-semibold [&_a]:text-sky-700 [&_a]:underline [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0b2e1c] [&_h3]:my-2.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#173523] [&_img]:my-4 [&_img]:max-h-[420px] [&_img]:w-full [&_img]:rounded-xl [&_img]:object-cover [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6" />
+                <div ref={editorRef} contentEditable suppressContentEditableWarning role="textbox" aria-multiline="true" aria-label="เนื้อหาข่าว" onInput={(event) => setContentHtml(event.currentTarget.innerHTML)} onKeyUp={saveEditorSelection} onMouseUp={saveEditorSelection} onFocus={saveEditorSelection} className="admin-news-editor-content h-[360px] overflow-y-auto px-5 py-5 text-base leading-8 text-[#273c30] outline-none sm:h-[440px] [&_a]:font-semibold [&_a]:text-sky-700 [&_a]:underline [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0b2e1c] [&_h3]:my-2.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#173523] [&_img]:my-4 [&_img]:max-h-[420px] [&_img]:w-full [&_img]:rounded-lg [&_img]:object-cover [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6" />
               </div>
             </div>
           </section>
         </div>
 
         <aside className="xl:sticky xl:top-5">
-          <section className="overflow-hidden rounded-[18px] border border-[#173b28]/10 bg-[#fffdf8] shadow-[0_16px_42px_rgba(28,63,42,0.10)]">
+          <section className="overflow-hidden rounded-lg border border-[#dce5de] bg-white shadow-[0_4px_18px_rgba(20,83,45,0.06)]">
             <div className="border-b border-[#173b28]/10 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold text-orange-600">Live Preview</p>
-                  <h2 className="mt-0.5 text-base font-bold text-[#0b2e1c]">ตัวอย่างแบบ Real-time</h2>
+                  <p className="text-xs font-bold uppercase tracking-[0.08em] text-[#15803d]">Live Preview</p>
+                  <h2 className="mt-1 text-xl font-bold text-[#14532d]">ตัวอย่างแบบ Real-time</h2>
                 </div>
                 <Eye className="h-5 w-5 text-[#5e8c4a]" />
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-[#edf2e8] p-1">
-                <button type="button" onClick={() => setPreviewTab("listing")} className={`min-h-9 rounded-lg text-xs font-bold transition ${previewTab === "listing" ? "bg-white text-[#0b2e1c] shadow-sm" : "text-[#68766e]"}`}>หน้ารวมข่าว</button>
-                <button type="button" onClick={() => setPreviewTab("detail")} className={`min-h-9 rounded-lg text-xs font-bold transition ${previewTab === "detail" ? "bg-white text-[#0b2e1c] shadow-sm" : "text-[#68766e]"}`}>หน้ารายละเอียด</button>
+              <div className="mt-4 grid grid-cols-2 gap-1 rounded-lg bg-[#edf5ef] p-1">
+                <button type="button" onClick={() => setPreviewTab("listing")} className={`min-h-10 rounded-md text-sm font-semibold transition ${previewTab === "listing" ? "bg-white text-[#14532d] shadow-sm" : "text-[#68766e]"}`}>หน้ารวมข่าว</button>
+                <button type="button" onClick={() => setPreviewTab("detail")} className={`min-h-10 rounded-md text-sm font-semibold transition ${previewTab === "detail" ? "bg-white text-[#14532d] shadow-sm" : "text-[#68766e]"}`}>หน้ารายละเอียด</button>
               </div>
             </div>
 
             <div className="max-h-[calc(100dvh-12rem)] overflow-y-auto p-4">
               {previewTab === "listing" ? (
-                <article className="overflow-hidden rounded-2xl bg-white shadow-[0_10px_28px_rgba(28,63,42,0.10)]">
+                <article className="overflow-hidden rounded-lg border border-[#dce5de] bg-white shadow-[0_3px_12px_rgba(20,83,45,0.05)]">
                   {coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={coverImage.url} alt="ภาพปกตัวอย่าง" className="h-40 w-full object-cover" />
@@ -934,16 +934,16 @@ export default function AdminNewsEditor({
                   <div className="p-4">
                     <span className="inline-flex rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-bold text-orange-700">{category}</span>
                     <h3 className="mt-3 line-clamp-2 text-lg font-bold leading-7 text-[#0b2e1c]">{previewTitle}</h3>
-                    <p className="mt-2 line-clamp-3 text-xs leading-5 text-[#64736a]">{previewSummary}</p>
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#64736a]">{previewSummary}</p>
                     <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#173b28]/8 pt-3 text-[10px] text-[#7c8981]">
                       <span className="inline-flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {formattedDate}</span>
                       <span>0 Views</span>
                     </div>
-                    <button type="button" className="mt-4 w-full rounded-xl bg-[#343a36] px-4 py-2.5 text-xs font-bold text-white">ดูข่าว</button>
+                    <button type="button" className="mt-4 min-h-10 w-full rounded-lg bg-[#14532d] px-4 text-sm font-semibold text-white">ดูข่าว</button>
                   </div>
                 </article>
               ) : (
-                <article className="overflow-hidden rounded-2xl bg-white shadow-[0_10px_28px_rgba(28,63,42,0.10)]">
+                <article className="overflow-hidden rounded-lg border border-[#dce5de] bg-white shadow-[0_3px_12px_rgba(20,83,45,0.05)]">
                   {coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={coverImage.url} alt="ภาพปกตัวอย่าง" className="h-56 w-full object-cover" />
@@ -955,7 +955,7 @@ export default function AdminNewsEditor({
                       <span>{formattedDate}</span><span>0 Views</span><span>{status === "published" ? "Published" : "Draft"}</span>
                     </div>
                     {contentHtml ? (
-                      <div className="admin-news-preview-content mt-5 text-sm leading-7 text-[#34483b] [&_a]:font-semibold [&_a]:text-sky-700 [&_a]:underline [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0b2e1c] [&_h3]:my-2.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#173523] [&_img]:my-4 [&_img]:max-h-[360px] [&_img]:w-full [&_img]:rounded-xl [&_img]:object-cover [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+                      <div className="admin-news-preview-content mt-5 text-[15px] leading-7 text-[#34483b] [&_a]:font-semibold [&_a]:text-sky-700 [&_a]:underline [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-[#0b2e1c] [&_h3]:my-2.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#173523] [&_img]:my-4 [&_img]:max-h-[360px] [&_img]:w-full [&_img]:rounded-lg [&_img]:object-cover [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6" dangerouslySetInnerHTML={{ __html: contentHtml }} />
                     ) : (
                       <p className="mt-5 rounded-xl bg-[#f5f7f2] p-4 text-center text-xs leading-5 text-[#7c8981]">เนื้อหาข่าวจะแสดงที่นี่แบบ Real-time</p>
                     )}
