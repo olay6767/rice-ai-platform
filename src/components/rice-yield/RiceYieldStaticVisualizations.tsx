@@ -174,6 +174,12 @@ export function ThailandYieldChoropleth({
     <div
       ref={containerRef}
       className="relative min-w-0 overflow-hidden rounded-xl bg-white shadow-[0_12px_32px_rgba(40,79,51,0.12)] dark:bg-white"
+      onPointerLeave={() => setHoveredProvince(null)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setHoveredProvince(null);
+        }
+      }}
     >
         <svg
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
@@ -209,9 +215,7 @@ export function ThailandYieldChoropleth({
                     : ""
                 }`}
                 onPointerEnter={() => setHoveredProvince(province)}
-                onPointerLeave={() => setHoveredProvince(null)}
                 onFocus={() => setHoveredProvince(province)}
-                onBlur={() => setHoveredProvince(null)}
                 onClick={() => onSelectProvince(province)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -305,13 +309,19 @@ export function ThailandYieldChoropleth({
               <p className="mt-2 text-xs leading-5 text-emerald-950/60">
                 ปีก่อน {formatNumber(activeRecord.previous_yield_kg_rai)} kg/ไร่ · เปลี่ยนแปลง {signedNumber(activeRecord.change_percent, "%")}
               </p>
-              <button
-                type="button"
-                onClick={() => onSelectProvince(activeProvince)}
-                className="mt-5 min-h-10 w-full rounded-lg bg-[#23654C] px-3 text-xs font-semibold text-white shadow-[0_7px_18px_rgba(35,101,76,0.22)] transition hover:bg-[#174d39]"
-              >
-                เลือกจังหวัดนี้
-              </button>
+              {activeProvince === selectedProvince ? (
+                <p className="mt-5 flex min-h-10 items-center justify-center rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-[#23654C]">
+                  กำลังแสดงจังหวัดนี้
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onSelectProvince(activeProvince)}
+                  className="mt-5 min-h-10 w-full rounded-lg bg-[#23654C] px-3 text-xs font-semibold text-white shadow-[0_7px_18px_rgba(35,101,76,0.22)] transition hover:bg-[#174d39]"
+                >
+                  เลือกจังหวัดนี้
+                </button>
+              )}
             </>
           ) : (
             <p className="mt-3 text-sm text-emerald-950/55">จังหวัดนี้ไม่มีข้อมูลในปีที่เลือก</p>
