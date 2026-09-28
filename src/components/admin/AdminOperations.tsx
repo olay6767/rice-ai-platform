@@ -579,8 +579,8 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
           </div>
           <div className="flex flex-wrap gap-2">
             {version.status === "draft" && <button className={button} disabled={busy === version.id} onClick={() => void changeVersion(version, "publish", "เผยแพร่")}><Eye className="h-4 w-4" />Publish</button>}
-            {version.status === "draft" && data.canSetDefault && <button className={primary} disabled={busy === version.id} onClick={() => void changeVersion(version, "publish-default", "เผยแพร่และตั้งค่าเริ่มต้น")}><CheckCircle2 className="h-4 w-4" />Publish + Default</button>}
-            {version.status === "published" && !version.is_default && data.canSetDefault && <button className={primary} disabled={busy === version.id} onClick={() => void changeVersion(version, "default", "ตั้งเป็นค่าเริ่มต้น")}><CheckCircle2 className="h-4 w-4" />Set Default</button>}
+            {version.status === "draft" && data.canSetDefault && <button className={primary} disabled={busy === version.id} onClick={() => void changeVersion(version, "publish-default", "เผยแพร่และตั้งค่าเริ่มต้น")}><CheckCircle2 className="h-4 w-4" />เผยแพร่และตั้งเป็นค่าเริ่มต้น</button>}
+            {version.status === "published" && !version.is_default && data.canSetDefault && <button className={primary} disabled={busy === version.id} onClick={() => void changeVersion(version, "default", "ตั้งเป็นค่าเริ่มต้น")}><CheckCircle2 className="h-4 w-4" />ตั้งเป็นค่าเริ่มต้น</button>}
             {version.status === "published" && !version.is_default && <button className={button} disabled={busy === version.id} onClick={() => void changeVersion(version, "archive", "เก็บเข้าคลัง")}>Archive</button>}
             {version.status === "archived" && <button className={button} disabled={busy === version.id} onClick={() => void changeVersion(version, "restore", "คืนจากคลัง")}>Restore</button>}
           </div>
