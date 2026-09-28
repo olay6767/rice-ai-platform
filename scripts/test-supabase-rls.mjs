@@ -67,24 +67,22 @@ try {
   const forgedEvent = await userB.client.from("user_behavior_events").insert({ user_id: userA.id, event_type: "chat", feature: "chat" });
   assert.ok(forgedEvent.error, "cross-user event insert must fail");
 
-  const draft = await root.from("agricultural_dataset_versions").select("id,dataset_type").eq("status", "draft").limit(1).single();
-  assert.ifError(draft.error);
-  const userDraft = await userA.client.from("agricultural_dataset_versions").select("id").eq("id", draft.data.id);
-  assert.equal(userDraft.data.length, 0);
-  const adminDraft = await admin.client.from("agricultural_dataset_versions").select("id").eq("id", draft.data.id);
-  assert.equal(adminDraft.data.length, 1);
   const userCreate = await userA.client.rpc("agricultural_dataset_create_version", { p_dataset_type: "flood", p_key: `test-${suffix}`, p_label: "test", p_description: "", p_source_name: "", p_source_url: null });
   assert.ok(userCreate.error, "user cannot create admin version");
-  const adminDefault = await admin.client.rpc("agricultural_dataset_change_version", { p_id: draft.data.id, p_action: "publish-default", p_revision: 0 });
-  assert.equal(adminDefault.error?.message, "SUPERADMIN_REQUIRED");
-  const superGuard = await superadmin.client.rpc("agricultural_dataset_change_version", { p_id: "00000000-0000-0000-0000-000000000000", p_action: "default", p_revision: 0 });
-  assert.equal(superGuard.error?.message, "VERSION_NOT_FOUND");
   const createdVersion = await admin.client.rpc("agricultural_dataset_create_version", {
     p_dataset_type: "flood", p_key: `codex-test-${suffix}`, p_label: "Temporary import test",
     p_description: "Deleted after test", p_source_name: "Codex test", p_source_url: null,
   });
   assert.ifError(createdVersion.error);
   testVersionId = createdVersion.data.id;
+  const userDraft = await userA.client.from("agricultural_dataset_versions").select("id").eq("id", testVersionId);
+  assert.equal(userDraft.data.length, 0);
+  const adminDraft = await admin.client.from("agricultural_dataset_versions").select("id").eq("id", testVersionId);
+  assert.equal(adminDraft.data.length, 1);
+  const adminDefault = await admin.client.rpc("agricultural_dataset_change_version", { p_id: testVersionId, p_action: "publish-default", p_revision: 0 });
+  assert.equal(adminDefault.error?.message, "SUPERADMIN_REQUIRED");
+  const superGuard = await superadmin.client.rpc("agricultural_dataset_change_version", { p_id: "00000000-0000-0000-0000-000000000000", p_action: "default", p_revision: 0 });
+  assert.equal(superGuard.error?.message, "VERSION_NOT_FOUND");
   const row = { year: 2024, month: 1, province_id: 1, flood_events: 2, source: "Codex test",
     affected_area_rai: null, affected_households: null, affected_people: null, agricultural_damage_rai: null };
   const blockedImport = await userA.client.rpc("agricultural_dataset_import", {
