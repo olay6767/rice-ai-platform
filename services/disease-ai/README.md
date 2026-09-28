@@ -23,7 +23,6 @@ cd services/disease-ai
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-Copy-Item .env.example .env
 uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
@@ -34,9 +33,41 @@ uvicorn app:app --host 127.0.0.1 --port 8000
 
 ตั้งค่า `DISEASE_API_URL=http://127.0.0.1:8000` ใน `.env.local` ของโปรเจกต์ Next.js แล้วเปิดเว็บตามปกติ
 
+`.env.example` เป็นรายการตัวแปรอ้างอิง ตัวบริการ Python อ่านค่าจาก environment ของ process โดยตรง หากต้องการทดสอบ token ในเครื่อง ให้ตั้ง `DISEASE_API_TOKEN` ค่าเดียวกันใน process ของ FastAPI และใน `.env.local` ของ Next.js เมื่อกำหนด token แล้ว `POST /predict` ต้องมี `Authorization: Bearer <token>` ส่วน `GET /health` ยังเปิดให้ตรวจสถานะได้ ห้ามใช้ตัวแปร `NEXT_PUBLIC_` กับ token นี้
+
+## Deploy บริการตรวจโรคแยกจากเว็บหลักบน Vercel
+
+สร้าง **Vercel project ใหม่** โดยใช้ `services/disease-ai` เป็น project root (`app.py` คือ FastAPI entrypoint) และ Python 3.12 ตาม `.python-version` โมเดล `.keras` ทั้งสองไฟล์ไม่อยู่ใน Git และ `.vercelignore` กันไฟล์เหล่านี้กับ `.env` ออกจาก deployment เพราะไฟล์ classifier ใหญ่กว่า [เพดาน source upload ของ Hobby](https://vercel.com/docs/limits#static-file-uploads) ให้อัปโหลดโมเดลไปยัง **private Vercel Blob store** แล้วให้บริการดึงแบบ stream ลง `/tmp` เมื่อมีคำขอวิเคราะห์ภาพครั้งแรก
+
+```powershell
+cd services/disease-ai
+vercel link  # สร้าง project ใหม่สำหรับ disease API แยกจากเว็บหลัก
+vercel blob create-store rice-ai-disease-models --access private
+vercel blob put models/Binary_Set2_ResNet50_best.keras --access private --pathname models/Binary_Set2_ResNet50_best.keras
+vercel blob put models/Set2_ResNet50_Finetuned_best.keras --access private --pathname models/Set2_ResNet50_Finetuned_best.keras
+```
+
+ตั้งค่าฝั่ง disease API project ใน Vercel:
+
+- `VALIDATOR_MODEL_URL` และ `CLASSIFIER_MODEL_URL` เป็น URL ของ private Blob ที่อัปโหลด (ต้องเป็น HTTPS, โฮสต์ลงท้าย `.private.blob.vercel-storage.com` และ path ลงท้าย `.keras`)
+- `BLOB_READ_WRITE_TOKEN` เป็น token ของ Blob store นี้สำหรับดาวน์โหลดจาก Python โดยตรง; เก็บเป็น environment secret เท่านั้น
+- `DISEASE_API_TOKEN` เป็น secret ที่ใช้รับคำขอจากเว็บหลัก
+
+ตั้งค่า `DISEASE_API_URL` ของเว็บหลักเป็น URL ของ disease API โดยไม่ต่อ `/predict` และตั้ง `DISEASE_API_TOKEN` ค่าเดียวกันในเว็บหลัก จากนั้น deploy disease API และ redeploy เว็บหลัก:
+
+```powershell
+vercel deploy  # ตรวจ preview หลังตั้ง environment variables
+vercel deploy --prod
+```
+
+ตรวจ `GET /health` ให้ตอบ `{"status":"ok"}` ก่อน ซึ่ง endpoint นี้ไม่ดาวน์โหลดหรือโหลด TensorFlow/โมเดล จากนั้นอัปโหลดภาพทดสอบผ่านหน้าเว็บจริง คำขอแรกจะดาวน์โหลดโมเดลรวมประมาณ 316 MB และโหลด TensorFlow จึงใช้เวลานานกว่าคำขอถัดไป ไฟล์ใน `/tmp` และโมเดลในหน่วยความจำใช้ซ้ำได้ภายใน Function instance เดียว; instance ใหม่ต้องดาวน์โหลดอีกครั้ง
+
+Vercel Functions จำกัด [request body 4.5 MB](https://vercel.com/docs/functions/limitations) แอปจึงจำกัดภาพไว้ที่ 4 MB เพื่อเผื่อ multipart overhead ส่วนการดาวน์โหลดไฟล์โมเดลจาก Blob เป็นการดึงจากฝั่ง Function ไม่ใช่ request body ของผู้ใช้ เว็บหลักตั้งระยะเวลาคำขอวิเคราะห์ไว้สูงสุด 300 วินาทีสำหรับการโหลดครั้งแรก; ตรวจหน่วยความจำและระยะเวลาคำขอแรกหลัง deploy จริงด้วย
+
 ## API ภายใน
 
 - `GET /health`
 - `POST /predict` โดยใช้ `multipart/form-data` field ชื่อ `file`
+- เมื่อกำหนด `DISEASE_API_TOKEN` ต้องส่ง `Authorization: Bearer <token>` กับ `POST /predict`
 
 โมเดลจำแนกได้ `Healthy`, `Sheath Blight`, `Bacterial Leaf Blight`, `Brown Spot`, `Rice Blast` และ `Neck Blast` เท่านั้น จึงยังไม่รองรับโรคเมล็ดด่าง

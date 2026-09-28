@@ -1,0 +1,5 @@
+.env
+.env.*
+.venv
+models/*.keras
+test_*.py

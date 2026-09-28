@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import io
+import importlib
 import json
 import os
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import numpy as np
-import tensorflow as tf
 from PIL import Image, ImageOps, UnidentifiedImageError
+
+from model_store import resolve_model_path
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -26,6 +29,10 @@ CLASSIFIER_MODEL_PATH = Path(
         MODELS_DIR / "Set2_ResNet50_Finetuned_best.keras",
     )
 )
+if not VALIDATOR_MODEL_PATH.is_absolute():
+    VALIDATOR_MODEL_PATH = BASE_DIR / VALIDATOR_MODEL_PATH
+if not CLASSIFIER_MODEL_PATH.is_absolute():
+    CLASSIFIER_MODEL_PATH = BASE_DIR / CLASSIFIER_MODEL_PATH
 CLASS_NAMES_PATH = BASE_DIR / "class_names.txt"
 LABELS_PATH = BASE_DIR / "disease_labels.json"
 
@@ -80,21 +87,24 @@ if not 0 <= RICE_THRESHOLD <= 1:
 if not 0 <= DISEASE_THRESHOLD <= 1:
     raise RuntimeError("DISEASE_THRESHOLD ต้องอยู่ระหว่าง 0 ถึง 1")
 
-for model_path in (VALIDATOR_MODEL_PATH, CLASSIFIER_MODEL_PATH):
-    if not model_path.exists():
-        raise FileNotFoundError(
-            f"ไม่พบไฟล์โมเดล: {model_path}\n"
-            "กรุณานำไฟล์ .keras ไปวางในโฟลเดอร์ models/"
-        )
+_models: tuple[Any, Any] | None = None
+_models_lock = Lock()
 
-validator_model = tf.keras.models.load_model(
-    VALIDATOR_MODEL_PATH,
-    compile=False,
-)
-classifier_model = tf.keras.models.load_model(
-    CLASSIFIER_MODEL_PATH,
-    compile=False,
-)
+
+def _get_models() -> tuple[Any, Any]:
+    global _models
+    if _models is not None:
+        return _models
+
+    with _models_lock:
+        if _models is None:
+            validator_path = resolve_model_path(VALIDATOR_MODEL_PATH, "VALIDATOR_MODEL_URL")
+            classifier_path = resolve_model_path(CLASSIFIER_MODEL_PATH, "CLASSIFIER_MODEL_URL")
+            tf = importlib.import_module("tensorflow")
+            validator = tf.keras.models.load_model(validator_path, compile=False)
+            classifier = tf.keras.models.load_model(classifier_path, compile=False)
+            _models = (validator, classifier)
+    return _models
 
 
 def _open_rgb_image(image_bytes: bytes) -> Image.Image:
@@ -130,6 +140,7 @@ def preprocess_image(image_bytes: bytes) -> np.ndarray:
     if PREPROCESS_MODE == "rescale_01":
         array = array / 255.0
     elif PREPROCESS_MODE == "resnet50":
+        tf = importlib.import_module("tensorflow")
         array = tf.keras.applications.resnet50.preprocess_input(array)
 
     return np.expand_dims(array, axis=0)
@@ -146,6 +157,7 @@ def _to_probability(value: Any) -> float:
 
 def predict_image(image_bytes: bytes) -> dict[str, Any]:
     batch = preprocess_image(image_bytes)
+    validator_model, classifier_model = _get_models()
 
     validator_output = validator_model.predict(batch, verbose=0)
     rice_probability = _to_probability(

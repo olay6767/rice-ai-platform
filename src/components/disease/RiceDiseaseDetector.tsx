@@ -41,7 +41,7 @@ import type {
 
 import styles from "./RiceDiseaseDetector.module.css";
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -202,7 +202,7 @@ export default function RiceDiseaseDetector() {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setError("ไฟล์ภาพต้องมีขนาดไม่เกิน 10 MB");
+      setError("ไฟล์ภาพต้องมีขนาดไม่เกิน 4 MB");
       return;
     }
 
@@ -380,7 +380,7 @@ export default function RiceDiseaseDetector() {
                   <div>
                     <CardTitle>อัปโหลดภาพใบข้าว</CardTitle>
                     <CardDescription>
-                      รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 10 MB
+                      รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 4 MB
                     </CardDescription>
                   </div>
                 </div>

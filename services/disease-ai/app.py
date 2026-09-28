@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import os
+from secrets import compare_digest
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from inference import predict_image
 
 
-MAX_FILE_SIZE = 10 * 1024 * 1024
+MAX_FILE_SIZE = 4 * 1024 * 1024
 ALLOWED_CONTENT_TYPES = {
     "image/jpeg",
     "image/png",
@@ -48,7 +50,17 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/predict")
+def require_api_token(authorization: str | None = Header(default=None)) -> None:
+    token = os.getenv("DISEASE_API_TOKEN", "").strip()
+    if token and not compare_digest(authorization or "", f"Bearer {token}"):
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+@app.post("/predict", dependencies=[Depends(require_api_token)])
 async def predict(file: UploadFile = File(...)) -> dict:
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
@@ -64,11 +76,11 @@ async def predict(file: UploadFile = File(...)) -> dict:
     if len(image_bytes) > MAX_FILE_SIZE:
         raise HTTPException(
             status_code=413,
-            detail="ไฟล์ภาพต้องมีขนาดไม่เกิน 10 MB",
+            detail="ไฟล์ภาพต้องมีขนาดไม่เกิน 4 MB",
         )
 
     try:
-        return predict_image(image_bytes)
+        return await run_in_threadpool(predict_image, image_bytes)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception:

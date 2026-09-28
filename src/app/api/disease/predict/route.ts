@@ -10,9 +10,9 @@ import type {
 } from "@/lib/disease/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 300;
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
 const ALLOWED_CONTENT_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -20,7 +20,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
 ]);
 const REQUEST_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 8;
-const SERVICE_TIMEOUT_MS = 25_000;
+const SERVICE_TIMEOUT_MS = 290_000;
 
 interface RateLimitEntry {
   count: number;
@@ -388,7 +388,7 @@ export async function POST(request: Request): Promise<Response> {
     return jsonError(
       413,
       "IMAGE_TOO_LARGE",
-      "ไฟล์ภาพต้องมีขนาดไม่เกิน 10 MB"
+      "ไฟล์ภาพต้องมีขนาดไม่เกิน 4 MB"
     );
   }
 
@@ -405,6 +405,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const diseaseServiceUrl = process.env.DISEASE_API_URL?.trim();
+  const diseaseApiToken = process.env.DISEASE_API_TOKEN?.trim();
 
   if (!diseaseServiceUrl) {
     return jsonError(
@@ -429,6 +430,9 @@ export async function POST(request: Request): Promise<Response> {
       {
         method: "POST",
         body: serviceFormData,
+        headers: diseaseApiToken
+          ? { Authorization: `Bearer ${diseaseApiToken}` }
+          : undefined,
         cache: "no-store",
         signal: AbortSignal.timeout(SERVICE_TIMEOUT_MS),
       }
