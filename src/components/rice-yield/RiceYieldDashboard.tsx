@@ -350,7 +350,7 @@ export default function RiceYieldDashboard() {
 
       <RicePanel
         title="แนวโน้มผลผลิตรายปี"
-        description={`จังหวัด${selectedProvince} · ข้อมูลจริงและค่าพยากรณ์`}
+        description={`จังหวัด${selectedProvince} · ${provinceHistory.some((record) => record.is_forecast) ? "ข้อมูลจริงและค่าพยากรณ์" : "ข้อมูลจริงย้อนหลัง"}`}
         action={<ForecastBadge isForecast={Boolean(selectedRecord?.is_forecast)} />}
         className={YIELD_PANEL_CLASS}
       >

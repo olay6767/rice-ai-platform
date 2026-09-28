@@ -491,7 +491,7 @@ export function HistoricalYieldForecastChart({
     <div className="relative">
       <div className="mb-3 flex flex-wrap items-center gap-4 text-xs text-emerald-950/60 dark:text-white/60 sm:text-sm">
         <span className="inline-flex items-center gap-2"><span className="h-0.5 w-7 bg-[#d6a72b]" /> Actual</span>
-        <span className="inline-flex items-center gap-2"><span className="w-7 border-t-2 border-dashed border-amber-400" /> Forecast 2568/69</span>
+        {forecastOnly.length > 0 && <span className="inline-flex items-center gap-2"><span className="w-7 border-t-2 border-dashed border-amber-400" /> Forecast {forecastOnly.at(-1)?.crop_year}</span>}
       </div>
       {hovered ? (
         <div className="absolute right-2 top-9 z-10 rounded-lg bg-white px-3 py-2 text-xs shadow-[0_14px_34px_rgba(22,61,39,0.2)] dark:bg-[#14291b]">
@@ -507,7 +507,7 @@ export function HistoricalYieldForecastChart({
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label="กราฟเส้นผลผลิตย้อนหลังและค่าพยากรณ์"
+          aria-label={forecastOnly.length > 0 ? "กราฟเส้นผลผลิตย้อนหลังและค่าพยากรณ์" : "กราฟเส้นผลผลิตย้อนหลัง"}
           className="h-auto min-w-[720px] w-full"
         >
           {forecastStart !== null ? (
