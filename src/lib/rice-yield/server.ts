@@ -337,8 +337,8 @@ export async function getRiceDashboard(filters: {
 
 /**
  * Adapts the published Supabase dataset to the existing user dashboard shape.
- * A prediction row takes precedence over the observed value for the same
- * province/year and is explicitly marked as a forecast.
+ * Observed yield takes precedence when a prediction and an actual value share
+ * a province/year. Predictions are forecasts only where no actual value exists.
  */
 export async function getRiceYieldDashboardView(
   versionKey?: string | null
@@ -363,15 +363,15 @@ export async function getRiceYieldDashboardView(
   const recordsWithoutChanges = [...keys].flatMap((key) => {
     const yearly = yearlyByKey.get(key);
     const prediction = predictionsByKey.get(key);
-    const source = prediction ?? yearly;
+    const source = yearly ?? prediction;
     if (!source) return [];
 
     const province = provincesById.get(source.province_id);
     if (!province) return [];
 
     const cropStartYear = source.crop_start_year;
-    const isForecast = Boolean(prediction);
-    const yieldValue = prediction?.predicted_yield ?? yearly?.actual_yield;
+    const isForecast = !yearly && Boolean(prediction);
+    const yieldValue = yearly?.actual_yield ?? prediction?.predicted_yield;
     if (yieldValue === undefined || !Number.isFinite(yieldValue)) return [];
 
     return [{

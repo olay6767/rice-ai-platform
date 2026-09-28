@@ -30,7 +30,6 @@ import {
   RicePanel,
 } from "./RiceAnalyticsShell";
 
-const DATA_BASE_PATH = "/data/rice-yield";
 const YIELD_PANEL_CLASS =
   "!rounded-xl !border-0 !shadow-[0_14px_36px_rgba(38,76,50,0.12)]";
 
@@ -118,22 +117,22 @@ function validateDashboardData(
 }
 
 async function fetchDashboardData(signal: AbortSignal): Promise<RiceYieldStaticData> {
-  const responses = await Promise.all([
-    fetch(`${DATA_BASE_PATH}/rice_yield_dashboard.json`, { signal }),
-    fetch(`${DATA_BASE_PATH}/rice_yield_yearly.json`, { signal }),
-    fetch(`${DATA_BASE_PATH}/thailand_provinces.geojson`, { signal }),
-  ]);
-
-  const failedResponse = responses.find((response) => !response.ok);
-  if (failedResponse) {
-    throw new Error(`โหลดไฟล์ข้อมูลไม่สำเร็จ (HTTP ${failedResponse.status})`);
+  const response = await fetch("/api/v1/dashboard?view=yield-dashboard", {
+    signal,
+    cache: "no-store",
+  });
+  const payload: unknown = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = (payload as { error?: { message?: unknown } })?.error?.message;
+    throw new Error(
+      typeof message === "string"
+        ? message
+        : `โหลดข้อมูลผลผลิตข้าวไม่สำเร็จ (HTTP ${response.status})`
+    );
   }
 
-  const [dashboardValue, recordsValue, geoJsonValue] = await Promise.all(
-    responses.map((response) => response.json() as Promise<unknown>)
-  );
-
-  return validateDashboardData(dashboardValue, recordsValue, geoJsonValue);
+  const data = (payload as { data?: Partial<RiceYieldStaticData> })?.data;
+  return validateDashboardData(data?.dashboard, data?.records, data?.geoJson);
 }
 
 export default function RiceYieldDashboard() {
@@ -272,7 +271,7 @@ export default function RiceYieldDashboard() {
           <div>
             <h2 className="text-lg font-bold sm:text-xl">ตัวกรองผลผลิต</h2>
             <p className="mt-1 text-xs text-emerald-950/55 dark:text-white/55">
-              เลือกปีการผลิตและจังหวัด
+              ชุดข้อมูล {data.dashboard.metadata.title} · เลือกปีการผลิตและจังหวัด
             </p>
           </div>
           <ForecastBadge isForecast={Boolean(selectedYearDefinition?.is_forecast)} />
