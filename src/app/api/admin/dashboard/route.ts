@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getAdminContext } from "@/lib/admin/auth";
+import { createDashboardExcelWorkbook, type DashboardExcelSheet } from "@/lib/admin/dashboard-excel";
 import { inferDashboardDatasetType, inspectDashboardCsv, inspectDashboardRecord, isDashboardDatasetType } from "@/lib/admin/dashboard-import";
 import { DASHBOARD_DATASETS, getDashboardDataset, type DashboardDatasetType, type DashboardRow, type AdminDashboardVersion, type DashboardImportFile, type ImportPreview } from "@/lib/admin/dashboard-types";
 import { isSupportedDataFile, parseUploadFile } from "@/lib/admin/tabular-upload";
@@ -77,6 +78,49 @@ function csvCell(value: unknown): string {
 function csvResponse(name: string, columns: string[], rows: Record<string,unknown>[]): Response {
   const csv = [columns.join(","),...rows.map(row=>columns.map(key=>csvCell(row[key])).join(","))].join("\r\n");
   return new Response("\uFEFF"+csv, {headers:{...HEADERS,"Content-Type":"text/csv; charset=utf-8","Content-Disposition":`attachment; filename="${name}"`}});
+}
+async function excelResponse(db: Database, version: AdminDashboardVersion): Promise<Response> {
+  const sheets: DashboardExcelSheet[] = [];
+  for (const dataset of DASHBOARD_DATASETS) {
+    const columns = dataset.columns.map((column) => column.key);
+    const rows: Record<string, unknown>[] = [];
+    let expectedCount: number | null = null;
+    let query = db.from(dataset.table).select(columns.join(","), {count:"exact"})
+      .eq("dashboard_version_id",version.id).order("province_id").order(dataset.period);
+    if (dataset.type === "monthly-environment") query = query.order("month");
+    if (dataset.type === "yield-predictions") query = query.order("model_version");
+    for (let from = 0; ; from += 1000) {
+      const result = await query.range(from,from+999);
+      if (result.error) throw result.error;
+      expectedCount ??= result.count ?? 0;
+      if (expectedCount > 20000) {
+        throw new RequestError(`${dataset.label} มีข้อมูลเกิน 20,000 แถว กรุณาใช้การดาวน์โหลดตามตัวกรองในแท็บตรวจข้อมูล`);
+      }
+      rows.push(...(result.data ?? []) as unknown as Record<string, unknown>[]);
+      if ((result.data?.length ?? 0) < 1000) break;
+    }
+    if (rows.length !== expectedCount) {
+      throw new RequestError("จำนวนแถวเปลี่ยนระหว่างดาวน์โหลด กรุณาลองใหม่",409,"VERSION_CHANGED");
+    }
+    sheets.push({name:dataset.label,columns,rows});
+  }
+  if (sheets.every((sheet) => sheet.rows.length === 0)) {
+    throw new RequestError("เวอร์ชันนี้ยังไม่มีข้อมูลสำหรับดาวน์โหลด",404);
+  }
+  const latest = await versionById(db,version.id);
+  if (latest.revision !== version.revision) {
+    throw new RequestError("ข้อมูลเวอร์ชันเปลี่ยนระหว่างดาวน์โหลด กรุณาลองใหม่",409,"VERSION_CHANGED");
+  }
+  const bytes = createDashboardExcelWorkbook(sheets);
+  const body = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(body).set(bytes);
+  const safeKey = version.version_key.replace(/[^a-z0-9._-]/gi,"_");
+  return new Response(body, {headers:{
+    ...HEADERS,
+    "Content-Type":"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "Content-Disposition":`attachment; filename="rice_yield_${safeKey}.xlsx"`,
+    "X-Content-Type-Options":"nosniff",
+  }});
 }
 async function allKeys(db: Database, table: string, keys: readonly string[], id: string) {
   const rows: DashboardRow[] = [];
@@ -209,6 +253,7 @@ export async function GET(request: Request): Promise<Response> {
     }
     const id = uuid(params.get("versionId"));
     const version = await versionById(db,id);
+    if (mode === "export-workbook") return excelResponse(db,version);
     const page = integer(params.get("page"),1,1,100000);
     if (mode === "import-files") {
       const result = await db.rpc("rice_dashboard_list_import_files", {p_id:id});

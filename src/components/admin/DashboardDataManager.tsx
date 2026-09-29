@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { AlertTriangle, Archive, CheckCircle2, ChevronDown, Copy, Database, Eye, EyeOff, FilePenLine, FolderOpen, History, Layers3, LoaderCircle, Plus, RefreshCw, ShieldCheck, Star, Trash2, UploadCloud } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronDown, Copy, Database, Download, Eye, EyeOff, FilePenLine, FolderOpen, History, Layers3, LoaderCircle, Plus, RefreshCw, ShieldCheck, Star, Trash2, UploadCloud } from "lucide-react";
 import type { AdminDashboardVersion, DashboardDatasetType, DatasetSummary } from "@/lib/admin/dashboard-types";
 import ImportPanel from "./dashboard/ImportPanel";
 import { DataBrowser, VersionHistory } from "./dashboard/DataBrowser";
-import { API, Dialog, Field, Notice, StatusBadge, button, date, errorText, input, muted, panel, primary, request } from "./dashboard/shared";
+import { API, Dialog, Field, Notice, StatusBadge, button, date, download, errorText, input, muted, panel, primary, request } from "./dashboard/shared";
 
 type View = "overview" | "import" | "data" | "history";
 type Modal =
@@ -20,6 +20,7 @@ export default function DashboardDataManager() {
   const [view, setView] = useState<View | null>(null);
   const [importType, setImportType] = useState<DashboardDatasetType>("yearly-yield");
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [reload, setReload] = useState(0);
@@ -58,6 +59,21 @@ export default function DashboardDataManager() {
     if (id) {
       setSelectedId(id);
       setView(null);
+    }
+  }
+
+  async function exportExcel(version: AdminDashboardVersion) {
+    setExporting(true);
+    setError("");
+    try {
+      await download(
+        `${API}?mode=export-workbook&versionId=${encodeURIComponent(version.id)}`,
+        `rice_yield_${version.version_key.replace(/[^a-z0-9._-]/gi, "_")}.xlsx`
+      );
+    } catch (error) {
+      setError(errorText(error));
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -123,6 +139,9 @@ export default function DashboardDataManager() {
                       <p className="mt-2 text-xs text-[var(--app-text-muted)]">{selected.version_key} · {totalRows(selected).toLocaleString()} แถว · อัปเดต {date(selected.updated_at)}</p>
                     </div>
                     <div className="flex shrink-0 flex-wrap gap-2">
+                      <button type="button" className={button} disabled={loading || exporting || totalRows(selected) === 0} title="ดาวน์โหลดข้อมูลทั้ง 3 หมวดของเวอร์ชันนี้" onClick={() => void exportExcel(selected)}>
+                        {exporting ? <LoaderCircle aria-hidden className="h-4 w-4 animate-spin" /> : <Download aria-hidden className="h-4 w-4" />}{exporting ? "กำลังเตรียม Excel…" : "ดาวน์โหลด Excel"}
+                      </button>
                       {selected.status === "draft" && <button type="button" className={primary} disabled={loading} onClick={() => setView("import")}><UploadCloud aria-hidden className="h-4 w-4" />นำเข้าข้อมูล</button>}
                       {selected.status === "draft" && <button type="button" className={button} disabled={loading || !canPublish} title={!canPublish ? "ตรวจความพร้อมในแท็บภาพรวมก่อนเผยแพร่" : undefined} onClick={() => setModal({ kind: "action", action: "publish", target: selected })}><Eye aria-hidden className="h-4 w-4" />เผยแพร่</button>}
                       {selected.status === "published" && <button type="button" className={primary} disabled={loading} onClick={() => setView("data")}><Database aria-hidden className="h-4 w-4" />ดูข้อมูล</button>}

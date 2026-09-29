@@ -12,6 +12,7 @@
     "test:dashboard": "node scripts/test-dashboard-import.mjs",
     "test:agriculture:import": "node --experimental-strip-types scripts/test-agricultural-import.mjs",
     "test:dashboard:ui": "node scripts/test-dashboard-ui.mjs",
+    "test:dashboard:excel": "node --experimental-strip-types scripts/test-dashboard-excel.mjs",
     "test:flood:ui": "node --test --test-isolation=none scripts/test-flood-ui.mjs",
     "test:drought:ui": "node --test --test-isolation=none scripts/test-drought-ui.mjs",
     "test:storm:ui": "node --test --test-isolation=none scripts/test-storm-ui.mjs",
