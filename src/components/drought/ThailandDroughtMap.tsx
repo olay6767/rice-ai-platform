@@ -145,6 +145,7 @@ export default function ThailandDroughtMap({
   values,
   selectedProvince,
   onSelectProvince,
+  onOpenProvinceDetails,
   scopeLabel,
   valueUnit,
   frequencyLabel = "ความถี่ที่พบบันทึกภัยแล้ง",
@@ -158,6 +159,7 @@ export default function ThailandDroughtMap({
   values: Map<string, number>;
   selectedProvince: string | null;
   onSelectProvince: (province: string | null) => void;
+  onOpenProvinceDetails?: (province: string) => void;
   scopeLabel: string;
   valueUnit: "ครั้ง" | "เดือน";
   frequencyLabel?: string;
@@ -581,22 +583,25 @@ export default function ThailandDroughtMap({
               </p>
               <button
                 type="button"
-                onClick={() =>
-                  onSelectProvince(
-                    selectedProvince === active.properties.provinceTh
-                      ? null
-                      : active.properties.provinceTh
-                  )
-                }
+                onClick={() => {
+                  const province = active.properties.provinceTh;
+                  if (onOpenProvinceDetails) {
+                    onOpenProvinceDetails(province);
+                  } else {
+                    onSelectProvince(selectedProvince === province ? null : province);
+                  }
+                }}
                 className={`mt-5 min-h-10 w-full rounded-md px-3 text-xs font-semibold text-white transition ${
                   isGreen
                     ? "bg-emerald-700 hover:bg-emerald-800"
                     : "bg-orange-700 hover:bg-orange-800 dark:bg-orange-300 dark:text-orange-950 dark:hover:bg-orange-200"
                 }`}
               >
-                {selectedProvince === active.properties.provinceTh
-                  ? "แสดงทุกจังหวัด"
-                  : "กรองจังหวัดนี้"}
+                {onOpenProvinceDetails
+                  ? "ดูรายละเอียดจังหวัดนี้"
+                  : selectedProvince === active.properties.provinceTh
+                    ? "แสดงทุกจังหวัด"
+                    : "กรองจังหวัดนี้"}
               </button>
             </>
           ) : (

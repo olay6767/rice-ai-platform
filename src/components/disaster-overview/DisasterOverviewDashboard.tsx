@@ -6,8 +6,9 @@ import {
   Layers,
   SunMedium,
   Wind,
+  X,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -672,6 +673,130 @@ function ImpactSummary({ items }: { items: ImpactView[] }) {
   );
 }
 
+function ProvinceDetails({
+  province,
+  data,
+  filters,
+  view,
+  onClose,
+}: {
+  province: string;
+  data: DisasterOverviewData;
+  filters: OverviewFilters;
+  view: ReturnType<typeof deriveDisasterOverview>;
+  onClose: () => void;
+}) {
+  const visibleDisasters = DISASTER_CONFIG.filter((config) =>
+    view.visibleDisasters.includes(config.name)
+  );
+  const knownValues = visibleDisasters
+    .map((config) => view.kpiValues[config.key])
+    .filter((value): value is number => value !== null);
+  const total = knownValues.length
+    ? knownValues.reduce((sum, value) => sum + value, 0)
+    : null;
+  const annualRows = view.yearlyRows.filter((row) =>
+    view.activeYears.includes(Number(row.label))
+  );
+
+  return (
+    <Panel
+      title={`รายละเอียดจังหวัด${province}`}
+      action={
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#40916C]/25 px-3 text-xs font-semibold text-[#315d42] transition hover:bg-[#f4f8e9]"
+        >
+          <X aria-hidden="true" className="h-3.5 w-3.5" />
+          ปิดรายละเอียด
+        </button>
+      }
+    >
+      <p className="mb-4 text-xs leading-5 text-emerald-950/65">
+        {overviewScope(data, filters)} · {filters.disaster === ALL ? "ทุกประเภทภัย" : filters.disaster}
+      </p>
+      {view.mapUnavailableNote ? (
+        <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          {view.mapUnavailableNote}
+        </p>
+      ) : null}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl bg-[#edf4e4] p-4">
+          <p className="text-xs font-semibold text-[#315d42]/75">
+            {view.isSummaryMode ? "รวมเหตุการณ์" : "รวมบันทึกภัย"}
+          </p>
+          <strong className="mt-2 block text-2xl font-bold tabular-nums text-[#173523]">
+            {formatNumber(total, 0)} <span className="text-xs font-medium">ครั้ง</span>
+          </strong>
+        </div>
+        {visibleDisasters.map((config) => {
+          const Icon = config.icon;
+          return (
+            <div key={config.key} className="rounded-xl border border-[#90A955]/20 bg-[#fbfdf5] p-4">
+              <p className="flex items-center gap-2 text-xs font-semibold text-[#315d42]">
+                <Icon aria-hidden="true" className="h-4 w-4" style={{ color: config.color }} />
+                {config.name}
+              </p>
+              <strong className="mt-2 block text-2xl font-bold tabular-nums text-[#173523]">
+                {formatNumber(view.kpiValues[config.key], 0)} <span className="text-xs font-medium">ครั้ง</span>
+              </strong>
+            </div>
+          );
+        })}
+      </div>
+
+      {view.isSummaryMode ? (
+        <div className="mt-5">
+          <h3 className="mb-3 text-sm font-bold text-[#173523]">ผลกระทบ พ.ศ. {view.summaryYear}</h3>
+          <ImpactSummary items={view.summaryImpacts} />
+        </div>
+      ) : (
+        <div className="mt-5">
+          <h3 className="mb-3 text-sm font-bold text-[#173523]">รายละเอียดรายปี</h3>
+          <div className="overflow-x-auto rounded-xl border border-[#90A955]/20">
+            <table className="w-full min-w-[420px] text-left text-xs">
+              <thead className="bg-[#edf4e4] text-[#315d42]">
+                <tr>
+                  <th scope="col" className="px-3 py-2.5">ปี พ.ศ.</th>
+                  {visibleDisasters.map((config) => (
+                    <th key={config.key} scope="col" className="px-3 py-2.5 text-right">{config.name}</th>
+                  ))}
+                  <th scope="col" className="px-3 py-2.5 text-right">รวม</th>
+                </tr>
+              </thead>
+              <tbody>
+                {annualRows.map((row) => {
+                  const values = visibleDisasters
+                    .map((config) => row[config.key])
+                    .filter((value): value is number => value !== null);
+                  const rowTotal = values.length
+                    ? values.reduce((sum, value) => sum + value, 0)
+                    : null;
+                  return (
+                    <tr key={row.label} className="border-t border-[#90A955]/15 text-[#315d42]">
+                      <th scope="row" className="px-3 py-2.5 font-semibold">{row.label}</th>
+                      {visibleDisasters.map((config) => (
+                        <td key={config.key} className="px-3 py-2.5 text-right tabular-nums">
+                          {formatNumber(row[config.key], 0)}
+                        </td>
+                      ))}
+                      <td className="px-3 py-2.5 text-right font-bold tabular-nums">{formatNumber(rowTotal, 0)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      <p className="mt-4 text-[11px] leading-5 text-emerald-950/55">
+        {view.isSummaryMode ? data.summary_2568.note : data.meta.metric_definition}
+      </p>
+    </Panel>
+  );
+}
+
 
 function MonthlyChart({
   rows,
@@ -894,6 +1019,8 @@ export default function DisasterOverviewDashboard() {
   const [rankingFilters, setRankingFilters] = useState<OverviewFilters>({
     ...DEFAULT_OVERVIEW_FILTERS,
   });
+  const [detailProvince, setDetailProvince] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -933,6 +1060,15 @@ export default function DisasterOverviewDashboard() {
     return () => controller.abort();
   }, [reloadKey]);
 
+  useEffect(() => {
+    if (!detailProvince) return;
+    const frame = window.requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      detailRef.current?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [detailProvince]);
+
   const summary = useMemo(
     () => (data ? deriveDisasterOverview(data, DEFAULT_OVERVIEW_FILTERS) : null),
     [data]
@@ -948,6 +1084,13 @@ export default function DisasterOverviewDashboard() {
   const mapView = useMemo(
     () => (data ? deriveDisasterOverview(data, mapFilters) : null),
     [data, mapFilters]
+  );
+  const detailView = useMemo(
+    () =>
+      data && detailProvince
+        ? deriveDisasterOverview(data, { ...mapFilters, province: detailProvince })
+        : null,
+    [data, detailProvince, mapFilters]
   );
   const snapshotView = useMemo(
     () => (data ? deriveDisasterOverview(data, snapshotFilters) : null),
@@ -1121,17 +1264,30 @@ export default function DisasterOverviewDashboard() {
             chartName="แผนที่"
             data={data}
             filters={mapFilters}
-            onChange={setMapFilters}
+            onChange={(filters) => {
+              setMapFilters(filters);
+              setDetailProvince(null);
+            }}
           />
           <ThailandFrequencyMap
             values={mapView.mapValues}
             selectedProvince={mapFilters.province === ALL ? null : mapFilters.province}
-            onSelectProvince={(province) =>
+            onSelectProvince={(province) => {
               setMapFilters((current) => ({
                 ...current,
                 province: province ?? ALL,
-              }))
-            }
+              }));
+              setDetailProvince(null);
+            }}
+            onOpenProvinceDetails={(province) => {
+              setMapFilters((current) => ({ ...current, province }));
+              setDetailProvince(province);
+              if (detailProvince === province) {
+                window.requestAnimationFrame(() =>
+                  detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                );
+              }
+            }}
             scopeLabel={overviewScope(data, mapFilters)}
             valueUnit="ครั้ง"
             frequencyLabel={mapFrequencyLabel}
@@ -1228,6 +1384,22 @@ export default function DisasterOverviewDashboard() {
           </Panel>
         </div>
       </div>
+      {detailProvince && detailView ? (
+        <div
+          ref={detailRef}
+          tabIndex={-1}
+          aria-label={`รายละเอียดจังหวัด${detailProvince}`}
+          className="scroll-mt-24 outline-none"
+        >
+          <ProvinceDetails
+            province={detailProvince}
+            data={data}
+            filters={mapFilters}
+            view={detailView}
+            onClose={() => setDetailProvince(null)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
