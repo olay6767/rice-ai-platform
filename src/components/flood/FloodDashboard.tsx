@@ -8,7 +8,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import DashboardMascotInsight from "@/components/insights/DashboardMascotInsight";
 import { readJsonResponse } from "@/lib/http/json";
@@ -22,6 +22,7 @@ import {
   RiceLoadingState,
   RicePanel,
 } from "@/components/rice-yield/RiceAnalyticsShell";
+import RiceAnalyticsNav from "@/components/rice-yield/RiceAnalyticsNav";
 import ThailandFloodMap from "./ThailandFloodMap";
 
 interface FloodAnnualRecord {
@@ -334,6 +335,14 @@ export default function FloodDashboard() {
                 และรายจังหวัดจากข้อมูลรายปี พ.ศ. 2563–2568 และข้อมูลรายเดือนถึง พ.ศ. 2567
               </p>
           </div>
+          <nav
+            aria-label="เมนูแดชบอร์ดการเกษตรและสภาพอากาศ"
+            className="-mx-4 mt-5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:mt-7 sm:px-0 [&::-webkit-scrollbar]:hidden"
+          >
+            <Suspense fallback={<div className="h-11" />}>
+              <RiceAnalyticsNav />
+            </Suspense>
+          </nav>
         </div>
       </section>
 
