@@ -234,7 +234,7 @@ export default function GlobalRiceAssistant({
         <section
           role="dialog"
           aria-label="สนทนากับน้องเสริม"
-          className="fixed bottom-[calc(env(safe-area-inset-bottom)+9.75rem)] left-3 right-3 z-[90] flex h-[min(68dvh,580px)] flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_28px_85px_rgba(19,55,37,0.28)] sm:bottom-24 sm:left-auto sm:right-5 sm:h-[580px] sm:w-[390px] dark:bg-[#10251a]"
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+5rem)] left-3 right-3 z-[90] flex h-[min(68dvh,580px)] flex-col overflow-hidden rounded-[1.75rem] bg-white shadow-[0_28px_85px_rgba(19,55,37,0.28)] sm:bottom-24 sm:left-auto sm:right-5 sm:h-[580px] sm:w-[390px] dark:bg-[#10251a]"
         >
           <header className="flex items-center justify-between px-4 py-3 shadow-[0_5px_18px_rgba(31,62,43,0.08)]">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -394,14 +394,14 @@ export default function GlobalRiceAssistant({
         onClick={() => setIsOpen((current) => !current)}
         aria-label={isOpen ? "ปิดน้องเสริม" : "เปิดน้องเสริม"}
         aria-expanded={isOpen}
-        className="fixed bottom-[calc(env(safe-area-inset-bottom)+5rem)] right-4 z-[91] grid h-[68px] w-[68px] place-items-center rounded-full bg-white p-1 shadow-[0_14px_38px_rgba(19,55,37,0.26)] transition hover:-translate-y-1 hover:shadow-[0_18px_46px_rgba(19,55,37,0.32)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rice-leaf sm:bottom-5 sm:right-5"
+        className="fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] right-4 z-[91] grid h-[52px] w-[52px] place-items-center rounded-full bg-white p-1 shadow-[0_14px_38px_rgba(19,55,37,0.26)] transition hover:-translate-y-1 hover:shadow-[0_18px_46px_rgba(19,55,37,0.32)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rice-leaf sm:bottom-5 sm:right-5 sm:h-[68px] sm:w-[68px]"
       >
         <Image
           src="/images/44.png"
           alt=""
           width={1254}
           height={1254}
-          className="h-16 w-16 object-contain"
+          className="h-11 w-11 object-contain sm:h-16 sm:w-16"
         />
       </button>
     </aside>

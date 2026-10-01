@@ -73,6 +73,10 @@ export function ThailandYieldChoropleth({
     () => new Map(records.map((record) => [record.province, record])),
     [records]
   );
+  const provinceOptions = useMemo(
+    () => geoJson.features.map((feature) => feature.properties.province_th).sort((a, b) => a.localeCompare(b, "th")),
+    [geoJson.features]
+  );
   const values = records.map((record) => record.yield_kg_rai);
   const minimum = values.length ? Math.min(...values) : 0;
   const maximum = values.length ? Math.max(...values) : 1;
@@ -153,6 +157,11 @@ export function ThailandYieldChoropleth({
   const visibleConnector =
     connector?.province === activeProvince ? connector : null;
 
+  function selectProvince(province: string) {
+    setHoveredProvince(null);
+    onSelectProvince(province);
+  }
+
   function zoom(factor: number) {
     setViewBox((current) => {
       const nextWidth = Math.max(250, Math.min(MAP_WIDTH, current.width * factor));
@@ -181,11 +190,55 @@ export function ThailandYieldChoropleth({
         }
       }}
     >
+        <label className="block px-3 pt-3 text-xs font-semibold text-[#173523] md:hidden">
+          เลือกจังหวัดที่ต้องการดู
+          <select
+            aria-label="เลือกจังหวัดบนแผนที่"
+            value={selectedProvince}
+            onChange={(event) => {
+              selectProvince(event.target.value);
+              setViewBox({ x: 0, y: 0, width: MAP_WIDTH, height: MAP_HEIGHT });
+            }}
+            className="mt-2 min-h-11 w-full min-w-0 rounded-lg border border-emerald-900/15 bg-[#f5faf6] px-3 text-base font-semibold text-[#173523] outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+          >
+            {provinceOptions.map((province) => (
+              <option key={province} value={province} disabled={!recordByProvince.has(province)}>
+                {province}{recordByProvince.has(province) ? "" : " (ไม่มีข้อมูล)"}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <div className="flex items-center justify-between gap-2 px-3 pt-3 md:absolute md:left-3 md:top-3 md:z-10 md:p-0">
+          <p className="text-xs leading-5 text-[#557060] md:hidden">หรือแตะจังหวัด<br />บนแผนที่</p>
+          <div className="flex gap-2 md:flex-col">
+            {[
+              { label: "ขยายแผนที่", icon: Plus, action: () => zoom(0.78) },
+              { label: "ย่อแผนที่", icon: Minus, action: () => zoom(1.28) },
+              {
+                label: "รีเซ็ตแผนที่",
+                icon: RotateCcw,
+                action: () => setViewBox({ x: 0, y: 0, width: MAP_WIDTH, height: MAP_HEIGHT }),
+              },
+            ].map(({ label, icon: Icon, action }) => (
+              <button
+                key={label}
+                type="button"
+                aria-label={label}
+                onClick={action}
+                className="grid h-11 w-11 touch-manipulation place-items-center rounded-lg border border-emerald-900/10 bg-white text-[#171d19] shadow-sm transition hover:bg-[#fff9e8] focus-visible:outline-2 focus-visible:outline-emerald-600 active:scale-95 md:shadow-[0_6px_18px_rgba(24,48,33,0.18)]"
+              >
+                <Icon aria-hidden="true" className="h-4 w-4" />
+              </button>
+            ))}
+          </div>
+        </div>
+
         <svg
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
           role="img"
           aria-label="แผนที่ผลผลิตข้าวรายจังหวัดของประเทศไทย"
-          className="block h-[560px] w-full touch-manipulation sm:h-[640px]"
+          className="mx-auto block aspect-[720/760] w-full max-w-[400px] touch-manipulation md:aspect-auto md:h-[640px] md:max-w-none"
           onDoubleClick={() => zoom(0.78)}
         >
           {projectedFeatures.map(({ feature, path }) => {
@@ -214,13 +267,15 @@ export function ThailandYieldChoropleth({
                     ? "drop-shadow-[0_0_7px_rgba(181,122,5,0.72)]"
                     : ""
                 }`}
-                onPointerEnter={() => setHoveredProvince(province)}
+                onPointerEnter={(event) => {
+                  if (event.pointerType === "mouse") setHoveredProvince(province);
+                }}
                 onFocus={() => setHoveredProvince(province)}
-                onClick={() => onSelectProvince(province)}
+                onClick={() => selectProvince(province)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
-                    onSelectProvince(province);
+                    selectProvince(province);
                   }
                 }}
               >
@@ -232,40 +287,18 @@ export function ThailandYieldChoropleth({
           })}
         </svg>
 
-        <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
-          {[
-            { label: "ขยายแผนที่", icon: Plus, action: () => zoom(0.78) },
-            { label: "ย่อแผนที่", icon: Minus, action: () => zoom(1.28) },
-            {
-              label: "รีเซ็ตแผนที่",
-              icon: RotateCcw,
-              action: () => setViewBox({ x: 0, y: 0, width: MAP_WIDTH, height: MAP_HEIGHT }),
-            },
-          ].map(({ label, icon: Icon, action }) => (
-            <button
-              key={label}
-              type="button"
-              aria-label={label}
-              onClick={action}
-              className="grid h-10 w-10 place-items-center rounded-lg bg-white text-[#171d19] shadow-[0_6px_18px_rgba(24,48,33,0.18)] transition hover:bg-[#fff9e8] active:scale-95"
-            >
-              <Icon aria-hidden="true" className="h-4 w-4" />
-            </button>
-          ))}
-        </div>
-
-        <div className="absolute bottom-3 left-3 z-10 hidden w-36 gap-2 rounded-xl bg-white/95 p-3 text-[#28362e] shadow-[0_12px_30px_rgba(39,77,53,0.2)] backdrop-blur md:grid">
-          <p className="text-xs font-bold">ระดับผลผลิต</p>
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-2 bg-white/95 p-3 text-[#28362e] md:absolute md:bottom-3 md:left-3 md:z-10 md:grid md:w-36 md:justify-start md:gap-2 md:rounded-xl md:shadow-[0_12px_30px_rgba(39,77,53,0.2)] md:backdrop-blur">
+          <p className="sr-only text-xs font-bold md:not-sr-only">ระดับผลผลิต</p>
           {[
             { label: "ผลผลิตสูง", color: "#b78312" },
             { label: "ผลผลิตต่ำ", color: "#f3df89" },
             { label: "ไม่มีข้อมูล", color: "#d7dbd4" },
           ].map((entry) => (
-            <span key={entry.label} className="flex items-center gap-2 text-[10px] font-semibold">
+            <span key={entry.label} className="flex items-center gap-1.5 text-[11px] font-medium md:gap-2 md:text-[10px] md:font-semibold">
               <span
                 aria-hidden="true"
                 style={{ backgroundColor: entry.color }}
-                className="h-5 w-5 shrink-0 shadow-[0_2px_5px_rgba(36,55,43,0.24)]"
+                className="h-3 w-3 shrink-0 rounded-sm md:h-5 md:w-5 md:rounded-none md:shadow-[0_2px_5px_rgba(36,55,43,0.24)]"
               />
               {entry.label}
             </span>
@@ -278,7 +311,7 @@ export function ThailandYieldChoropleth({
             aria-hidden="true"
             viewBox={`0 0 ${visibleConnector.width} ${visibleConnector.height}`}
             preserveAspectRatio="none"
-            className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible"
+            className="pointer-events-none absolute inset-0 z-20 hidden h-full w-full overflow-visible md:block"
           >
             <path d={visibleConnector.path} pathLength="1" className="dashboard-map-connector-halo fill-none stroke-[#d6a72b]/25 stroke-[10] [stroke-linecap:round]" />
             <path d={visibleConnector.path} pathLength="1" className="dashboard-map-connector-line fill-none stroke-[#b57a05] stroke-[3] [stroke-linecap:round]" />
@@ -292,16 +325,18 @@ export function ThailandYieldChoropleth({
           key={`detail-${activeProvince}`}
           ref={detailCardRef}
           aria-live="polite"
-          className="dashboard-map-detail-card absolute bottom-3 right-3 z-30 w-[min(230px,calc(100%-1.5rem))] rounded-xl bg-white/95 p-4 shadow-[0_20px_48px_rgba(17,53,35,0.26)] backdrop-blur"
+          className="dashboard-map-detail-card relative border-t border-emerald-900/10 bg-[#f5faf6] p-4 md:absolute md:bottom-3 md:right-3 md:z-30 md:w-[min(230px,calc(100%-1.5rem))] md:rounded-xl md:border-0 md:bg-white/95 md:shadow-[0_20px_48px_rgba(17,53,35,0.26)] md:backdrop-blur"
         >
-          <span aria-hidden="true" className="absolute -left-1 top-7 h-9 w-2 rounded-full bg-[#b57a05] shadow-[0_0_18px_rgba(181,122,5,0.62)]" />
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#171d19]">
-            <MapPin aria-hidden="true" className="h-4 w-4" /> จังหวัด
+          <span aria-hidden="true" className="absolute -left-1 top-7 hidden h-9 w-2 rounded-full bg-[#b57a05] shadow-[0_0_18px_rgba(181,122,5,0.62)] md:block" />
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 md:block">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#171d19]">
+              <MapPin aria-hidden="true" className="h-4 w-4" /> จังหวัด
+            </div>
+            <p className="text-xl font-bold text-[#173523] md:mt-2">{activeProvince}</p>
           </div>
-          <p className="mt-2 text-xl font-bold text-[#173523]">{activeProvince}</p>
           {activeRecord ? (
             <>
-              <p className="mt-5 text-xs font-medium text-emerald-950/60">ผลผลิต</p>
+              <p className="mt-3 text-xs font-medium text-emerald-950/60 md:mt-5">ผลผลิต</p>
               <p className="mt-1 text-3xl font-bold tabular-nums text-[#8b6208]">
                 {formatNumber(activeRecord.yield_kg_rai)}
                 <span className="ml-1.5 text-xs font-semibold text-emerald-950/60">kg/ไร่</span>
@@ -310,14 +345,14 @@ export function ThailandYieldChoropleth({
                 ปีก่อน {formatNumber(activeRecord.previous_yield_kg_rai)} kg/ไร่ · เปลี่ยนแปลง {signedNumber(activeRecord.change_percent, "%")}
               </p>
               {activeProvince === selectedProvince ? (
-                <p className="mt-5 flex min-h-10 items-center justify-center rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-[#23654C]">
+                <p className="mt-5 hidden min-h-10 items-center justify-center rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-[#23654C] md:flex">
                   กำลังแสดงจังหวัดนี้
                 </p>
               ) : (
                 <button
                   type="button"
-                  onClick={() => onSelectProvince(activeProvince)}
-                  className="mt-5 min-h-10 w-full rounded-lg bg-[#23654C] px-3 text-xs font-semibold text-white shadow-[0_7px_18px_rgba(35,101,76,0.22)] transition hover:bg-[#174d39]"
+                  onClick={() => selectProvince(activeProvince)}
+                  className="mt-3 min-h-11 w-full rounded-lg bg-[#23654C] px-3 text-xs font-semibold text-white shadow-[0_7px_18px_rgba(35,101,76,0.22)] transition hover:bg-[#174d39] md:mt-5"
                 >
                   เลือกจังหวัดนี้
                 </button>
@@ -358,7 +393,7 @@ export function TopForecastChangeChart({ records }: { records: RiceYieldRecord[]
 
   return (
     <div className="relative flex min-h-[520px] flex-col xl:min-h-[590px]">
-      <div className="relative isolate mb-5 grid w-fit self-start grid-cols-2 gap-2">
+      <div className="relative isolate mb-5 grid w-full min-w-0 self-start grid-cols-2 gap-2 sm:w-fit">
         <span
           aria-hidden="true"
           className="pointer-events-none absolute inset-y-0 left-0 -z-10 w-[calc(50%-0.25rem)] rounded-lg bg-gradient-to-r from-[#f7dfa0] via-[#fff2bd] to-[#f4ce68] shadow-[0_8px_22px_rgba(183,131,18,0.2)] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none dark:from-[#76590f] dark:via-[#94711a] dark:to-[#76590f]"
@@ -371,7 +406,7 @@ export function TopForecastChangeChart({ records }: { records: RiceYieldRecord[]
           type="button"
           aria-pressed={mode === "increase"}
           onClick={() => setMode("increase")}
-          className={`relative min-h-11 whitespace-nowrap rounded-lg px-4 text-xs font-semibold transition-[color,background-color,box-shadow,transform] duration-300 sm:px-5 sm:text-sm ${
+          className={`relative min-h-11 whitespace-nowrap rounded-lg px-2 text-xs font-semibold transition-[color,background-color,box-shadow,transform] duration-300 sm:px-5 sm:text-sm ${
             mode === "increase"
               ? "text-[#5f4608]"
               : "bg-white text-emerald-950/65 shadow-[0_3px_10px_rgba(22,61,39,0.1)] hover:-translate-y-0.5 hover:text-emerald-900 dark:bg-white/[0.08] dark:text-white/65 dark:hover:text-white"
@@ -383,7 +418,7 @@ export function TopForecastChangeChart({ records }: { records: RiceYieldRecord[]
           type="button"
           aria-pressed={mode === "decrease"}
           onClick={() => setMode("decrease")}
-          className={`relative min-h-11 whitespace-nowrap rounded-lg px-4 text-xs font-semibold transition-[color,background-color,box-shadow,transform] duration-300 sm:px-5 sm:text-sm ${
+          className={`relative min-h-11 whitespace-nowrap rounded-lg px-2 text-xs font-semibold transition-[color,background-color,box-shadow,transform] duration-300 sm:px-5 sm:text-sm ${
             mode === "decrease"
               ? "text-[#5f4608] dark:text-amber-50"
               : "bg-white text-emerald-950/65 shadow-[0_3px_10px_rgba(22,61,39,0.1)] hover:-translate-y-0.5 hover:text-emerald-900 dark:bg-white/[0.08] dark:text-white/65 dark:hover:text-white"
@@ -412,13 +447,13 @@ export function TopForecastChangeChart({ records }: { records: RiceYieldRecord[]
               onPointerLeave={() => setHovered(null)}
               onFocus={() => setHovered(record)}
               onBlur={() => setHovered(null)}
-              className="grid grid-cols-[minmax(88px,0.75fr)_minmax(120px,2fr)_auto] items-center gap-3 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/40"
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/40 sm:grid-cols-[minmax(88px,0.75fr)_minmax(120px,2fr)_auto] sm:gap-3"
             >
               <span className="truncate text-xs font-semibold sm:text-sm">
                 <span className="mr-2 text-emerald-950/35 dark:text-white/35">{index + 1}</span>
                 {record.province}
               </span>
-              <span className="h-5 overflow-hidden rounded-full bg-[#f3eedb] dark:bg-white/[0.08]">
+              <span className="col-span-2 row-start-2 h-2.5 overflow-hidden rounded-full bg-[#f3eedb] sm:col-span-1 sm:row-start-auto sm:h-5 dark:bg-white/[0.08]">
                 <span
                   className={`block h-full min-w-1 rounded-full ${
                     mode === "increase"
@@ -428,7 +463,7 @@ export function TopForecastChangeChart({ records }: { records: RiceYieldRecord[]
                   style={{ width: `${(Math.abs(record.change_percent ?? 0) / maximum) * 100}%` }}
                 />
               </span>
-              <span className={`min-w-16 text-right text-sm font-bold tabular-nums ${
+              <span className={`col-start-2 row-start-1 min-w-16 text-right text-sm font-bold tabular-nums sm:col-start-auto sm:row-start-auto ${
                 mode === "increase"
                   ? "text-[#8b6208] dark:text-[#f1d77a]"
                   : "text-amber-700 dark:text-amber-300"
@@ -513,7 +548,8 @@ export function HistoricalYieldForecastChart({
           </dl>
         </div>
       ) : null}
-      <div className="overflow-x-auto pb-2">
+      <p className="mb-2 text-xs text-emerald-950/60 md:hidden dark:text-white/60">เลื่อนกราฟซ้าย–ขวาเพื่อดูทุกปี · แตะจุดเพื่อดูค่า</p>
+      <div className="overflow-x-auto pb-2" tabIndex={0} role="region" aria-label="กราฟผลผลิต เลื่อนซ้ายขวาเพื่อดูทุกปี">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           role="img"
