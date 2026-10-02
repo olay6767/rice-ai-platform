@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarDays, Eye } from "lucide-react";
+import { ArrowLeft, CalendarDays, Eye } from "lucide-react";
 import type { ReactNode } from "react";
 
 import {
+  categoryLabel,
   defaultArticleImage,
   formatArticleDate,
   galleryForArticle,
@@ -199,6 +201,21 @@ function RichNewsBody({ blocks }: { blocks: NewsContentBlock[] }) {
   });
 }
 
+function ArticleMeta({ article }: { article: InfographicArticle }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-rice-muted dark:text-white/55">
+      <span className="inline-flex items-center gap-2">
+        <CalendarDays aria-hidden="true" className="h-4 w-4" />
+        {formatArticleDate(article.publishedAt)}
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <Eye aria-hidden="true" className="h-4 w-4" />
+        {article.viewCount.toLocaleString("th-TH")} ครั้ง
+      </span>
+    </div>
+  );
+}
+
 export default async function InfographicArticlePage({
   params,
 }: {
@@ -212,30 +229,52 @@ export default async function InfographicArticlePage({
   const gallery = galleryForArticle(article);
 
   return (
-    <main className="py-8 sm:py-12 lg:py-14">
-      <article className="dashboard-container grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-12">
+    <main className="py-5 pb-[calc(6rem+env(safe-area-inset-bottom))] sm:py-12 sm:pb-12 lg:py-14">
+      <article className="dashboard-container grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:gap-12">
+        <header className="lg:hidden">
+          <Link
+            href="/infographic"
+            className="inline-flex min-h-11 items-center gap-2 rounded-xl pr-3 text-sm font-bold text-rice-leaf focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rice-leaf/20 dark:text-rice-mint-light"
+          >
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+            กลับไปข่าวสาร
+          </Link>
+          <p className="mt-3 text-xs font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
+            {categoryLabel(article.category)}
+          </p>
+          <h1 className="mt-2 font-heading text-3xl font-bold leading-tight tracking-[-0.035em] text-rice-forest dark:text-white">
+            {article.title}
+          </h1>
+          <div className="mt-4 border-b border-rice-forest/10 pb-5 dark:border-white/10">
+            <ArticleMeta article={article} />
+          </div>
+        </header>
+
         <div className="min-w-0">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[1.75rem] border border-rice-forest/10 bg-rice-surface-soft dark:border-white/10">
+          <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-rice-forest/10 bg-rice-surface-soft sm:aspect-[4/3] sm:rounded-[1.75rem] dark:border-white/10">
             <Image
               src={article.image}
               alt={article.imageAlt}
               fill
-              priority
+              preload
               sizes="(max-width: 1023px) 100vw, 56vw"
               className="object-cover"
             />
           </div>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div
+            className="-mx-1 mt-3 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 [scrollbar-width:none] sm:mx-0 sm:mt-4 sm:grid sm:grid-cols-4 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
+            style={{ scrollbarWidth: "none" }}
+          >
             {gallery.map((image, index) => (
               <div
                 key={`${image}-${index}`}
-                className="relative aspect-square overflow-hidden rounded-2xl border border-rice-forest/10 bg-rice-surface-soft dark:border-white/10"
+                className="relative h-24 w-24 shrink-0 snap-start overflow-hidden rounded-xl border border-rice-forest/10 bg-rice-surface-soft sm:h-auto sm:w-auto sm:aspect-square sm:rounded-2xl dark:border-white/10"
               >
                 <Image
                   src={image}
                   alt={`ภาพประกอบข่าว ${article.title} ลำดับที่ ${index + 1}`}
                   fill
-                  sizes="(max-width: 639px) 50vw, (max-width: 1023px) 25vw, 14vw"
+                  sizes="(max-width: 639px) 96px, (max-width: 1023px) 25vw, 14vw"
                   className="object-cover"
                 />
               </div>
@@ -244,20 +283,25 @@ export default async function InfographicArticlePage({
         </div>
 
         <div className="min-w-0 lg:pt-2">
-          <h1 className="font-heading text-3xl font-bold leading-tight tracking-[-0.035em] text-rice-forest sm:text-4xl lg:text-5xl dark:text-white">
-            {article.title}
-          </h1>
-          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-rice-forest/10 pb-6 text-sm font-medium text-rice-muted dark:border-white/10 dark:text-white/55">
-            <span className="inline-flex items-center gap-2">
-              <CalendarDays aria-hidden="true" className="h-4 w-4" />
-              {formatArticleDate(article.publishedAt)}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <Eye aria-hidden="true" className="h-4 w-4" />
-              {article.viewCount.toLocaleString("th-TH")} ครั้ง
-            </span>
+          <div className="hidden lg:block">
+            <Link
+              href="/infographic"
+              className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-xl pr-3 text-sm font-bold text-rice-leaf focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rice-leaf/20 dark:text-rice-mint-light"
+            >
+              <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+              กลับไปข่าวสาร
+            </Link>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-200">
+              {categoryLabel(article.category)}
+            </p>
+            <h1 className="mt-2 font-heading text-5xl font-bold leading-tight tracking-[-0.035em] text-rice-forest dark:text-white">
+              {article.title}
+            </h1>
+            <div className="mt-5 border-b border-rice-forest/10 pb-6 dark:border-white/10">
+              <ArticleMeta article={article} />
+            </div>
           </div>
-          <div className="mt-7 space-y-5 text-base leading-8 text-rice-text sm:text-lg sm:leading-9 dark:text-white/75">
+          <div className="mt-1 space-y-5 text-base leading-8 text-rice-text sm:mt-5 sm:text-lg sm:leading-9 lg:mt-7 dark:text-white/75">
             {article.richBody?.length ? (
               <RichNewsBody blocks={article.richBody} />
             ) : (

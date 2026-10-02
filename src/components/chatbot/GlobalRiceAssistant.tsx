@@ -228,8 +228,14 @@ export default function GlobalRiceAssistant({
 
   if (pathname === "/chatbot") return null;
 
+  const hideOnMobile = pathname.startsWith("/infographic");
+
   return (
-    <aside data-print-hidden="true" aria-label="น้องเสริม ผู้ช่วยประจำเว็บไซต์">
+    <aside
+      data-print-hidden="true"
+      aria-label="น้องเสริม ผู้ช่วยประจำเว็บไซต์"
+      className={hideOnMobile ? "hidden sm:block" : undefined}
+    >
       {isOpen ? (
         <section
           role="dialog"

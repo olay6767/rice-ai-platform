@@ -13,7 +13,7 @@ export default function InfographicLoadingState({
       aria-live="polite"
       aria-label={label}
       className={`flex w-full flex-col items-center justify-center px-6 text-center ${
-        compact ? "min-h-[360px]" : "min-h-[62dvh]"
+        compact ? "min-h-[260px] sm:min-h-[360px]" : "min-h-[62dvh]"
       }`}
     >
       <span className="relative grid h-20 w-20 place-items-center rounded-full bg-white shadow-[0_16px_42px_rgba(30,75,48,0.16)] ring-1 ring-rice-forest/10 dark:bg-white/[0.08] dark:ring-white/10">
