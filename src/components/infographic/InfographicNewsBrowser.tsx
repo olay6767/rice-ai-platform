@@ -16,6 +16,7 @@ import {
   type AdminPostSummary,
   type InfographicArticle,
 } from "@/lib/infographic/articles";
+import InfographicLoadingState from "./InfographicLoadingState";
 
 type ViewMode = "grid" | "list";
 type CategoryFilter = (typeof INFOGRAPHIC_CATEGORIES)[number]["id"];
@@ -124,6 +125,7 @@ export default function InfographicNewsBrowser() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [adminPosts, setAdminPosts] = useState<AdminPostSummary[] | null>(null);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const activeCategoryIndex = Math.max(
@@ -152,6 +154,8 @@ export default function InfographicNewsBrowser() {
         }
       } catch {
         // คงข้อมูลตัวอย่างไว้เมื่อฐานข้อมูลยังไม่พร้อม
+      } finally {
+        if (active) setIsLoadingPosts(false);
       }
     }
 
@@ -306,17 +310,24 @@ export default function InfographicNewsBrowser() {
 
         <section
           aria-label="รายการข่าวสาร"
+          aria-busy={isLoadingPosts}
           className={
             viewMode === "grid"
               ? "mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3"
               : "mt-8 flex flex-col gap-5"
           }
         >
-          {visibleArticles.map((article) =>
-            viewMode === "grid" ? (
-              <GridCard key={article.id} article={article} />
-            ) : (
-              <ListCard key={article.id} article={article} />
+          {isLoadingPosts ? (
+            <div className={viewMode === "grid" ? "col-span-full" : undefined}>
+              <InfographicLoadingState compact />
+            </div>
+          ) : (
+            visibleArticles.map((article) =>
+              viewMode === "grid" ? (
+                <GridCard key={article.id} article={article} />
+              ) : (
+                <ListCard key={article.id} article={article} />
+              )
             )
           )}
         </section>
