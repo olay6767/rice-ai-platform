@@ -1,1 +1,1 @@
-export { POST } from "@/app/api/admin/datasets/import/route";
+export { GET, POST } from "@/app/api/admin/datasets/import/route";

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import * as XLSX from "xlsx";
 import { getAdminContext } from "@/lib/admin/auth";
 import { AGRICULTURAL_TYPES, AgriculturalImportError, inspectAgriculturalRows, parseAgriculturalFile, type AgriculturalType } from "@/lib/admin/agricultural-import";
 
@@ -7,6 +8,44 @@ const HEADERS = { "Cache-Control": "no-store" };
 const TABLES: Record<AgriculturalType, string> = {
   rice_price: "rice_price_series", flood: "flood_records", drought: "drought_records", storm: "storm_records",
 };
+const RICE_PRICE_TEMPLATE = [
+  {
+    observed_on: "2024-01-01",
+    rice_type: "ข้าวหอมมะลิ",
+    rice_type_code: "jasmine",
+    price: 15000,
+    year: 2024,
+    month: 1,
+    unit: "บาท/ตัน",
+    data_type: "actual",
+    is_imputed: false,
+    model_name: "",
+    model_version: "",
+    forecast_date: "",
+    reliability: "",
+    reliability_label: "",
+    metadata: "{}",
+    source: "ตัวอย่างสำหรับนำเข้า",
+  },
+  {
+    observed_on: "2024-02-01",
+    rice_type: "ข้าวหอมมะลิ",
+    rice_type_code: "jasmine",
+    price: 15250,
+    year: 2024,
+    month: 2,
+    unit: "บาท/ตัน",
+    data_type: "actual",
+    is_imputed: false,
+    model_name: "",
+    model_version: "",
+    forecast_date: "",
+    reliability: "",
+    reliability_label: "",
+    metadata: "{}",
+    source: "ตัวอย่างสำหรับนำเข้า",
+  },
+];
 
 function responseError(error: unknown): Response {
   if (error instanceof AgriculturalImportError) return Response.json({ error: { code: error.code, message: error.message } }, { status: 400, headers: HEADERS });
@@ -21,6 +60,31 @@ function responseError(error: unknown): Response {
   if (["PGRST202", "42P01"].includes(database.code ?? "")) return Response.json({ error: { code: "MIGRATION_REQUIRED", message: "กรุณา Apply migration นำเข้าข้อมูลก่อน" } }, { status: 503, headers: HEADERS });
   console.error("Agricultural import failed", error);
   return Response.json({ error: { code: "IMPORT_FAILED", message: "นำเข้าข้อมูลไม่สำเร็จ ตรวจคอลัมน์และค่าข้อมูลแล้วลองใหม่" } }, { status: 500, headers: HEADERS });
+}
+
+export async function GET(request: Request): Promise<Response> {
+  const context = await getAdminContext();
+  if (context.errorResponse) return context.errorResponse;
+  try {
+    const type = new URL(request.url).searchParams.get("type");
+    if (type !== "rice_price") {
+      throw new AgriculturalImportError("ไฟล์ตัวอย่างนี้รองรับข้อมูลราคาข้าวเท่านั้น", "INVALID_TYPE");
+    }
+    const worksheet = XLSX.utils.json_to_sheet(RICE_PRICE_TEMPLATE);
+    worksheet["!cols"] = Object.keys(RICE_PRICE_TEMPLATE[0]).map((key) => ({ wch: Math.max(12, key.length + 2) }));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "rice_price");
+    const buffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+    return new Response(new Uint8Array(buffer), {
+      headers: {
+        ...HEADERS,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": 'attachment; filename="rice_price_import_template.xlsx"',
+      },
+    });
+  } catch (error) {
+    return responseError(error);
+  }
 }
 
 export async function POST(request: Request): Promise<Response> {

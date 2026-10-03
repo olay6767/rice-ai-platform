@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Crown,
   Eye,
+  FileSpreadsheet,
   ImageUp,
   LoaderCircle,
   Mail,
@@ -480,7 +481,13 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
+  const [activeImportDraftId, setActiveImportDraftId] = useState("");
   const [draft, setDraft] = useState({ key: "", label: "", description: "", sourceName: "", sourceUrl: "" });
+  const draftVersions = data?.versions.filter((version) => version.status === "draft") ?? [];
+  const activeImportDraft =
+    draftVersions.find((version) => version.id === activeImportDraftId) ??
+    draftVersions[0] ??
+    null;
 
   async function load() {
     setLoading(true);
@@ -517,6 +524,40 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
       setCreateOpen(false);
       setDraft({ key: "", label: "", description: "", sourceName: "", sourceUrl: "" });
       setSuccess("สร้างฉบับร่างแล้ว");
+      await load();
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function createImportDraft() {
+    const now = new Date();
+    const dateKey = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+    ].join("");
+    const unique = now.getTime().toString(36).slice(-6);
+    setBusy("import-draft");
+    setError("");
+    setSuccess("");
+    try {
+      const created = await request<{ id: string }>("/api/admin/datasets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          key: `rice-price-import-${dateKey}-${unique}`,
+          label: `นำเข้าราคาข้าว ${now.toLocaleDateString("th-TH", { dateStyle: "medium" })}`,
+          description: "ฉบับร่างสำหรับตรวจสอบและนำเข้าข้อมูลราคาข้าวจากไฟล์ Excel",
+          sourceName: "ไฟล์ Excel จากผู้ดูแลระบบ",
+          sourceUrl: "",
+        }),
+      });
+      setActiveImportDraftId(created.id);
+      setSuccess("สร้างฉบับร่างแล้ว เลือกไฟล์ Excel เพื่อตรวจสอบข้อมูลได้เลย");
       await load();
     } catch (cause) {
       setError(errorText(cause));
@@ -566,6 +607,44 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
       <textarea className={input + " md:col-span-2"} rows={3} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="คำอธิบาย" />
       <div className="flex gap-2 md:col-span-2"><button className={primary} type="submit" disabled={busy === "create"}><Save className="h-4 w-4" />บันทึก Draft</button><button className={button} type="button" onClick={() => setCreateOpen(false)}>ยกเลิก</button></div>
     </form>}
+    {category === "price" && data && <section className={panel + " border-rice-leaf/25"} aria-label="นำเข้า Excel ราคาข้าว">
+      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-rice-mint/45 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light">
+            <FileSpreadsheet aria-hidden="true" className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-rice-leaf dark:text-rice-mint-light">Excel import</p>
+            <h4 className="mt-1 text-lg font-bold">นำเข้าไฟล์ราคาข้าว</h4>
+            <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">รองรับ Excel (.xlsx/.xls), CSV และ JSON · ตรวจทุกแถวและ Preview ก่อนบันทึก · ข้อมูลจะลงเฉพาะ Draft</p>
+          </div>
+        </div>
+        {draftVersions.length > 0 && <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(16rem,1fr)_auto] lg:min-w-[30rem]">
+          <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
+            เลือกฉบับร่างปลายทาง
+            <select className={input} value={activeImportDraft?.id ?? ""} onChange={(event) => setActiveImportDraftId(event.target.value)}>
+              {draftVersions.map((version) => <option key={version.id} value={version.id}>{version.label} · {version.record_count.toLocaleString("th-TH")} แถว</option>)}
+            </select>
+          </label>
+          <button type="button" className={`${button} self-end`} disabled={busy === "import-draft"} onClick={() => void createImportDraft()}>
+            {busy === "import-draft" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            สร้าง Draft ใหม่
+          </button>
+        </div>}
+      </div>
+      {activeImportDraft ? (
+        <AgriculturalDatasetImport key={activeImportDraft.id} type="rice_price" version={activeImportDraft} onSaved={load} />
+      ) : (
+        <div className="mt-4 rounded-xl border border-dashed border-rice-leaf/30 bg-rice-mint/10 p-4 sm:p-5">
+          <p className="font-semibold">สร้างฉบับร่างก่อนนำเข้าไฟล์</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">เวอร์ชันที่เผยแพร่แล้วจะไม่ถูกแก้ไข ระบบจะสร้าง Draft ใหม่สำหรับรับไฟล์ Excel โดยเฉพาะ</p>
+          <button type="button" className={`${primary} mt-4 w-full sm:w-auto`} disabled={busy === "import-draft"} onClick={() => void createImportDraft()}>
+            {busy === "import-draft" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {busy === "import-draft" ? "กำลังสร้างฉบับร่าง..." : "สร้าง Draft เพื่อนำเข้า Excel"}
+          </button>
+        </div>
+      )}
+    </section>}
     {loading ? <Busy /> : !data?.versions.length ? <Empty>ยังไม่มีเวอร์ชันข้อมูล</Empty> : <div className="grid gap-4">{data.versions.map((version) => {
       const validation = version.import_files[0]?.validation_summary ?? {};
       const statusTone = version.status === "published" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200" : version.status === "draft" ? "bg-amber-100 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200" : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/60";
@@ -592,7 +671,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
           <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ปัญหา Validation</dt><dd className="mt-1 text-xl font-bold">{(validation.missingCount ?? 0) + (validation.unknownProvinceCount ?? 0)}</dd></div>
         </dl>
         {!!version.import_files.length && <div className="mt-4 rounded-xl border border-[var(--app-border)] p-3"><p className="text-xs font-bold">ไฟล์ต้นทาง</p><div className="mt-2 flex flex-wrap gap-2">{version.import_files.map((file) => <span key={file.file_name} className="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs text-[var(--app-text-secondary)]">{file.file_name} · {file.row_count.toLocaleString("th-TH")} แถว</span>)}</div></div>}
-        {version.status === "draft" && <AgriculturalDatasetImport type={type} version={version} onSaved={load} />}
+        {version.status === "draft" && category !== "price" && <AgriculturalDatasetImport type={type} version={version} onSaved={load} />}
       </article>;
     })}</div>}
   </div>;
