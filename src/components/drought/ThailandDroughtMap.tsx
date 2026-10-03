@@ -583,12 +583,6 @@ export default function ThailandDroughtMap({
               </p>
               <button
                 type="button"
-                aria-haspopup={onOpenProvinceDetails ? "dialog" : undefined}
-                aria-label={
-                  onOpenProvinceDetails
-                    ? `ดูรายละเอียดจังหวัด${active.properties.provinceTh}`
-                    : undefined
-                }
                 onClick={() => {
                   const province = active.properties.provinceTh;
                   if (onOpenProvinceDetails) {
