@@ -4,6 +4,7 @@ import {
   CloudRain,
   Funnel,
   Layers,
+  MapPin,
   SunMedium,
   Wind,
   X,
@@ -192,6 +193,7 @@ function GraphFilters({
   data,
   filters,
   onChange,
+  toolbarAction,
   resetFilters = DEFAULT_OVERVIEW_FILTERS,
   yearMode = "period",
   showMonth = true,
@@ -202,6 +204,7 @@ function GraphFilters({
   data: DisasterOverviewData;
   filters: OverviewFilters;
   onChange: (filters: OverviewFilters) => void;
+  toolbarAction?: ReactNode;
   resetFilters?: OverviewFilters;
   yearMode?: "period" | "history";
   showMonth?: boolean;
@@ -226,31 +229,34 @@ function GraphFilters({
 
   return (
     <div className="mb-4">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={`filters-${chartName.replaceAll(" ", "-")}`}
-        onClick={() => {
-          if (!open) setDraftFilters({ ...filters });
-          setOpen((current) => !current);
-        }}
-        className={`inline-flex min-h-9 items-center gap-2 rounded-full px-4 text-xs font-medium transition ${
-          dark
-            ? "bg-white/[0.09] text-[#ECF39E] hover:bg-white/[0.14]"
-            : "bg-[#f2f4ef] text-[#557060] hover:bg-[#e9eedf]"
-        }`}
-      >
-        <Funnel aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.7} />
-        เลือกปี
-        <span
-          aria-hidden="true"
-          className={`ml-1 text-[9px] transition-transform ${
-            open ? "rotate-180" : ""
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={`filters-${chartName.replaceAll(" ", "-")}`}
+          onClick={() => {
+            if (!open) setDraftFilters({ ...filters });
+            setOpen((current) => !current);
+          }}
+          className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-xs font-medium transition ${
+            dark
+              ? "bg-white/[0.09] text-[#ECF39E] hover:bg-white/[0.14]"
+              : "bg-[#f2f4ef] text-[#557060] hover:bg-[#e9eedf]"
           }`}
         >
-          ▼
-        </span>
-      </button>
+          <Funnel aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={1.7} />
+          เลือกปี
+          <span
+            aria-hidden="true"
+            className={`ml-1 text-[9px] transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+          >
+            ▼
+          </span>
+        </button>
+        {toolbarAction}
+      </div>
 
       {open ? (
         <div
@@ -368,6 +374,46 @@ function GraphFilters({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function ProvinceListSelect({
+  provinces,
+  value,
+  onChange,
+}: {
+  provinces: string[];
+  value: string;
+  onChange: (province: string) => void;
+}) {
+  return (
+    <label className="relative min-w-0 flex-1 sm:flex-none">
+      <span className="sr-only">เลือกจังหวัดจากรายชื่อ</span>
+      <MapPin
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#40916C]"
+        strokeWidth={1.8}
+      />
+      <select
+        aria-label="เลือกจังหวัดจากรายชื่อ"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="min-h-10 w-full appearance-none rounded-full border border-transparent bg-[#f2f4ef] py-2 pl-9 pr-9 text-xs font-medium text-[#557060] outline-none transition hover:bg-[#e9eedf] focus:border-[#40916C]/25 focus:ring-2 focus:ring-[#40916C]/20 sm:w-48"
+      >
+        <option value={ALL}>ทุกจังหวัด</option>
+        {provinces.map((province) => (
+          <option key={province} value={province}>
+            {province}
+          </option>
+        ))}
+      </select>
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-[#40916C]/70"
+      >
+        ▼
+      </span>
+    </label>
   );
 }
 
@@ -1264,6 +1310,17 @@ export default function DisasterOverviewDashboard() {
             chartName="แผนที่"
             data={data}
             filters={mapFilters}
+            showProvince={false}
+            toolbarAction={
+              <ProvinceListSelect
+                provinces={data.filters.provinces}
+                value={mapFilters.province}
+                onChange={(province) => {
+                  setMapFilters((current) => ({ ...current, province }));
+                  setDetailProvince(province === ALL ? null : province);
+                }}
+              />
+            }
             onChange={(filters) => {
               setMapFilters(filters);
               setDetailProvince(filters.province === ALL ? null : filters.province);
