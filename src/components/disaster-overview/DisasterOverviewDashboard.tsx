@@ -843,7 +843,6 @@ function ProvinceDetails({
   );
 }
 
-
 function MonthlyChart({
   rows,
   visibleDisasters,
@@ -1204,6 +1203,25 @@ export default function DisasterOverviewDashboard() {
     พายุ:
       "ควรให้พื้นที่ที่พบถี่ตรวจความพร้อมของอาคาร พื้นที่เพาะปลูก และแผนสื่อสารฉุกเฉิน พร้อมติดตามประกาศเตือนภัยอย่างใกล้ชิด",
   };
+  const selectedMapProvince =
+    mapFilters.province === ALL ? null : mapFilters.province;
+  const selectMapProvince = (province: string | null) => {
+    setMapFilters((current) => ({
+      ...current,
+      province: province ?? ALL,
+    }));
+    setDetailProvince(null);
+  };
+  const openProvinceDetails = (province: string) => {
+    setMapFilters((current) => ({ ...current, province }));
+    setDetailProvince(province);
+    if (detailProvince === province) {
+      window.requestAnimationFrame(() => {
+        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        detailRef.current?.focus({ preventScroll: true });
+      });
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-5">
@@ -1316,35 +1334,20 @@ export default function DisasterOverviewDashboard() {
                 provinces={data.filters.provinces}
                 value={mapFilters.province}
                 onChange={(province) => {
-                  setMapFilters((current) => ({ ...current, province }));
-                  setDetailProvince(province === ALL ? null : province);
+                  selectMapProvince(province === ALL ? null : province);
                 }}
               />
             }
             onChange={(filters) => {
               setMapFilters(filters);
-              setDetailProvince(filters.province === ALL ? null : filters.province);
+              setDetailProvince(null);
             }}
           />
           <ThailandFrequencyMap
             values={mapView.mapValues}
-            selectedProvince={mapFilters.province === ALL ? null : mapFilters.province}
-            onSelectProvince={(province) => {
-              setMapFilters((current) => ({
-                ...current,
-                province: province ?? ALL,
-              }));
-              setDetailProvince(province);
-            }}
-            onOpenProvinceDetails={(province) => {
-              setMapFilters((current) => ({ ...current, province }));
-              setDetailProvince(province);
-              if (detailProvince === province) {
-                window.requestAnimationFrame(() =>
-                  detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                );
-              }
-            }}
+            selectedProvince={selectedMapProvince}
+            onSelectProvince={selectMapProvince}
+            onOpenProvinceDetails={openProvinceDetails}
             scopeLabel={overviewScope(data, mapFilters)}
             valueUnit="ครั้ง"
             frequencyLabel={mapFrequencyLabel}
