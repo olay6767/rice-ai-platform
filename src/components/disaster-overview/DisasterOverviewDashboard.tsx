@@ -6,9 +6,8 @@ import {
   Layers,
   SunMedium,
   Wind,
-  X,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import {
   Bar,
   BarChart,
@@ -33,6 +32,7 @@ import {
   RiceErrorState,
   RiceLoadingState,
 } from "@/components/rice-yield/RiceAnalyticsShell";
+import Modal from "@/components/ui/Modal";
 import {
   ALL,
   DEFAULT_OVERVIEW_FILTERS,
@@ -674,17 +674,11 @@ function ImpactSummary({ items }: { items: ImpactView[] }) {
 }
 
 function ProvinceDetails({
-  province,
   data,
-  filters,
   view,
-  onClose,
 }: {
-  province: string;
   data: DisasterOverviewData;
-  filters: OverviewFilters;
   view: ReturnType<typeof deriveDisasterOverview>;
-  onClose: () => void;
 }) {
   const visibleDisasters = DISASTER_CONFIG.filter((config) =>
     view.visibleDisasters.includes(config.name)
@@ -700,22 +694,7 @@ function ProvinceDetails({
   );
 
   return (
-    <Panel
-      title={`รายละเอียดจังหวัด${province}`}
-      action={
-        <button
-          type="button"
-          onClick={onClose}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-[#40916C]/25 px-3 text-xs font-semibold text-[#315d42] transition hover:bg-[#f4f8e9]"
-        >
-          <X aria-hidden="true" className="h-3.5 w-3.5" />
-          ปิดรายละเอียด
-        </button>
-      }
-    >
-      <p className="mb-4 text-xs leading-5 text-emerald-950/65">
-        {overviewScope(data, filters)} · {filters.disaster === ALL ? "ทุกประเภทภัย" : filters.disaster}
-      </p>
+    <div className="text-[#315d42]">
       {view.mapUnavailableNote ? (
         <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
           {view.mapUnavailableNote}
@@ -793,7 +772,7 @@ function ProvinceDetails({
       <p className="mt-4 text-[11px] leading-5 text-emerald-950/55">
         {view.isSummaryMode ? data.summary_2568.note : data.meta.metric_definition}
       </p>
-    </Panel>
+    </div>
   );
 }
 
@@ -1020,7 +999,6 @@ export default function DisasterOverviewDashboard() {
     ...DEFAULT_OVERVIEW_FILTERS,
   });
   const [detailProvince, setDetailProvince] = useState<string | null>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -1059,15 +1037,6 @@ export default function DisasterOverviewDashboard() {
     void loadData();
     return () => controller.abort();
   }, [reloadKey]);
-
-  useEffect(() => {
-    if (!detailProvince) return;
-    const frame = window.requestAnimationFrame(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      detailRef.current?.focus({ preventScroll: true });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [detailProvince]);
 
   const summary = useMemo(
     () => (data ? deriveDisasterOverview(data, DEFAULT_OVERVIEW_FILTERS) : null),
@@ -1282,11 +1251,6 @@ export default function DisasterOverviewDashboard() {
             onOpenProvinceDetails={(province) => {
               setMapFilters((current) => ({ ...current, province }));
               setDetailProvince(province);
-              if (detailProvince === province) {
-                window.requestAnimationFrame(() =>
-                  detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                );
-              }
             }}
             scopeLabel={overviewScope(data, mapFilters)}
             valueUnit="ครั้ง"
@@ -1384,22 +1348,40 @@ export default function DisasterOverviewDashboard() {
           </Panel>
         </div>
       </div>
-      {detailProvince && detailView ? (
-        <div
-          ref={detailRef}
-          tabIndex={-1}
-          aria-label={`รายละเอียดจังหวัด${detailProvince}`}
-          className="scroll-mt-24 outline-none"
-        >
+      <Modal
+        open={Boolean(detailProvince && detailView)}
+        onOpenChange={(open) => {
+          if (!open) setDetailProvince(null);
+        }}
+        title={
+          <span className="text-[#173523]">
+            {detailProvince ? `รายละเอียดจังหวัด${detailProvince}` : "รายละเอียดจังหวัด"}
+          </span>
+        }
+        description={
+          detailProvince
+            ? (
+                <span className="text-emerald-950/65">
+                  {overviewScope(data, mapFilters)} · {mapFilters.disaster === ALL ? "ทุกประเภทภัย" : mapFilters.disaster}
+                </span>
+              )
+            : undefined
+        }
+        size="xl"
+        contentPadding="md"
+        fullScreenOnMobile
+        closeAriaLabel="ปิดรายละเอียดจังหวัด"
+        overlayClassName="!z-[110]"
+        panelClassName="!bg-white !text-[#315d42] sm:border sm:border-[#90A955]/25"
+        headerClassName="!border-[#90A955]/20 !bg-[#f8fbf3]"
+      >
+        {detailProvince && detailView ? (
           <ProvinceDetails
-            province={detailProvince}
             data={data}
-            filters={mapFilters}
             view={detailView}
-            onClose={() => setDetailProvince(null)}
           />
-        </div>
-      ) : null}
+        ) : null}
+      </Modal>
     </div>
   );
 }
