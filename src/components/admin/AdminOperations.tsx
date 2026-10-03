@@ -523,7 +523,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
       });
       setCreateOpen(false);
       setDraft({ key: "", label: "", description: "", sourceName: "", sourceUrl: "" });
-      setSuccess("สร้างฉบับร่างแล้ว");
+      setSuccess("สร้างเวอร์ชัน Draft แล้ว");
       await load();
     } catch (cause) {
       setError(errorText(cause));
@@ -557,7 +557,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
         }),
       });
       setActiveImportDraftId(created.id);
-      setSuccess("สร้างฉบับร่างแล้ว เลือกไฟล์ Excel เพื่อตรวจสอบข้อมูลได้เลย");
+      setSuccess("สร้างเวอร์ชัน Draft แล้ว เลือกไฟล์ Excel เพื่อตรวจสอบข้อมูลได้เลย");
       await load();
     } catch (cause) {
       setError(errorText(cause));
@@ -590,11 +590,11 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h3 className="font-bold">เวอร์ชันข้อมูลและการเผยแพร่</h3>
-        <p className="mt-1 text-sm text-[var(--app-text-secondary)]">แก้ข้อมูลใน Draft แล้วจึง Publish; API ข้อมูลการเกษตรส่งเฉพาะ Published Default ส่วนหน้า User จะสลับมาใช้ API หลังตรวจความครบถ้วนของทุกหน้า</p>
+        <p className="mt-1 text-sm text-[var(--app-text-secondary)]">แต่ละชุดข้อมูลเก็บเป็นเวอร์ชันแยกกัน: สร้าง Draft → นำเข้าไฟล์ → Preview → Publish → ตั้งเป็น Default โดยหน้า User อ่านเฉพาะ Published Default</p>
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" className={button} onClick={() => void load()} disabled={loading}><RefreshCw className="h-4 w-4" />รีเฟรช</button>
-        <button type="button" className={primary} onClick={() => setCreateOpen((value) => !value)}><Plus className="h-4 w-4" />สร้างฉบับร่าง</button>
+        <button type="button" className={primary} onClick={() => setCreateOpen((value) => !value)}><Plus className="h-4 w-4" />สร้างเวอร์ชันใหม่</button>
       </div>
     </div>
     {error && <Notice message={error} />}
@@ -605,7 +605,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
       <input className={input} value={draft.sourceName} onChange={(event) => setDraft({ ...draft, sourceName: event.target.value })} placeholder="ชื่อแหล่งข้อมูล" />
       <input className={input} type="url" value={draft.sourceUrl} onChange={(event) => setDraft({ ...draft, sourceUrl: event.target.value })} placeholder="URL แหล่งข้อมูล (ถ้ามี)" />
       <textarea className={input + " md:col-span-2"} rows={3} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="คำอธิบาย" />
-      <div className="flex gap-2 md:col-span-2"><button className={primary} type="submit" disabled={busy === "create"}><Save className="h-4 w-4" />บันทึก Draft</button><button className={button} type="button" onClick={() => setCreateOpen(false)}>ยกเลิก</button></div>
+      <div className="flex gap-2 md:col-span-2"><button className={primary} type="submit" disabled={busy === "create"}><Save className="h-4 w-4" />สร้างเวอร์ชัน Draft</button><button className={button} type="button" onClick={() => setCreateOpen(false)}>ยกเลิก</button></div>
     </form>}
     {category === "price" && data && <section className={panel + " border-rice-leaf/25"} aria-label="นำเข้า Excel ราคาข้าว">
       <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
@@ -615,20 +615,20 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
           </span>
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-rice-leaf dark:text-rice-mint-light">Excel import</p>
-            <h4 className="mt-1 text-lg font-bold">นำเข้าไฟล์ราคาข้าว</h4>
-            <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">รองรับ Excel (.xlsx/.xls), CSV และ JSON · ตรวจทุกแถวและ Preview ก่อนบันทึก · ข้อมูลจะลงเฉพาะ Draft</p>
+            <h4 className="mt-1 text-lg font-bold">นำเข้า Excel เป็นเวอร์ชันข้อมูลราคาข้าว</h4>
+            <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">แต่ละไฟล์นำเข้าในเวอร์ชัน Draft ที่เลือก รองรับ Excel (.xlsx/.xls), CSV และ JSON พร้อมตรวจทุกแถวก่อนบันทึก</p>
           </div>
         </div>
         {draftVersions.length > 0 && <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(16rem,1fr)_auto] lg:min-w-[30rem]">
           <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
-            เลือกฉบับร่างปลายทาง
+            เลือกเวอร์ชัน Draft ปลายทาง
             <select className={input} value={activeImportDraft?.id ?? ""} onChange={(event) => setActiveImportDraftId(event.target.value)}>
               {draftVersions.map((version) => <option key={version.id} value={version.id}>{version.label} · {version.record_count.toLocaleString("th-TH")} แถว</option>)}
             </select>
           </label>
           <button type="button" className={`${button} self-end`} disabled={busy === "import-draft"} onClick={() => void createImportDraft()}>
             {busy === "import-draft" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            สร้าง Draft ใหม่
+            สร้างเวอร์ชันใหม่
           </button>
         </div>}
       </div>
@@ -636,11 +636,11 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
         <AgriculturalDatasetImport key={activeImportDraft.id} type="rice_price" version={activeImportDraft} onSaved={load} />
       ) : (
         <div className="mt-4 rounded-xl border border-dashed border-rice-leaf/30 bg-rice-mint/10 p-4 sm:p-5">
-          <p className="font-semibold">สร้างฉบับร่างก่อนนำเข้าไฟล์</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">เวอร์ชันที่เผยแพร่แล้วจะไม่ถูกแก้ไข ระบบจะสร้าง Draft ใหม่สำหรับรับไฟล์ Excel โดยเฉพาะ</p>
+          <p className="font-semibold">สร้างเวอร์ชัน Draft ก่อนนำเข้าไฟล์</p>
+          <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">ระบบจะสร้างเวอร์ชันใหม่สำหรับไฟล์ Excel ชุดนี้ โดยไม่แก้ไขเวอร์ชัน Published ที่ผู้ใช้กำลังดู</p>
           <button type="button" className={`${primary} mt-4 w-full sm:w-auto`} disabled={busy === "import-draft"} onClick={() => void createImportDraft()}>
             {busy === "import-draft" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            {busy === "import-draft" ? "กำลังสร้างฉบับร่าง..." : "สร้าง Draft เพื่อนำเข้า Excel"}
+            {busy === "import-draft" ? "กำลังสร้างเวอร์ชัน..." : "สร้างเวอร์ชันใหม่จาก Excel"}
           </button>
         </div>
       )}
