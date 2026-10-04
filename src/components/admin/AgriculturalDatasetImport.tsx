@@ -105,7 +105,7 @@ export default function AgriculturalDatasetImport({ type, version, onSaved }: {
       } else {
         const result = await request<{ importedRows: number; replacedRows: number }>("/api/admin/datasets/import", { method: "POST", body: form });
         clearFile();
-        setSuccess(`บันทึก ${result.importedRows.toLocaleString()} แถวในเวอร์ชัน Draft แล้ว (แทนข้อมูลเดิม ${result.replacedRows.toLocaleString()} แถว) ตรวจเวอร์ชันด้านล่างก่อน Publish`);
+        setSuccess(`บันทึก ${result.importedRows.toLocaleString()} แถวในเวอร์ชันแล้ว (แทนข้อมูลเดิม ${result.replacedRows.toLocaleString()} แถว) ตรวจสอบก่อนเผยแพร่`);
         await onSaved();
       }
     } catch (cause) {
@@ -120,7 +120,7 @@ export default function AgriculturalDatasetImport({ type, version, onSaved }: {
   return <div className="mt-4 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4 sm:p-5">
     <div className="flex items-start gap-3">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rice-mint/55 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light"><UploadCloud aria-hidden="true" className="h-5 w-5" /></span>
-      <div className="min-w-0"><h5 className="font-bold">นำเข้าไฟล์ในเวอร์ชัน Draft “{version.label}”</h5><p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">Excel (.xlsx/.xls), CSV หรือ JSON · ไม่เกิน 10 MB · สูงสุด 20,000 แถว · ตรวจและ Preview ก่อนบันทึก</p></div>
+      <div className="min-w-0"><h5 className="font-bold">นำเข้าไฟล์ในเวอร์ชัน “{version.label}”</h5><p className="mt-1 text-xs leading-5 text-[var(--app-text-secondary)]">Excel (.xlsx/.xls), CSV หรือ JSON · ไม่เกิน 10 MB · สูงสุด 20,000 แถว · ตรวจและ Preview ก่อนบันทึก</p></div>
     </div>
     <input
       ref={fileInputRef}
@@ -172,14 +172,14 @@ export default function AgriculturalDatasetImport({ type, version, onSaved }: {
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{[["แถวในไฟล์", preview.receivedRows], ["แถวที่ผ่าน", preview.validRows], ["ปีเริ่มต้น", preview.minYear ?? "—"], ["ปีล่าสุด", preview.maxYear ?? "—"]].map(([label, value]) => <div key={label} className="rounded-lg bg-[var(--app-surface-soft)] p-3"><p className="text-[10px] text-[var(--app-text-muted)]">{label}</p><p className="mt-1 text-lg font-bold tabular-nums">{typeof value === "number" ? value.toLocaleString() : value}</p></div>)}</div>
         {type !== "rice_price" && <p className="mt-3 text-xs text-[var(--app-text-secondary)]">ครอบคลุม {preview.provinceCount.toLocaleString()} จังหวัด</p>}
       </div>
-      <p className="rounded-lg bg-amber-50 px-3 py-2 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">เมื่อยืนยัน ไฟล์นี้จะแทนข้อมูลเดิม {preview.replacedRows.toLocaleString()} แถวเฉพาะในเวอร์ชัน Draft นี้ โดยไม่กระทบเวอร์ชัน Published หรือ Default</p>
+      <p className="rounded-lg bg-amber-50 px-3 py-2 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200">เมื่อยืนยัน ไฟล์นี้จะแทนข้อมูลเดิม {preview.replacedRows.toLocaleString()} แถวเฉพาะในเวอร์ชันนี้ โดยไม่กระทบเวอร์ชันที่เผยแพร่หรือค่าเริ่มต้น</p>
       {!!preview.errors.length && <ul role="alert" className="max-h-40 list-disc overflow-auto pl-5 text-rose-700 dark:text-rose-300">{preview.errors.map((issue, index) => <li key={index}>แถว {issue.row}: {issue.message}</li>)}</ul>}
       {!!preview.previewRows.length && <details open><summary className="cursor-pointer font-semibold">ตัวอย่างข้อมูล {preview.previewRows.length} แถวแรก</summary><div className="mt-2 max-h-72 overflow-auto rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)]"><table className="w-full min-w-max text-left text-xs"><thead className="sticky top-0 bg-[var(--app-surface-soft)]"><tr>{columns.map((column) => <th key={column} className="whitespace-nowrap px-3 py-2 font-mono">{column}</th>)}</tr></thead><tbody>{preview.previewRows.map((row, index) => <tr key={index} className="border-t border-[var(--app-border)]">{columns.map((column) => <td key={column} className="max-w-64 whitespace-nowrap px-3 py-2">{row[column] == null ? "—" : typeof row[column] === "object" ? JSON.stringify(row[column]) : String(row[column])}</td>)}</tr>)}</tbody></table></div></details>}
       {preview.valid && <>
-        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3"><input type="checkbox" checked={confirmed} disabled={Boolean(busy)} onChange={(event) => setConfirmed(event.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-rice-leaf" /><span>ตรวจสอบ Preview แล้ว และยืนยันให้แทนข้อมูลทั้งหมดเฉพาะเวอร์ชัน Draft “{version.label}”</span></label>
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-3"><input type="checkbox" checked={confirmed} disabled={Boolean(busy)} onChange={(event) => setConfirmed(event.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-rice-leaf" /><span>ตรวจสอบ Preview แล้ว และยืนยันให้แทนข้อมูลทั้งหมดเฉพาะเวอร์ชัน “{version.label}”</span></label>
         <button type="button" className={primary} disabled={!confirmed || Boolean(busy) || preview.revision !== version.revision} onClick={() => void send("commit")}>
           {busy === "commit" ? <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" /> : <UploadCloud aria-hidden="true" className="h-4 w-4" />}
-          {busy === "commit" ? "กำลังบันทึกข้อมูล..." : "ยืนยันบันทึกเป็นเวอร์ชัน Draft"}
+          {busy === "commit" ? "กำลังบันทึกข้อมูล..." : "ยืนยันบันทึกในเวอร์ชันนี้"}
         </button>
       </>}
     </div>}

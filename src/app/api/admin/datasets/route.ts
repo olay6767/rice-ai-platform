@@ -69,6 +69,8 @@ function fail(error: unknown): Response {
     PUBLISHED_REQUIRED: "เลือกเป็นค่าเริ่มต้นได้เฉพาะเวอร์ชันที่เผยแพร่แล้ว",
     ARCHIVED_REQUIRED: "เวอร์ชันนี้ไม่ได้อยู่ในคลัง",
     DEFAULT_PROTECTED: "กรุณาเลือกเวอร์ชันเริ่มต้นอื่นก่อนเก็บเวอร์ชันนี้เข้าคลัง",
+    PUBLISHED_DELETE_PROTECTED: "ปิดการเผยแพร่หรือเก็บเวอร์ชันเข้าคลังก่อนลบ",
+    INVALID_VERSION_DETAILS: "กรุณาตรวจชื่อและรายละเอียดเวอร์ชัน",
     INVALID_FILE_TYPE: "รองรับเฉพาะไฟล์ JSON, CSV และ Excel",
     ROW_LIMIT_EXCEEDED: "ไฟล์มีข้อมูลเกิน 20,000 แถว",
   };
@@ -267,15 +269,37 @@ export async function PATCH(request: Request): Promise<Response> {
   try {
     const body = await request.json() as Record<string, unknown>;
     const type = datasetType(body.type);
-    const id = requiredText(body.id, "รหัสรายการ", 100);
+    const id = requiredUuid(body.id);
     const action = requiredText(body.action, "คำสั่ง", 30);
     const revision = Number(body.revision);
     if (!Number.isInteger(revision) || revision < 0) throw new RequestError("Revision ไม่ถูกต้อง");
+    const versionResult = await context.supabase
+      .from("agricultural_dataset_versions")
+      .select("id,dataset_type")
+      .eq("id", id)
+      .maybeSingle();
+    if (versionResult.error) throw versionResult.error;
+    if (!versionResult.data) throw new RequestError("ไม่พบเวอร์ชันที่เลือก", 404);
+    if (versionResult.data.dataset_type !== type) {
+      throw new RequestError("ประเภทข้อมูลของเวอร์ชันไม่ตรงกัน", 409);
+    }
+    if (action === "delete") {
+      const result = await context.supabase.rpc("agricultural_dataset_delete_version", {
+        p_id: id,
+        p_revision: revision,
+      });
+      if (result.error) throw result.error;
+      invalidate(type);
+      return Response.json({ data: result.data }, { headers: HEADERS });
+    }
+    const label = action === "edit"
+      ? requiredText(body.label, "ชื่อเวอร์ชัน", 120)
+      : optionalText(body.label, 120);
     const result = await context.supabase.rpc("agricultural_dataset_change_version", {
       p_id: id,
       p_action: action,
       p_revision: revision,
-      p_label: optionalText(body.label, 120),
+      p_label: label,
       p_description: optionalText(body.description, 1000),
       p_source_name: optionalText(body.sourceName, 200),
       p_source_url: optionalText(body.sourceUrl, 1000),

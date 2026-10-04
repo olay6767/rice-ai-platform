@@ -64,6 +64,14 @@ try {
     });
     return { status: response.status, body: await response.json() };
   }
+  async function changeVersion(body) {
+    const response = await fetch("http://localhost:3001/api/admin/datasets", {
+      method: "PATCH",
+      headers: { cookie: cookieHeader, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, body: await response.json() };
+  }
   for (const [type, row] of Object.entries(examples)) {
     const createdVersion = await actor.rpc("agricultural_dataset_create_version", {
       p_dataset_type: type, p_key: `codex-http-${randomUUID().slice(0, 8)}`,
@@ -102,9 +110,29 @@ try {
     const commit = await upload(type, id, "commit", name, bytes, preview.body.data.token, preview.body.data.revision);
     assert.equal(commit.status, 200, `${type} commit: ${JSON.stringify(commit.body.error)}`);
     assert.equal(commit.body.data.importedRows, 1);
-    const changed = await actor.rpc("agricultural_dataset_change_version", { p_id: id, p_action: "publish", p_revision: 1 });
-    assert.ifError(changed.error);
-    console.log(`${type}: JSON/CSV/XLSX/XLS preview, commit, publish passed`);
+    if (type === "rice_price") {
+      const edited = await changeVersion({
+        type, id, action: "edit", revision: 1,
+        label: "Temporary HTTP version lifecycle test",
+        description: "Deleted after HTTP route test",
+        sourceName: "Codex", sourceUrl: "",
+      });
+      assert.equal(edited.status, 200, JSON.stringify(edited.body.error));
+      const published = await changeVersion({ type, id, action: "publish", revision: 2 });
+      assert.equal(published.status, 200, JSON.stringify(published.body.error));
+      const protectedDelete = await changeVersion({ type, id, action: "delete", revision: 3 });
+      assert.equal(protectedDelete.status, 409);
+      assert.equal(protectedDelete.body.error.code, "PUBLISHED_DELETE_PROTECTED");
+      const unpublished = await changeVersion({ type, id, action: "unpublish", revision: 3 });
+      assert.equal(unpublished.status, 200, JSON.stringify(unpublished.body.error));
+      const deleted = await changeVersion({ type, id, action: "delete", revision: 4 });
+      assert.equal(deleted.status, 200, JSON.stringify(deleted.body.error));
+      console.log(`${type}: import plus HTTP edit/publish/unpublish/delete lifecycle passed`);
+    } else {
+      const changed = await actor.rpc("agricultural_dataset_change_version", { p_id: id, p_action: "publish", p_revision: 1 });
+      assert.ifError(changed.error);
+      console.log(`${type}: JSON/CSV/XLSX/XLS preview, commit, publish passed`);
+    }
   }
   const yieldDraft = await root.from("rice_dashboard_versions").select("id").eq("status", "draft").limit(1).single();
   assert.ifError(yieldDraft.error);
@@ -125,6 +153,8 @@ try {
     if (events.error) console.error("Event cleanup failed", events.error.message);
     const version = await root.from("agricultural_dataset_versions").delete().eq("id", id);
     if (version.error) console.error("Version cleanup failed", version.error.message);
+    const deletedAudit = await root.from("agricultural_dataset_deleted_versions").delete().eq("version_id", id);
+    if (deletedAudit.error) console.error("Deleted-version audit cleanup failed", deletedAudit.error.message);
   }
   if (actorId) {
     const deleted = await root.auth.admin.deleteUser(actorId);

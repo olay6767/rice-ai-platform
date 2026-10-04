@@ -1,13 +1,21 @@
 "use client";
 
 import {
+  Archive,
   Bot,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   Crown,
+  Database,
   Eye,
+  EyeOff,
+  FilePenLine,
   FileSpreadsheet,
+  FolderOpen,
+  History,
   ImageUp,
+  Layers3,
   LoaderCircle,
   Mail,
   MapPin,
@@ -19,6 +27,9 @@ import {
   Save,
   Search,
   ShieldCheck,
+  Star,
+  Trash2,
+  UploadCloud,
   UserRound,
   X,
 } from "lucide-react";
@@ -27,7 +38,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import DashboardDataManager from "@/components/admin/DashboardDataManager";
 import AgriculturalDatasetImport from "@/components/admin/AgriculturalDatasetImport";
-import { button, errorText, input, panel, primary, request } from "@/components/admin/dashboard/shared";
+import { Dialog, Field, button, errorText, input, panel, primary, request } from "@/components/admin/dashboard/shared";
 import type {
   AdminAiModel,
   AdminDisease,
@@ -436,6 +447,8 @@ type DatasetVersion = {
   source_url: string | null;
   revision: number;
   published_at: string | null;
+  created_at: string;
+  updated_at: string;
   record_count: number;
   import_files: Array<{
     file_name: string;
@@ -473,27 +486,42 @@ function statusLabel(status: DatasetVersion["status"], isDefault: boolean) {
   return "ฉบับร่าง";
 }
 
+function datasetDate(value: string | null) {
+  return value
+    ? new Date(value).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" })
+    : "ยังไม่เผยแพร่";
+}
+
+type DatasetWorkspaceView = "overview" | "import" | "history";
+type DatasetVersionModal =
+  | { kind: "create" }
+  | { kind: "edit"; target: DatasetVersion }
+  | { kind: "delete"; target: DatasetVersion };
+
 function DatasetVersionManager({ category }: { category: Exclude<AgricultureCategory, "yield"> }) {
   const type = DATASET_TYPE[category];
   const [data, setData] = useState<DatasetResponse | null>(null);
+  const [selectedId, setSelectedId] = useState("");
+  const [view, setView] = useState<DatasetWorkspaceView>("overview");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [createOpen, setCreateOpen] = useState(false);
-  const [activeImportDraftId, setActiveImportDraftId] = useState("");
-  const [draft, setDraft] = useState({ key: "", label: "", description: "", sourceName: "", sourceUrl: "" });
-  const draftVersions = data?.versions.filter((version) => version.status === "draft") ?? [];
-  const activeImportDraft =
-    draftVersions.find((version) => version.id === activeImportDraftId) ??
-    draftVersions[0] ??
-    null;
+  const [modal, setModal] = useState<DatasetVersionModal | null>(null);
+  const selected = data?.versions.find((version) => version.id === selectedId) ?? null;
+  const defaultVersion = data?.versions.find((version) => version.is_default) ?? null;
 
-  async function load() {
+  async function load(preferredId?: string) {
     setLoading(true);
     setError("");
     try {
-      setData(await request<DatasetResponse>(`/api/admin/datasets?type=${type}`));
+      const result = await request<DatasetResponse>(`/api/admin/datasets?type=${type}`);
+      setData(result);
+      setSelectedId((current) => {
+        if (preferredId && result.versions.some((version) => version.id === preferredId)) return preferredId;
+        if (result.versions.some((version) => version.id === current)) return current;
+        return result.versions.find((version) => version.is_default)?.id ?? result.versions[0]?.id ?? "";
+      });
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -504,67 +532,15 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
   useEffect(() => {
     let active = true;
     request<DatasetResponse>(`/api/admin/datasets?type=${type}`)
-      .then((result) => { if (active) setData(result); })
+      .then((result) => {
+        if (!active) return;
+        setData(result);
+        setSelectedId(result.versions.find((version) => version.is_default)?.id ?? result.versions[0]?.id ?? "");
+      })
       .catch((cause) => { if (active) setError(errorText(cause)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [type]);
-
-  async function createVersion(event: FormEvent) {
-    event.preventDefault();
-    setBusy("create");
-    setError("");
-    setSuccess("");
-    try {
-      await request("/api/admin/datasets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, ...draft }),
-      });
-      setCreateOpen(false);
-      setDraft({ key: "", label: "", description: "", sourceName: "", sourceUrl: "" });
-      setSuccess("สร้างเวอร์ชัน Draft แล้ว");
-      await load();
-    } catch (cause) {
-      setError(errorText(cause));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function createImportDraft() {
-    const now = new Date();
-    const dateKey = [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0"),
-    ].join("");
-    const unique = now.getTime().toString(36).slice(-6);
-    setBusy("import-draft");
-    setError("");
-    setSuccess("");
-    try {
-      const created = await request<{ id: string }>("/api/admin/datasets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          key: `rice-price-import-${dateKey}-${unique}`,
-          label: `นำเข้าราคาข้าว ${now.toLocaleDateString("th-TH", { dateStyle: "medium" })}`,
-          description: "ฉบับร่างสำหรับตรวจสอบและนำเข้าข้อมูลราคาข้าวจากไฟล์ Excel",
-          sourceName: "ไฟล์ Excel จากผู้ดูแลระบบ",
-          sourceUrl: "",
-        }),
-      });
-      setActiveImportDraftId(created.id);
-      setSuccess("สร้างเวอร์ชัน Draft แล้ว เลือกไฟล์ Excel เพื่อตรวจสอบข้อมูลได้เลย");
-      await load();
-    } catch (cause) {
-      setError(errorText(cause));
-    } finally {
-      setBusy(null);
-    }
-  }
 
   async function changeVersion(version: DatasetVersion, action: string, label: string) {
     if (!window.confirm(`ยืนยัน${label} “${version.label}”?`)) return;
@@ -578,7 +554,8 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
         body: JSON.stringify({ type, id: version.id, revision: version.revision, action }),
       });
       setSuccess(`${label}สำเร็จ`);
-      await load();
+      await load(version.id);
+      setView("overview");
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -586,95 +563,185 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
     }
   }
 
-  return <div className="space-y-4">
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h3 className="font-bold">เวอร์ชันข้อมูลและการเผยแพร่</h3>
-        <p className="mt-1 text-sm text-[var(--app-text-secondary)]">แต่ละชุดข้อมูลเก็บเป็นเวอร์ชันแยกกัน: สร้าง Draft → นำเข้าไฟล์ → Preview → Publish → ตั้งเป็น Default โดยหน้า User อ่านเฉพาะ Published Default</p>
+  return <div className="min-w-0 space-y-4">
+    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-rice-leaf dark:text-rice-mint-light">Governed dataset</p>
+        <h3 className="mt-1 text-2xl font-bold">จัดการเวอร์ชันข้อมูล{AGRI_TABS.find((tab) => tab.id === category)?.label}</h3>
+        <p className="mt-1 text-sm text-[var(--app-text-secondary)]">สร้างและเลือกเวอร์ชัน แล้วนำเข้า แก้ไข ตรวจสอบ หรือเผยแพร่จากพื้นที่ทำงานเดียว</p>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className={button} onClick={() => void load()} disabled={loading}><RefreshCw className="h-4 w-4" />รีเฟรช</button>
-        <button type="button" className={primary} onClick={() => setCreateOpen((value) => !value)}><Plus className="h-4 w-4" />สร้างเวอร์ชันใหม่</button>
+      <div className="flex shrink-0 flex-wrap gap-2">
+        <button type="button" className={button} onClick={() => void load()} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />รีเฟรช</button>
+        <button type="button" className={primary} disabled={loading || Boolean(error)} onClick={() => setModal({ kind: "create" })}><Plus className="h-4 w-4" />สร้างเวอร์ชัน</button>
       </div>
-    </div>
+    </header>
     {error && <Notice message={error} />}
     {success && <Notice message={success} success />}
-    {createOpen && <form onSubmit={createVersion} className={panel + " grid gap-3 md:grid-cols-2"}>
-      <input className={input} required pattern="[a-z0-9][a-z0-9._-]{1,49}" value={draft.key} onChange={(event) => setDraft({ ...draft, key: event.target.value.toLowerCase() })} placeholder="version-key" />
-      <input className={input} required value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} placeholder="ชื่อเวอร์ชัน" />
-      <input className={input} value={draft.sourceName} onChange={(event) => setDraft({ ...draft, sourceName: event.target.value })} placeholder="ชื่อแหล่งข้อมูล" />
-      <input className={input} type="url" value={draft.sourceUrl} onChange={(event) => setDraft({ ...draft, sourceUrl: event.target.value })} placeholder="URL แหล่งข้อมูล (ถ้ามี)" />
-      <textarea className={input + " md:col-span-2"} rows={3} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} placeholder="คำอธิบาย" />
-      <div className="flex gap-2 md:col-span-2"><button className={primary} type="submit" disabled={busy === "create"}><Save className="h-4 w-4" />สร้างเวอร์ชัน Draft</button><button className={button} type="button" onClick={() => setCreateOpen(false)}>ยกเลิก</button></div>
-    </form>}
-    {category === "price" && data && <section className={panel + " border-rice-leaf/25"} aria-label="นำเข้า Excel ราคาข้าว">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-rice-mint/45 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light">
-            <FileSpreadsheet aria-hidden="true" className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-rice-leaf dark:text-rice-mint-light">Excel import</p>
-            <h4 className="mt-1 text-lg font-bold">นำเข้า Excel เป็นเวอร์ชันข้อมูลราคาข้าว</h4>
-            <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">แต่ละไฟล์นำเข้าในเวอร์ชัน Draft ที่เลือก รองรับ Excel (.xlsx/.xls), CSV และ JSON พร้อมตรวจทุกแถวก่อนบันทึก</p>
-          </div>
-        </div>
-        {draftVersions.length > 0 && <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(16rem,1fr)_auto] lg:min-w-[30rem]">
-          <label className="grid min-w-0 gap-1.5 text-sm font-semibold">
-            เลือกเวอร์ชัน Draft ปลายทาง
-            <select className={input} value={activeImportDraft?.id ?? ""} onChange={(event) => setActiveImportDraftId(event.target.value)}>
-              {draftVersions.map((version) => <option key={version.id} value={version.id}>{version.label} · {version.record_count.toLocaleString("th-TH")} แถว</option>)}
+    {loading && !data?.versions.length ? <Busy /> : !data?.versions.length ? <Empty>ยังไม่มีเวอร์ชันข้อมูล กด “สร้างเวอร์ชัน” เพื่อเริ่มต้น</Empty> : <>
+      <section className="rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 sm:p-5" aria-label="เลือกเวอร์ชันข้อมูล">
+        <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_minmax(0,1.35fr)] lg:items-end">
+          <label className="grid gap-1.5 text-sm font-semibold">
+            <span className="flex items-center gap-2"><Layers3 className="h-4 w-4 text-rice-leaf dark:text-rice-mint-light" />เวอร์ชันที่กำลังจัดการ</span>
+            <select className={input} value={selectedId} disabled={loading} onChange={(event) => { setSelectedId(event.target.value); setSuccess(""); setView("overview"); }}>
+              {data.versions.map((version) => <option key={version.id} value={version.id}>{statusLabel(version.status, version.is_default)} · {version.label}</option>)}
             </select>
           </label>
-          <button type="button" className={`${button} self-end`} disabled={busy === "import-draft"} onClick={() => void createImportDraft()}>
-            {busy === "import-draft" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            สร้างเวอร์ชันใหม่
-          </button>
-        </div>}
-      </div>
-      {activeImportDraft ? (
-        <AgriculturalDatasetImport key={activeImportDraft.id} type="rice_price" version={activeImportDraft} onSaved={load} />
-      ) : (
-        <div className="mt-4 rounded-xl border border-dashed border-rice-leaf/30 bg-rice-mint/10 p-4 sm:p-5">
-          <p className="font-semibold">สร้างเวอร์ชัน Draft ก่อนนำเข้าไฟล์</p>
-          <p className="mt-1 text-sm leading-6 text-[var(--app-text-secondary)]">ระบบจะสร้างเวอร์ชันใหม่สำหรับไฟล์ Excel ชุดนี้ โดยไม่แก้ไขเวอร์ชัน Published ที่ผู้ใช้กำลังดู</p>
-          <button type="button" className={`${primary} mt-4 w-full sm:w-auto`} disabled={busy === "import-draft"} onClick={() => void createImportDraft()}>
-            {busy === "import-draft" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            {busy === "import-draft" ? "กำลังสร้างเวอร์ชัน..." : "สร้างเวอร์ชันใหม่จาก Excel"}
-          </button>
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-border)] sm:grid-cols-4">
+            {[
+              ["ทั้งหมด", data.versions.length.toLocaleString("th-TH")],
+              ["ฉบับร่าง", data.versions.filter((version) => version.status === "draft").length.toLocaleString("th-TH")],
+              ["เผยแพร่", data.versions.filter((version) => version.status === "published").length.toLocaleString("th-TH")],
+              ["ค่าเริ่มต้น", defaultVersion?.label ?? "ยังไม่มี"],
+            ].map(([label, value]) => <div key={label} className="min-w-0 bg-[var(--app-surface-soft)] px-3 py-2.5"><dt className="text-[11px] text-[var(--app-text-muted)]">{label}</dt><dd className="mt-0.5 truncate text-sm font-bold" title={value}>{value}</dd></div>)}
+          </dl>
         </div>
-      )}
-    </section>}
-    {loading ? <Busy /> : !data?.versions.length ? <Empty>ยังไม่มีเวอร์ชันข้อมูล</Empty> : <div className="grid gap-4">{data.versions.map((version) => {
-      const validation = version.import_files[0]?.validation_summary ?? {};
-      const statusTone = version.status === "published" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200" : version.status === "draft" ? "bg-amber-100 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200" : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/60";
-      return <article key={version.id} className={panel}>
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${statusTone}`}>{statusLabel(version.status, version.is_default)}</span><span className="font-mono text-xs text-[var(--app-text-muted)]">{version.version_key}</span></div>
-            <h4 className="mt-3 text-lg font-bold">{version.label}</h4>
-            <p className="mt-1 text-sm text-[var(--app-text-secondary)]">{version.description || "ไม่มีคำอธิบาย"}</p>
-            <p className="mt-2 text-xs text-[var(--app-text-muted)]">แหล่งข้อมูล: {version.source_name || "ยังไม่ระบุ"}</p>
+      </section>
+
+      {selected && <div className="min-w-0 space-y-4">
+        <section className="min-w-0 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface)]" aria-label="พื้นที่ทำงานของเวอร์ชันที่เลือก">
+          <div className="p-4 sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${selected.status === "published" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200" : selected.status === "draft" ? "bg-amber-100 text-amber-900 dark:bg-amber-400/10 dark:text-amber-200" : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/60"}`}>{statusLabel(selected.status, selected.is_default)}</span></div>
+                <h4 className="mt-2 break-words text-xl font-bold sm:text-2xl">{selected.label}</h4>
+                <p className="mt-1 max-w-3xl whitespace-pre-wrap break-words text-sm text-[var(--app-text-secondary)]">{selected.description || "ยังไม่ได้ใส่รายละเอียดเวอร์ชัน"}</p>
+                <p className="mt-2 text-xs text-[var(--app-text-muted)]">{selected.version_key} · {selected.record_count.toLocaleString("th-TH")} แถว · อัปเดต {datasetDate(selected.updated_at)}</p>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                {selected.status === "draft" && <button type="button" className={primary} disabled={loading} onClick={() => setView("import")}><UploadCloud className="h-4 w-4" />นำเข้าข้อมูล</button>}
+                {selected.status === "draft" && <button type="button" className={button} disabled={busy === selected.id || selected.record_count === 0} onClick={() => void changeVersion(selected, "publish", "เผยแพร่")}><Eye className="h-4 w-4" />เผยแพร่</button>}
+                {selected.status === "draft" && data.canSetDefault && <button type="button" className={button} disabled={busy === selected.id || selected.record_count === 0} onClick={() => void changeVersion(selected, "publish-default", "เผยแพร่และตั้งเป็นค่าเริ่มต้น")}><Star className="h-4 w-4" />เผยแพร่เป็นค่าเริ่มต้น</button>}
+                {selected.status === "published" && !selected.is_default && data.canSetDefault && <button type="button" className={primary} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "default", "ตั้งเป็นค่าเริ่มต้น")}><Star className="h-4 w-4" />ตั้งเป็นค่าเริ่มต้น</button>}
+                {selected.status === "published" && !selected.is_default && <button type="button" className={button} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "unpublish", "เปิดเวอร์ชันเพื่อแก้ไขข้อมูล")}><EyeOff className="h-4 w-4" />เปิดแก้ไขข้อมูล</button>}
+                {selected.status === "archived" && <button type="button" className={button} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "restore", "คืนจากคลัง")}><FolderOpen className="h-4 w-4" />คืนจากคลัง</button>}
+              </div>
+            </div>
+
+            <details className="group mt-4 border-t border-[var(--app-border)] pt-3">
+              <summary className="flex w-fit cursor-pointer list-none items-center gap-2 py-1 text-sm font-semibold text-[var(--app-text-secondary)] [&::-webkit-details-marker]:hidden">ตัวเลือกเวอร์ชันและรายละเอียด <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
+              <div className="mt-3 rounded-xl bg-[var(--app-surface-soft)] p-3.5">
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className={button} disabled={loading} onClick={() => setModal({ kind: "edit", target: selected })}><FilePenLine className="h-4 w-4" />แก้ไขรายละเอียด</button>
+                  {selected.status !== "archived" && <button type="button" className={button} disabled={loading || selected.is_default} title={selected.is_default ? "เปลี่ยนค่าเริ่มต้นเป็นเวอร์ชันอื่นก่อน" : "เก็บเวอร์ชันไว้โดยไม่แสดงต่อผู้ใช้"} onClick={() => void changeVersion(selected, "archive", "เก็บเข้าคลัง")}><Archive className="h-4 w-4" />เก็บเข้าคลัง</button>}
+                  {selected.status !== "published" && !selected.is_default && <button type="button" className={`${button} border-rose-500/35 text-rose-700 enabled:hover:bg-rose-50 dark:text-rose-200 dark:enabled:hover:bg-rose-500/10`} disabled={loading} onClick={() => setModal({ kind: "delete", target: selected })}><Trash2 className="h-4 w-4" />ลบเวอร์ชัน</button>}
+                </div>
+                <dl className="mt-3 grid gap-2 border-t border-[var(--app-border)] pt-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+                  {[["แก้ไขครั้งที่", String(selected.revision)], ["สร้างเมื่อ", datasetDate(selected.created_at)], ["อัปเดตล่าสุด", datasetDate(selected.updated_at)], ["เผยแพร่เมื่อ", datasetDate(selected.published_at)]].map(([label, value]) => <div key={label}><dt className="text-[var(--app-text-muted)]">{label}</dt><dd className="mt-1 break-words font-medium text-[var(--app-text-secondary)]">{value}</dd></div>)}
+                </dl>
+              </div>
+            </details>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {version.status === "draft" && <button className={button} disabled={busy === version.id} onClick={() => void changeVersion(version, "publish", "เผยแพร่")}><Eye className="h-4 w-4" />Publish</button>}
-            {version.status === "draft" && data.canSetDefault && <button className={primary} disabled={busy === version.id} onClick={() => void changeVersion(version, "publish-default", "เผยแพร่และตั้งค่าเริ่มต้น")}><CheckCircle2 className="h-4 w-4" />เผยแพร่และตั้งเป็นค่าเริ่มต้น</button>}
-            {version.status === "published" && !version.is_default && data.canSetDefault && <button className={primary} disabled={busy === version.id} onClick={() => void changeVersion(version, "default", "ตั้งเป็นค่าเริ่มต้น")}><CheckCircle2 className="h-4 w-4" />ตั้งเป็นค่าเริ่มต้น</button>}
-            {version.status === "published" && !version.is_default && <button className={button} disabled={busy === version.id} onClick={() => void changeVersion(version, "archive", "เก็บเข้าคลัง")}>Archive</button>}
-            {version.status === "archived" && <button className={button} disabled={busy === version.id} onClick={() => void changeVersion(version, "restore", "คืนจากคลัง")}>Restore</button>}
+
+          <div className="overflow-x-auto border-t border-[var(--app-border)] bg-[var(--app-surface-soft)] px-2 sm:px-4" role="tablist" aria-label="จัดการข้อมูลในเวอร์ชัน">
+            <div className="flex min-w-max gap-1">
+              {[
+                { id: "overview", label: "ภาพรวม", icon: Layers3 },
+                { id: "import", label: "นำเข้าข้อมูล", icon: Database },
+                { id: "history", label: "ประวัติ", icon: History },
+              ].map((item) => <button key={item.id} type="button" role="tab" aria-selected={view === item.id} className={`relative flex min-h-12 items-center gap-2 px-3 text-sm font-semibold transition-colors ${view === item.id ? "text-rice-forest after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-rice-leaf dark:text-rice-mint-light" : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`} onClick={() => setView(item.id as DatasetWorkspaceView)}><item.icon className="h-4 w-4" />{item.label}</button>)}
+            </div>
           </div>
-        </div>
-        <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">จำนวนข้อมูล</dt><dd className="mt-1 text-xl font-bold">{version.record_count.toLocaleString("th-TH")}</dd></div>
-          <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">จังหวัด</dt><dd className="mt-1 text-xl font-bold">{validation.provinceCount ?? "—"}</dd></div>
-          <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ช่วงปี ค.ศ.</dt><dd className="mt-1 text-xl font-bold">{validation.minYear && validation.maxYear ? `${validation.minYear}–${validation.maxYear}` : "—"}</dd></div>
-          <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ปัญหา Validation</dt><dd className="mt-1 text-xl font-bold">{(validation.missingCount ?? 0) + (validation.unknownProvinceCount ?? 0)}</dd></div>
-        </dl>
-        {!!version.import_files.length && <div className="mt-4 rounded-xl border border-[var(--app-border)] p-3"><p className="text-xs font-bold">ไฟล์ต้นทาง</p><div className="mt-2 flex flex-wrap gap-2">{version.import_files.map((file) => <span key={file.file_name} className="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs text-[var(--app-text-secondary)]">{file.file_name} · {file.row_count.toLocaleString("th-TH")} แถว</span>)}</div></div>}
-        {version.status === "draft" && category !== "price" && <AgriculturalDatasetImport type={type} version={version} onSaved={load} />}
-      </article>;
-    })}</div>}
+        </section>
+
+        {view === "overview" && <DatasetVersionOverview version={selected} />}
+        {view === "import" && (selected.status === "draft"
+          ? <section className={panel}><div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-rice-mint/45 text-rice-forest"><FileSpreadsheet className="h-5 w-5" /></span><div><h4 className="font-bold">นำเข้าไฟล์ในเวอร์ชัน “{selected.label}”</h4><p className="mt-1 text-sm text-[var(--app-text-secondary)]">ตรวจตัวอย่างก่อนบันทึก ไฟล์ใหม่จะแทนข้อมูลเดิมเฉพาะเวอร์ชันนี้</p></div></div><AgriculturalDatasetImport key={`${selected.id}:${selected.revision}`} type={type} version={selected} onSaved={() => load(selected.id)} /></section>
+          : <div className={panel}><Notice message={selected.is_default ? "เวอร์ชันค่าเริ่มต้นกำลังใช้งานอยู่ กรุณาตั้งเวอร์ชันอื่นเป็นค่าเริ่มต้นก่อนเปิดแก้ไขข้อมูล" : "กด “เปิดแก้ไขข้อมูล” เพื่อเปลี่ยนเวอร์ชันนี้กลับเป็นสถานะแก้ไข แล้วจึงนำเข้า Excel ได้"} /></div>)}
+        {view === "history" && <section className={panel}><h4 className="font-bold">ประวัติเวอร์ชัน</h4>{selected.recent_events.length ? <ol className="mt-4 divide-y divide-[var(--app-border)]">{selected.recent_events.map((event, index) => <li key={`${event.created_at}:${index}`} className="py-3"><p className="font-semibold">{event.summary}</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">{event.action} · {datasetDate(event.created_at)}</p></li>)}</ol> : <p className="mt-3 text-sm text-[var(--app-text-secondary)]">ยังไม่มีประวัติการเปลี่ยนแปลง</p>}</section>}
+      </div>}
+    </>}
+    {modal && <DatasetVersionDialog type={type} modal={modal} onClose={() => setModal(null)} onSaved={async (message, id) => { setModal(null); setSuccess(message); setError(""); await load(id); setView("overview"); }} />}
   </div>;
+}
+
+function DatasetVersionOverview({ version }: { version: DatasetVersion }) {
+  const validation = version.import_files[0]?.validation_summary ?? {};
+  return <section className={panel}>
+    <div><h4 className="text-lg font-bold">ภาพรวมชุดข้อมูล</h4><p className="mt-1 text-sm text-[var(--app-text-secondary)]">ตรวจจำนวนแถว ช่วงปี แหล่งข้อมูล และไฟล์ที่นำเข้าในเวอร์ชันนี้</p></div>
+    <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">จำนวนข้อมูล</dt><dd className="mt-1 text-xl font-bold">{version.record_count.toLocaleString("th-TH")}</dd></div>
+      <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">จังหวัด</dt><dd className="mt-1 text-xl font-bold">{validation.provinceCount ?? "—"}</dd></div>
+      <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ช่วงปี ค.ศ.</dt><dd className="mt-1 text-xl font-bold">{validation.minYear && validation.maxYear ? `${validation.minYear}–${validation.maxYear}` : "—"}</dd></div>
+      <div className="rounded-xl bg-[var(--app-surface-soft)] p-3"><dt className="text-xs text-[var(--app-text-muted)]">ปัญหา Validation</dt><dd className="mt-1 text-xl font-bold">{(validation.missingCount ?? 0) + (validation.unknownProvinceCount ?? 0)}</dd></div>
+    </dl>
+    <div className="mt-4 grid gap-3 lg:grid-cols-2">
+      <div className="rounded-xl border border-[var(--app-border)] p-3"><p className="text-xs font-bold">แหล่งข้อมูล</p><p className="mt-2 text-sm text-[var(--app-text-secondary)]">{version.source_name || "ยังไม่ระบุ"}</p>{version.source_url && <a className="mt-1 block break-all text-sm text-rice-leaf underline" href={version.source_url} target="_blank" rel="noreferrer">{version.source_url}</a>}</div>
+      <div className="rounded-xl border border-[var(--app-border)] p-3"><p className="text-xs font-bold">ไฟล์ต้นทาง</p>{version.import_files.length ? <div className="mt-2 flex flex-wrap gap-2">{version.import_files.map((file, index) => <span key={`${file.file_name}:${file.imported_at}:${index}`} className="rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs text-[var(--app-text-secondary)]">{file.file_name} · {file.row_count.toLocaleString("th-TH")} แถว</span>)}</div> : <p className="mt-2 text-sm text-[var(--app-text-secondary)]">ยังไม่มีไฟล์นำเข้า</p>}</div>
+    </div>
+  </section>;
+}
+
+function DatasetVersionDialog({ type, modal, onClose, onSaved }: {
+  type: GovernedDatasetType;
+  modal: DatasetVersionModal;
+  onClose: () => void;
+  onSaved: (message: string, id?: string) => Promise<void>;
+}) {
+  const target = modal.kind === "create" ? null : modal.target;
+  const [key, setKey] = useState("");
+  const [label, setLabel] = useState(target?.label ?? "");
+  const [description, setDescription] = useState(target?.description ?? "");
+  const [sourceName, setSourceName] = useState(target?.source_name ?? "");
+  const [sourceUrl, setSourceUrl] = useState(target?.source_url ?? "");
+  const [deleteKey, setDeleteKey] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const title = modal.kind === "create" ? "สร้างเวอร์ชัน" : modal.kind === "edit" ? "แก้ไขรายละเอียดเวอร์ชัน" : "ลบเวอร์ชัน";
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      if (modal.kind === "create") {
+        const created = await request<{ id: string }>("/api/admin/datasets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type, key, label, description, sourceName, sourceUrl }),
+        });
+        await onSaved("สร้างเวอร์ชันแล้ว พร้อมนำเข้าข้อมูลและตรวจสอบก่อนเผยแพร่", created.id);
+        return;
+      }
+      await request("/api/admin/datasets", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          id: modal.target.id,
+          revision: modal.target.revision,
+          action: modal.kind === "delete" ? "delete" : "edit",
+          label,
+          description,
+          sourceName,
+          sourceUrl,
+        }),
+      });
+      await onSaved(modal.kind === "delete" ? "ลบเวอร์ชันและข้อมูลภายในแล้ว" : "แก้ไขรายละเอียดเวอร์ชันแล้ว", modal.kind === "edit" ? modal.target.id : undefined);
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return <Dialog title={title} onClose={onClose} busy={busy}><form onSubmit={submit} className="space-y-4">
+    {modal.kind === "delete" ? <>
+      <Notice message="การลบจะนำข้อมูลและไฟล์อ้างอิงของเวอร์ชันนี้ออกจากระบบ โดยเก็บประวัติการลบไว้สำหรับตรวจสอบ" />
+      <p className="text-lg font-bold">{modal.target.label}</p>
+      <Field label={`พิมพ์รหัสเวอร์ชัน “${modal.target.version_key}” เพื่อยืนยัน`}><input autoFocus className={input} value={deleteKey} disabled={busy} autoComplete="off" spellCheck={false} onChange={(event) => setDeleteKey(event.target.value)} /></Field>
+      <label className="flex items-start gap-3 text-sm leading-6"><input type="checkbox" className="mt-1 h-5 w-5 accent-rice-leaf" checked={confirmed} disabled={busy} onChange={(event) => setConfirmed(event.target.checked)} />ตรวจสอบแล้วและยืนยันลบเวอร์ชันนี้</label>
+    </> : <>
+      {modal.kind === "create" && <Field label="รหัสเวอร์ชัน (เปลี่ยนภายหลังไม่ได้)"><input autoFocus className={input} required minLength={2} maxLength={50} pattern="[a-z0-9][a-z0-9._-]{1,49}" placeholder="เช่น rice-price-2027-v1" value={key} disabled={busy} onChange={(event) => setKey(event.target.value.toLowerCase())} /></Field>}
+      <Field label="ชื่อเวอร์ชัน"><input className={input} required minLength={2} maxLength={120} value={label} disabled={busy} onChange={(event) => setLabel(event.target.value)} /></Field>
+      <Field label="รายละเอียด / สิ่งที่เปลี่ยน"><textarea className={input} rows={4} maxLength={1000} value={description} disabled={busy} onChange={(event) => setDescription(event.target.value)} /></Field>
+      <Field label="ชื่อแหล่งข้อมูล"><input className={input} maxLength={200} value={sourceName} disabled={busy} onChange={(event) => setSourceName(event.target.value)} /></Field>
+      <Field label="URL แหล่งข้อมูล (ถ้ามี)"><input className={input} type="url" maxLength={1000} value={sourceUrl ?? ""} disabled={busy} onChange={(event) => setSourceUrl(event.target.value)} /></Field>
+      {modal.kind === "create" && <p className="text-sm leading-6 text-[var(--app-text-secondary)]">เวอร์ชันใหม่จะยังไม่แสดงต่อผู้ใช้ จนกว่าจะนำเข้าข้อมูลและกดเผยแพร่</p>}
+    </>}
+    {error && <Notice message={error} />}
+    <div className="flex justify-end gap-2"><button type="button" className={button} disabled={busy} onClick={onClose}>ยกเลิก</button><button type="submit" className={modal.kind === "delete" ? `${button} border-rose-500/35 text-rose-700 dark:text-rose-200` : primary} disabled={busy || (modal.kind === "delete" && (!confirmed || deleteKey !== modal.target.version_key))}>{busy && <LoaderCircle className="h-4 w-4 animate-spin" />}{busy ? "กำลังบันทึก..." : modal.kind === "delete" ? "ลบเวอร์ชัน" : modal.kind === "create" ? "สร้างเวอร์ชัน" : "บันทึกการแก้ไข"}</button></div>
+  </form></Dialog>;
 }
 
 export function AgriculturalDataPanel() {

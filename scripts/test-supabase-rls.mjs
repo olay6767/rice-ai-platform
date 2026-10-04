@@ -16,6 +16,7 @@ assert.ok(url && anon && service, "Supabase env is required");
 const root = createClient(url, service, { auth: { persistSession: false } });
 const created = [];
 let testVersionId = null;
+let deletedVersionId = null;
 const suffix = randomUUID().slice(0, 8);
 const prior = await root.auth.admin.listUsers({ page: 1, perPage: 100 });
 if (prior.error) throw prior.error;
@@ -107,13 +108,50 @@ try {
   assert.equal(staleImport.error?.message, "VERSION_CHANGED");
   const afterStale = await admin.client.from("flood_records").select("id").eq("version_id", testVersionId);
   assert.equal(afterStale.data.length, 1);
-  console.log("Live Supabase RLS/import passed: user isolation, role guards, atomic draft import, stale revision rejection");
+  const edited = await admin.client.rpc("agricultural_dataset_change_version", {
+    p_id: testVersionId, p_action: "edit", p_revision: 1,
+    p_label: "Temporary version lifecycle test", p_description: "Edited metadata",
+    p_source_name: "Codex test", p_source_url: null,
+  });
+  assert.ifError(edited.error);
+  assert.equal(edited.data.label, "Temporary version lifecycle test");
+  const published = await admin.client.rpc("agricultural_dataset_change_version", {
+    p_id: testVersionId, p_action: "publish", p_revision: 2,
+  });
+  assert.ifError(published.error);
+  const protectedDelete = await admin.client.rpc("agricultural_dataset_delete_version", {
+    p_id: testVersionId, p_revision: 3,
+  });
+  assert.equal(protectedDelete.error?.message, "PUBLISHED_DELETE_PROTECTED");
+  const unpublished = await admin.client.rpc("agricultural_dataset_change_version", {
+    p_id: testVersionId, p_action: "unpublish", p_revision: 3,
+  });
+  assert.ifError(unpublished.error);
+  const blockedDelete = await userA.client.rpc("agricultural_dataset_delete_version", {
+    p_id: testVersionId, p_revision: 4,
+  });
+  assert.equal(blockedDelete.error?.message, "ADMIN_REQUIRED");
+  const deleted = await admin.client.rpc("agricultural_dataset_delete_version", {
+    p_id: testVersionId, p_revision: 4,
+  });
+  assert.ifError(deleted.error);
+  deletedVersionId = testVersionId;
+  testVersionId = null;
+  const tombstone = await root.from("agricultural_dataset_deleted_versions")
+    .select("version_id,record_count").eq("version_id", deletedVersionId).single();
+  assert.ifError(tombstone.error);
+  assert.equal(tombstone.data.record_count, 1);
+  console.log("Live Supabase RLS/version lifecycle passed: isolation, role guards, import, edit, publish, unpublish, protected delete, audited delete");
 } finally {
   if (testVersionId) {
     const events = await root.from("agricultural_dataset_events").delete().eq("version_id", testVersionId);
     if (events.error) console.error("Temporary event cleanup failed", events.error.message);
     const version = await root.from("agricultural_dataset_versions").delete().eq("id", testVersionId);
     if (version.error) console.error("Temporary version cleanup failed", version.error.message);
+  }
+  if (deletedVersionId) {
+    const deletedAudit = await root.from("agricultural_dataset_deleted_versions").delete().eq("version_id", deletedVersionId);
+    if (deletedAudit.error) console.error("Temporary deletion audit cleanup failed", deletedAudit.error.message);
   }
   for (const id of created) {
     const deleted = await root.auth.admin.deleteUser(id);
