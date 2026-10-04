@@ -510,6 +510,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
   const [modal, setModal] = useState<DatasetVersionModal | null>(null);
   const selected = data?.versions.find((version) => version.id === selectedId) ?? null;
   const defaultVersion = data?.versions.find((version) => version.is_default) ?? null;
+  const canImport = selected?.status === "draft" && selected.record_count === 0;
 
   async function load(preferredId?: string) {
     setLoading(true);
@@ -517,11 +518,16 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
     try {
       const result = await request<DatasetResponse>(`/api/admin/datasets?type=${type}`);
       setData(result);
-      setSelectedId((current) => {
-        if (preferredId && result.versions.some((version) => version.id === preferredId)) return preferredId;
-        if (result.versions.some((version) => version.id === current)) return current;
-        return result.versions.find((version) => version.is_default)?.id ?? result.versions[0]?.id ?? "";
-      });
+      const nextSelectedId = preferredId && result.versions.some((version) => version.id === preferredId)
+        ? preferredId
+        : result.versions.some((version) => version.id === selectedId)
+          ? selectedId
+          : result.versions.find((version) => version.is_default)?.id ?? result.versions[0]?.id ?? "";
+      setSelectedId(nextSelectedId);
+      const nextSelected = result.versions.find((version) => version.id === nextSelectedId) ?? null;
+      if (view === "import" && (nextSelected?.status !== "draft" || nextSelected.record_count > 0)) {
+        setView("overview");
+      }
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -608,7 +614,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
                 <p className="mt-2 text-xs text-[var(--app-text-muted)]">{selected.version_key} · {selected.record_count.toLocaleString("th-TH")} แถว · อัปเดต {datasetDate(selected.updated_at)}</p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
-                {selected.status === "draft" && <button type="button" className={primary} disabled={loading} onClick={() => setView("import")}><UploadCloud className="h-4 w-4" />นำเข้าข้อมูล</button>}
+                {canImport && <button type="button" className={primary} disabled={loading} onClick={() => setView("import")}><UploadCloud className="h-4 w-4" />นำเข้าข้อมูล</button>}
                 {selected.status === "draft" && <button type="button" className={button} disabled={busy === selected.id || selected.record_count === 0} onClick={() => void changeVersion(selected, "publish", "เผยแพร่")}><Eye className="h-4 w-4" />เผยแพร่</button>}
                 {selected.status === "draft" && data.canSetDefault && <button type="button" className={button} disabled={busy === selected.id || selected.record_count === 0} onClick={() => void changeVersion(selected, "publish-default", "เผยแพร่และตั้งเป็นค่าเริ่มต้น")}><Star className="h-4 w-4" />เผยแพร่เป็นค่าเริ่มต้น</button>}
                 {selected.status === "published" && !selected.is_default && data.canSetDefault && <button type="button" className={primary} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "default", "ตั้งเป็นค่าเริ่มต้น")}><Star className="h-4 w-4" />ตั้งเป็นค่าเริ่มต้น</button>}
@@ -636,7 +642,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
             <div className="flex min-w-max gap-1">
               {[
                 { id: "overview", label: "ภาพรวม", icon: Layers3 },
-                { id: "import", label: "นำเข้าข้อมูล", icon: Database },
+                ...(canImport ? [{ id: "import", label: "นำเข้าข้อมูล", icon: Database }] : []),
                 { id: "history", label: "ประวัติ", icon: History },
               ].map((item) => <button key={item.id} type="button" role="tab" aria-selected={view === item.id} className={`relative flex min-h-12 items-center gap-2 px-3 text-sm font-semibold transition-colors ${view === item.id ? "text-rice-forest after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-rice-leaf dark:text-rice-mint-light" : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`} onClick={() => setView(item.id as DatasetWorkspaceView)}><item.icon className="h-4 w-4" />{item.label}</button>)}
             </div>
@@ -644,9 +650,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
         </section>
 
         {view === "overview" && <DatasetVersionOverview version={selected} />}
-        {view === "import" && (selected.status === "draft"
-          ? <section className={panel}><div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-rice-mint/45 text-rice-forest"><FileSpreadsheet className="h-5 w-5" /></span><div><h4 className="font-bold">นำเข้าไฟล์ในเวอร์ชัน “{selected.label}”</h4><p className="mt-1 text-sm text-[var(--app-text-secondary)]">ตรวจตัวอย่างก่อนบันทึก ไฟล์ใหม่จะแทนข้อมูลเดิมเฉพาะเวอร์ชันนี้</p></div></div><AgriculturalDatasetImport key={`${selected.id}:${selected.revision}`} type={type} version={selected} onSaved={() => load(selected.id)} /></section>
-          : <div className={panel}><Notice message={selected.is_default ? "เวอร์ชันค่าเริ่มต้นกำลังใช้งานอยู่ กรุณาตั้งเวอร์ชันอื่นเป็นค่าเริ่มต้นก่อนเปิดแก้ไขข้อมูล" : "กด “เปิดแก้ไขข้อมูล” เพื่อเปลี่ยนเวอร์ชันนี้กลับเป็นสถานะแก้ไข แล้วจึงนำเข้า Excel ได้"} /></div>)}
+        {view === "import" && canImport && <section className={panel}><div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-rice-mint/45 text-rice-forest"><FileSpreadsheet className="h-5 w-5" /></span><div><h4 className="font-bold">นำเข้าไฟล์ในเวอร์ชัน “{selected.label}”</h4><p className="mt-1 text-sm text-[var(--app-text-secondary)]">ตรวจตัวอย่างก่อนบันทึก ข้อมูลจะถูกบันทึกไว้ในเวอร์ชันนี้</p></div></div><AgriculturalDatasetImport key={`${selected.id}:${selected.revision}`} type={type} version={selected} onSaved={() => load(selected.id)} /></section>}
         {view === "history" && <section className={panel}><h4 className="font-bold">ประวัติเวอร์ชัน</h4>{selected.recent_events.length ? <ol className="mt-4 divide-y divide-[var(--app-border)]">{selected.recent_events.map((event, index) => <li key={`${event.created_at}:${index}`} className="py-3"><p className="font-semibold">{event.summary}</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">{event.action} · {datasetDate(event.created_at)}</p></li>)}</ol> : <p className="mt-3 text-sm text-[var(--app-text-secondary)]">ยังไม่มีประวัติการเปลี่ยนแปลง</p>}</section>}
       </div>}
     </>}
