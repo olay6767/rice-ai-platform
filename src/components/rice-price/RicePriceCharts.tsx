@@ -154,6 +154,10 @@ export function PriceTimelineChart({
     .filter(({ record }) => record.month === 1);
   const forecastIndex = sorted.findIndex((record) => record.dataType === "forecast");
   const forecastX = forecastIndex >= 0 ? x(Math.max(0, forecastIndex - 0.5)) : width;
+  const forecastYears = new Set(
+    sorted.filter((record) => record.dataType === "forecast").map((record) => record.yearBe)
+  );
+  const forecastYearLabel = [...forecastYears].sort((a, b) => a - b).join(", ");
 
   return (
     <div>
@@ -170,7 +174,7 @@ export function PriceTimelineChart({
         >
           <title id={`${id}-title`}>ราคาข้าวย้อนหลังและค่าพยากรณ์</title>
           <desc id={`${id}-desc`}>
-            เส้นเวลาราคาข้าวรายเดือน แยกข้าวจริงและพยากรณ์ปี 2569
+            เส้นเวลาราคาข้าวรายเดือน แยกข้าวจริงและพยากรณ์{forecastYearLabel ? `ปี ${forecastYearLabel}` : ""}
           </desc>
           {forecastIndex >= 0 ? (
             <g>
@@ -191,7 +195,7 @@ export function PriceTimelineChart({
                 fontSize="12"
                 fontWeight="700"
               >
-                พยากรณ์ 2569
+                พยากรณ์ {forecastYearLabel}
               </text>
             </g>
           ) : null}
@@ -234,10 +238,10 @@ export function PriceTimelineChart({
                 x={x(index)}
                 y={height - 26}
                 textAnchor="middle"
-                fill={record.yearBe === 2569 ? FORECAST_LABEL_COLOR : "currentColor"}
-                opacity={record.yearBe === 2569 ? 1 : 0.58}
+                fill={forecastYears.has(record.yearBe) ? FORECAST_LABEL_COLOR : "currentColor"}
+                opacity={forecastYears.has(record.yearBe) ? 1 : 0.58}
                 fontSize="11"
-                fontWeight={record.yearBe === 2569 ? 700 : 400}
+                fontWeight={forecastYears.has(record.yearBe) ? 700 : 400}
               >
                 {record.yearBe}
               </text>
@@ -315,6 +319,9 @@ export function PriceHeatmap({
   const minimum = Math.min(...prices);
   const maximum = Math.max(...prices);
   const byKey = new Map(records.map((record) => [`${record.yearBe}-${record.month}`, record]));
+  const forecastYears = new Set(
+    records.filter((record) => record.dataType === "forecast").map((record) => record.yearBe)
+  );
 
   return (
     <div>
@@ -342,8 +349,8 @@ export function PriceHeatmap({
           {years.flatMap((year) => {
             const cells: ReactNode[] = [
               <div key={`${year}-label`} className="flex items-center gap-1.5 pr-1 text-xs font-bold">
-                <span className={year === 2569 ? "text-amber-600 dark:text-amber-300" : ""}>{year}</span>
-                {year === 2569 ? (
+                <span className={forecastYears.has(year) ? "text-amber-600 dark:text-amber-300" : ""}>{year}</span>
+                {forecastYears.has(year) ? (
                   <span className="rounded bg-amber-100 px-1 py-0.5 text-[8px] text-amber-700 dark:bg-amber-300/15 dark:text-amber-200">
                     พยากรณ์
                   </span>
@@ -584,7 +591,14 @@ export function SeasonalChart({
   selectedYear: number;
   selectedMonth: number;
 }) {
-  const historical = records.filter((record) => record.yearBe <= 2568);
+  const historical = records.filter((record) => record.dataType !== "forecast");
+  const historicalYears = [...new Set(historical.map((record) => record.yearBe))].sort((a, b) => a - b);
+  const historicalYearLabel = historicalYears.length > 0
+    ? `${historicalYears[0]}${historicalYears.length > 1 ? `–${historicalYears.at(-1)}` : ""}`
+    : "ไม่มีข้อมูลย้อนหลัง";
+  const selectedIsForecast = records.some(
+    (record) => record.yearBe === selectedYear && record.dataType === "forecast"
+  );
   const historicalAverage = Array.from({ length: 12 }, (_, index) => {
     const monthRecords = historical.filter((record) => record.month === index + 1);
     return monthRecords.reduce((total, record) => total + record.price, 0) / monthRecords.length;
@@ -597,23 +611,23 @@ export function SeasonalChart({
   return (
     <MonthLineChart
       title="รูปแบบราคาตามฤดูกาล"
-      description={`เปรียบเทียบค่าเฉลี่ยรายเดือน พ.ศ. 2558–2568 กับปี ${selectedYear}`}
+      description={`เปรียบเทียบค่าเฉลี่ยรายเดือน พ.ศ. ${historicalYearLabel} กับปี ${selectedYear}`}
       selectedMonth={selectedMonth}
       series={[
         {
           id: "history-average",
-          label: "เฉลี่ยย้อนหลัง 2558–2568",
+          label: `เฉลี่ยย้อนหลัง ${historicalYearLabel}`,
           values: historicalAverage,
           color: ACTUAL_COLOR,
           dashed: true,
         },
         {
           id: "selected-year",
-          label: selectedYear === 2569 ? "พยากรณ์ปี 2569" : `ข้าวจริง ปี ${selectedYear}`,
+          label: selectedIsForecast ? `พยากรณ์ปี ${selectedYear}` : `ข้าวจริง ปี ${selectedYear}`,
           values: selected,
-          color: selectedYear === 2569 ? FORECAST_COLOR : ACTUAL_COLOR,
-          dashed: selectedYear === 2569,
-          highlightLast: selectedYear === 2569,
+          color: selectedIsForecast ? FORECAST_COLOR : ACTUAL_COLOR,
+          dashed: selectedIsForecast,
+          highlightLast: selectedIsForecast,
         },
       ]}
     />
@@ -633,7 +647,7 @@ export function CompareRiceChart({
   const maximum = Math.max(...records.map((record) => record.price), 1);
 
   return (
-    <div role="img" aria-label="กราฟเปรียบเทียบราคาข้าว 5 ชนิด" className="space-y-4 py-1">
+    <div role="img" aria-label={`กราฟเปรียบเทียบราคาข้าว ${riceTypes.length} ชนิด`} className="space-y-4 py-1">
       {riceTypes.map((riceType) => {
         const record = byType.get(riceType);
         if (!record) return null;
@@ -770,16 +784,18 @@ export function MomentumChart({
   );
 }
 
-export function Forecast2569Chart({
+export function ForecastChart({
   records,
   riceTypes,
   selectedRiceType,
   selectedMonth,
+  forecastYear,
 }: {
   records: RiceForecastRecord[];
   riceTypes: string[];
   selectedRiceType: string;
   selectedMonth: number;
+  forecastYear: number;
 }) {
   const series = riceTypes.map((riceType) => ({
     id: riceType,
@@ -796,8 +812,8 @@ export function Forecast2569Chart({
 
   return (
     <MonthLineChart
-      title="พยากรณ์ราคาข้าวปี 2569"
-      description="ค่าพยากรณ์รายเดือนของข้าวทั้ง 5 ชนิด โดยเน้นชนิดข้าวที่เลือก"
+      title={`พยากรณ์ราคาข้าวปี ${forecastYear}`}
+      description={`ค่าพยากรณ์รายเดือนของข้าวทั้ง ${riceTypes.length} ชนิด โดยเน้นชนิดข้าวที่เลือก`}
       series={series}
       selectedMonth={selectedMonth}
       toggleable

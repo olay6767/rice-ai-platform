@@ -17,7 +17,7 @@
     "test:drought:ui": "node --test --test-isolation=none scripts/test-drought-ui.mjs",
     "test:storm:ui": "node --test --test-isolation=none scripts/test-storm-ui.mjs",
     "test:disease:ui": "node --test --test-isolation=none scripts/test-disease-ui.mjs",
-    "test:rice-price:ui": "node --test --test-isolation=none scripts/test-rice-price-ui.mjs",
+    "test:rice-price:ui": "node --test scripts/test-rice-price-ui.mjs",
     "rice:data:check": "node scripts/import-rice-yield-data.mjs --dry-run",
     "rice:data:verify": "node scripts/verify-yield-live.mjs",
     "rice:data:import": "node scripts/import-rice-yield-data.mjs",

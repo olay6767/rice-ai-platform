@@ -17,7 +17,7 @@ import type { RicePriceDashboardData, RicePriceRecord } from "@/lib/rice-price/t
 import { RiceErrorState, RiceLoadingState, RicePanel } from "@/components/rice-yield/RiceAnalyticsShell";
 import {
   CompareRiceChart,
-  Forecast2569Chart,
+  ForecastChart,
   formatPrice,
   PriceHeatmap,
   PriceTimelineChart,
@@ -41,16 +41,30 @@ export default function RicePriceDashboard() {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let controller = new AbortController();
+    const load = () => {
+      fetchRicePriceDashboardData(controller.signal)
+        .then((result) => {
+          setData(result);
+          setError(null);
+        })
+        .catch((reason: unknown) => {
+          if (reason instanceof DOMException && reason.name === "AbortError") return;
+          setError(reason instanceof Error ? reason.message : "ไม่สามารถโหลดข้อมูลราคาข้าวได้");
+        });
+    };
+    const refreshWhenFocused = () => {
+      controller.abort();
+      controller = new AbortController();
+      load();
+    };
 
-    fetchRicePriceDashboardData(controller.signal)
-      .then(setData)
-      .catch((reason: unknown) => {
-        if (reason instanceof DOMException && reason.name === "AbortError") return;
-        setError(reason instanceof Error ? reason.message : "ไม่สามารถโหลดข้อมูลราคาข้าวได้");
-      });
-
-    return () => controller.abort();
+    load();
+    window.addEventListener("focus", refreshWhenFocused);
+    return () => {
+      window.removeEventListener("focus", refreshWhenFocused);
+      controller.abort();
+    };
   }, [reloadKey]);
 
   const updateQuery = useCallback(
@@ -83,11 +97,15 @@ export default function RicePriceDashboard() {
   const selectedRiceType = filters.riceTypes.includes(searchParams.get("riceType") ?? "")
     ? (searchParams.get("riceType") as string)
     : filters.riceTypes[0];
-  const selectedYear = validNumber(searchParams.get("priceYear"), filters.yearsBe, 2569);
+  const selectedYear = validNumber(
+    searchParams.get("priceYear"),
+    filters.yearsBe,
+    filters.yearsBe.at(-1) ?? new Date().getFullYear() + 543
+  );
   const selectedMonth = validNumber(
     searchParams.get("priceMonth"),
     filters.months.map((month) => month.value),
-    1
+    filters.months[0]?.value ?? 1
   );
 
   return (
@@ -135,7 +153,21 @@ function DashboardContent({
     (record) => record.yearBe === selectedYear && record.month === selectedMonth
   );
   const monthLabel = data.filters.months.find((month) => month.value === selectedMonth)?.label ?? "";
-  const isForecastYear = selectedYear === 2569;
+  const isForecastRecord = selectedRecord?.dataType === "forecast";
+  const firstYear = data.filters.yearsBe[0] ?? selectedYear;
+  const lastYear = data.filters.yearsBe.at(-1) ?? selectedYear;
+  const forecastYear = data.forecasts.reduce(
+    (latest, record) => Math.max(latest, record.yearBe),
+    0
+  );
+  const latestForecasts = data.forecasts.filter((record) => record.yearBe === forecastYear);
+  const hasCompleteForecast = forecastYear > 0 && data.filters.riceTypes.every((riceType) =>
+    new Set(
+      latestForecasts
+        .filter((record) => record.riceType === riceType)
+        .map((record) => record.month)
+    ).size === 12
+  );
   const previousRecord = selectedRecord
     ? [...selectedTypeRecords]
         .filter((record) => record.date < selectedRecord.date)
@@ -153,17 +185,27 @@ function DashboardContent({
 
   return (
     <div className="space-y-5 sm:space-y-7">
+      <section className="flex flex-col gap-2 rounded-2xl border border-emerald-800/10 bg-white/80 px-4 py-3 shadow-[0_8px_24px_rgba(11,46,28,0.05)] sm:flex-row sm:items-center sm:justify-between dark:border-white/10 dark:bg-white/[0.04]">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">Published Default Dataset</p>
+          <p className="mt-0.5 truncate text-sm font-bold text-emerald-950 dark:text-white">{data.dataset.label}</p>
+        </div>
+        <p className="shrink-0 text-xs text-emerald-950/55 dark:text-white/55">
+          {data.dataset.versionKey} · {data.dataset.recordCount.toLocaleString("th-TH")} รายการ
+        </p>
+      </section>
+
       <DashboardMascotInsight
         dashboardName="ราคาข้าวไทย"
         summary={
           selectedRecord
-            ? `${selectedRiceType} เดือน${monthLabel} ${selectedYear} มีราคา ${formatPrice(selectedRecord.price, 2)} บาทต่อ 100 กก.${priceChange === null ? " และไม่มีข้อมูลเดือนก่อนสำหรับเปรียบเทียบ" : ` ${priceChange > 0 ? "เพิ่มขึ้น" : priceChange < 0 ? "ลดลง" : "ไม่เปลี่ยนแปลง"} ${formatPrice(Math.abs(priceChange), 2)} บาท${priceChangePercent === null ? "" : ` หรือ ${Math.abs(priceChangePercent).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%`}จากข้อมูลก่อนหน้า`} โดยเป็น${isForecastYear ? "ค่าพยากรณ์" : "ข้อมูลราคา"}`
+            ? `${selectedRiceType} เดือน${monthLabel} ${selectedYear} มีราคา ${formatPrice(selectedRecord.price, 2)} บาทต่อ 100 กก.${priceChange === null ? " และไม่มีข้อมูลเดือนก่อนสำหรับเปรียบเทียบ" : ` ${priceChange > 0 ? "เพิ่มขึ้น" : priceChange < 0 ? "ลดลง" : "ไม่เปลี่ยนแปลง"} ${formatPrice(Math.abs(priceChange), 2)} บาท${priceChangePercent === null ? "" : ` หรือ ${Math.abs(priceChangePercent).toLocaleString("th-TH", { maximumFractionDigits: 2 })}%`}จากข้อมูลก่อนหน้า`} โดยเป็น${isForecastRecord ? "ค่าพยากรณ์" : "ข้อมูลราคา"}`
             : `ไม่พบข้อมูลราคา${selectedRiceType}ในเดือน${monthLabel} ${selectedYear}`
         }
         recommendation={
           !selectedRecord
             ? "ควรตรวจชนิดข้าว ปี และเดือนที่เลือกก่อนใช้ข้อมูลประกอบการวางแผน"
-            : isForecastYear
+            : isForecastRecord
               ? "ควรใช้แนวโน้มนี้ทำแผนรายรับและต้นทุนหลายกรณี พร้อมติดตามราคาจริงก่อนตัดสินใจ ไม่ควรถือค่าพยากรณ์เป็นราคาที่รับประกัน"
               : (priceChange ?? 0) < 0
                 ? "ควรเปรียบเทียบต้นทุนการเก็บรักษา เงื่อนไขสัญญา และข้อมูลตลาดล่าสุดก่อนกำหนดช่วงจำหน่าย โดยไม่ตัดสินใจจากราคาเดือนเดียว"
@@ -184,7 +226,7 @@ function DashboardContent({
           label="ราคาเฉลี่ย"
           value={yearRecords.length ? formatPrice(average(yearRecords), 2) : "—"}
           unit="บาท / 100 กก."
-          detail={`เฉลี่ย 12 เดือน ปี ${selectedYear}`}
+          detail={`เฉลี่ย ${yearRecords.length.toLocaleString("th-TH")} เดือน ปี ${selectedYear}`}
         />
         <KpiCard
           imageSrc="/images/25.png"
@@ -204,7 +246,7 @@ function DashboardContent({
 
       <RicePanel
         title="1. ราคาย้อนหลัง + พยากรณ์"
-        description={`แนวโน้มราคา ${selectedRiceType} รายเดือน พ.ศ. 2558–2569 แยกข้าวจริงและพยากรณ์`}
+        description={`แนวโน้มราคา ${selectedRiceType} รายเดือน พ.ศ. ${firstYear}${firstYear === lastYear ? "" : `–${lastYear}`} แยกข้าวจริงและพยากรณ์`}
         action={
           <PriceChartFilters
             data={data}
@@ -235,8 +277,8 @@ function DashboardContent({
       </RicePanel>
 
       <RicePanel
-        title="4. เปรียบเทียบข้าว 5 ชนิด"
-        description={`เทียบข้าว 5 ชนิด · ${monthLabel} ${selectedYear}`}
+        title={`4. เปรียบเทียบข้าว ${data.filters.riceTypes.length.toLocaleString("th-TH")} ชนิด`}
+        description={`เทียบข้าว ${data.filters.riceTypes.length.toLocaleString("th-TH")} ชนิด · ${monthLabel} ${selectedYear}`}
         action={
           <PriceChartFilters
             data={data}
@@ -254,9 +296,9 @@ function DashboardContent({
         />
       </RicePanel>
 
-      <RicePanel
-        title="5. พยากรณ์ปี 2569"
-        description="แนวโน้มพยากรณ์ 12 เดือน แยกสีประจำข้าวทั้ง 5 ชนิด และเน้นชนิดที่เลือกด้วยเส้นหนา"
+      {hasCompleteForecast ? <RicePanel
+        title={`5. พยากรณ์ปี ${forecastYear}`}
+        description={`แนวโน้มพยากรณ์ 12 เดือน แยกสีประจำข้าวทั้ง ${data.filters.riceTypes.length.toLocaleString("th-TH")} ชนิด และเน้นชนิดที่เลือกด้วยเส้นหนา`}
         action={
           <PriceChartFilters
             data={data}
@@ -267,13 +309,14 @@ function DashboardContent({
           />
         }
       >
-        <Forecast2569Chart
-          records={data.forecasts2569}
+        <ForecastChart
+          records={latestForecasts}
           riceTypes={data.filters.riceTypes}
           selectedRiceType={selectedRiceType}
           selectedMonth={selectedMonth}
+          forecastYear={forecastYear}
         />
-      </RicePanel>
+      </RicePanel> : null}
     </div>
   );
 }
@@ -291,6 +334,11 @@ function PriceChartFilters({
   selectedMonth: number;
   onFilterChange: (key: string, value: string) => void;
 }) {
+  const forecastYears = new Set(
+    data.monthly
+      .filter((record) => record.dataType === "forecast")
+      .map((record) => record.yearBe)
+  );
   return (
     <details className="group relative z-40 self-start">
       <summary className="inline-flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-full bg-[#edf2e5] px-3.5 text-xs font-semibold text-[#557060] transition-colors hover:bg-[#e3ead9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/35 [&::-webkit-details-marker]:hidden dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15">
@@ -315,7 +363,7 @@ function PriceChartFilters({
             value={selectedYear}
             options={[...data.filters.yearsBe].reverse().map((year) => ({
               value: year,
-              label: year === 2569 ? `${year} — พยากรณ์` : String(year),
+              label: forecastYears.has(year) ? `${year} — พยากรณ์` : String(year),
             }))}
             startAdornment={<CalendarDays aria-hidden="true" className="h-4 w-4" />}
             fullWidth

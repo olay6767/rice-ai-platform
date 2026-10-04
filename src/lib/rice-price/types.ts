@@ -36,12 +36,13 @@ export interface RiceForecastRecord {
 
 export interface RicePriceSummary {
   riceType: string;
+  forecastYear: number;
   forecastMin: number;
   forecastMax: number;
   forecastMean: number;
   forecastSd: number;
-  january2569: number;
-  december2569: number;
+  january: number;
+  december: number;
   change: number;
   changePct: number;
   reliability: ForecastReliability;
@@ -90,9 +91,21 @@ export interface RicePriceFilters {
   };
 }
 
+export interface RicePriceDatasetInfo {
+  id: string;
+  versionKey: string;
+  label: string;
+  description: string;
+  sourceName: string;
+  sourceUrl: string | null;
+  publishedAt: string | null;
+  recordCount: number;
+}
+
 export interface RicePriceDashboardData {
+  dataset: RicePriceDatasetInfo;
   monthly: RicePriceRecord[];
-  forecasts2569: RiceForecastRecord[];
+  forecasts: RiceForecastRecord[];
   summaries: RicePriceSummary[];
   modelPerformance: RiceModelPerformance[];
   quality: RiceDataQuality[];

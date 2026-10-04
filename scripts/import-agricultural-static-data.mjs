@@ -147,7 +147,7 @@ function priceRows() {
       rice_type: riceType,
       rice_type_code: riceTypeCode,
       price: requiredNumber(row.price, "price"),
-      unit: "บาท/ตัน",
+      unit: "บาท/100 กก.",
       data_type: dataType,
       source: row.source?.trim() || "สมาคมโรงสีข้าวไทย",
       is_imputed: sourceType === "imputed" || String(row.is_imputed).toLowerCase() === "true",
