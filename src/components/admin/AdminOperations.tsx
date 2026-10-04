@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Crown,
   Database,
+  Download,
   Eye,
   EyeOff,
   FilePenLine,
@@ -39,7 +40,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import DashboardDataManager from "@/components/admin/DashboardDataManager";
 import AgriculturalDatasetImport from "@/components/admin/AgriculturalDatasetImport";
 import GovernedDatasetRecords from "@/components/admin/GovernedDatasetRecords";
-import { Dialog, Field, button, errorText, input, panel, primary, request } from "@/components/admin/dashboard/shared";
+import { Dialog, Field, button, download, errorText, input, panel, primary, request } from "@/components/admin/dashboard/shared";
 import type {
   AdminAiModel,
   AdminDisease,
@@ -505,6 +506,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
   const [selectedId, setSelectedId] = useState("");
   const [view, setView] = useState<DatasetWorkspaceView>("overview");
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -572,6 +574,22 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
     }
   }
 
+  async function exportExcel(version: DatasetVersion) {
+    setExporting(true);
+    setError("");
+    try {
+      const safeKey = version.version_key.replace(/[^a-z0-9._-]/gi, "_");
+      await download(
+        `/api/admin/datasets?mode=export&type=${encodeURIComponent(type)}&versionId=${encodeURIComponent(version.id)}`,
+        `${type}_${safeKey}.xlsx`
+      );
+    } catch (cause) {
+      setError(errorText(cause));
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return <div className="min-w-0 space-y-4">
     <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
@@ -617,10 +635,12 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
                 <p className="mt-2 text-xs text-[var(--app-text-muted)]">{selected.version_key} · {selected.record_count.toLocaleString("th-TH")} แถว · อัปเดต {datasetDate(selected.updated_at)}</p>
               </div>
               <div className="flex shrink-0 flex-wrap gap-2">
+                {canInspect && <button type="button" className={button} disabled={loading || exporting} onClick={() => void exportExcel(selected)}>{exporting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}{exporting ? "กำลังเตรียม Excel…" : "ดาวน์โหลด Excel"}</button>}
                 {canImport && <button type="button" className={primary} disabled={loading} onClick={() => setView("import")}><UploadCloud className="h-4 w-4" />นำเข้าข้อมูล</button>}
+                {canInspect && <button type="button" className={primary} disabled={loading} onClick={() => setView("data")}><Database className="h-4 w-4" />ดูข้อมูล</button>}
                 {selected.status === "draft" && <button type="button" className={button} disabled={busy === selected.id || selected.record_count === 0} onClick={() => void changeVersion(selected, "publish", "เผยแพร่")}><Eye className="h-4 w-4" />เผยแพร่</button>}
                 {selected.status === "draft" && data.canSetDefault && <button type="button" className={button} disabled={busy === selected.id || selected.record_count === 0} onClick={() => void changeVersion(selected, "publish-default", "เผยแพร่และตั้งเป็นค่าเริ่มต้น")}><Star className="h-4 w-4" />เผยแพร่เป็นค่าเริ่มต้น</button>}
-                {selected.status === "published" && !selected.is_default && data.canSetDefault && <button type="button" className={primary} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "default", "ตั้งเป็นค่าเริ่มต้น")}><Star className="h-4 w-4" />ตั้งเป็นค่าเริ่มต้น</button>}
+                {selected.status === "published" && !selected.is_default && data.canSetDefault && <button type="button" className={button} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "default", "ตั้งเป็นค่าเริ่มต้น")}><Star className="h-4 w-4" />ตั้งเป็นค่าเริ่มต้น</button>}
                 {selected.status === "published" && !selected.is_default && <button type="button" className={button} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "unpublish", "เปิดเวอร์ชันเพื่อแก้ไขข้อมูล")}><EyeOff className="h-4 w-4" />เปิดแก้ไขข้อมูล</button>}
                 {selected.status === "archived" && <button type="button" className={button} disabled={busy === selected.id} onClick={() => void changeVersion(selected, "restore", "คืนจากคลัง")}><FolderOpen className="h-4 w-4" />คืนจากคลัง</button>}
               </div>

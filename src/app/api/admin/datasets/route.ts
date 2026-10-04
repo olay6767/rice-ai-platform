@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 
 import { getAdminContext } from "@/lib/admin/auth";
+import { createDashboardExcelWorkbook } from "@/lib/admin/dashboard-excel";
 import {
   inspectAgriculturalRows,
   type AgriculturalType,
@@ -11,19 +12,25 @@ import { isSupportedDataFile, parseUploadFile } from "@/lib/admin/tabular-upload
 export const runtime = "nodejs";
 
 const HEADERS = { "Cache-Control": "no-store" };
+type DatasetType = AgriculturalType;
 const TABLES = {
   rice_price: "rice_price_series",
   flood: "flood_records",
   drought: "drought_records",
   storm: "storm_records",
 } as const;
-const RECORD_COLUMNS: Record<DatasetType, string> = {
-  rice_price: "id,observed_on,year,month,rice_type,rice_type_code,price,unit,data_type,is_imputed,model_name,model_version,forecast_date,reliability,reliability_label,metadata,source",
-  flood: "id,year,month,province_id,flood_events,affected_area_rai,affected_households,affected_people,agricultural_damage_rai,source",
-  drought: "id,year,month,province_id,drought_events,affected_area_rai,affected_households,agricultural_damage_rai,source",
-  storm: "id,occurred_on,year,month,province_id,storm_type,storm_events,affected_people,affected_households,damaged_houses,agricultural_damage_rai,source",
+const RECORD_FIELDS: Record<DatasetType, readonly string[]> = {
+  rice_price: ["observed_on", "year", "month", "rice_type", "rice_type_code", "price", "unit", "data_type", "is_imputed", "model_name", "model_version", "forecast_date", "reliability", "reliability_label", "metadata", "source"],
+  flood: ["year", "month", "province_id", "flood_events", "affected_area_rai", "affected_households", "affected_people", "agricultural_damage_rai", "source"],
+  drought: ["year", "month", "province_id", "drought_events", "affected_area_rai", "affected_households", "agricultural_damage_rai", "source"],
+  storm: ["occurred_on", "year", "month", "province_id", "storm_type", "storm_events", "affected_people", "affected_households", "damaged_houses", "agricultural_damage_rai", "source"],
 };
-type DatasetType = AgriculturalType;
+const DATASET_LABEL: Record<DatasetType, string> = {
+  rice_price: "ราคาข้าว",
+  flood: "น้ำท่วม",
+  drought: "ภัยแล้ง",
+  storm: "พายุ",
+};
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -140,7 +147,7 @@ async function datasetRecords(
 
   let query = context.supabase
     .from(TABLES[type])
-    .select(RECORD_COLUMNS[type], { count: "exact" })
+    .select(["id", ...RECORD_FIELDS[type]].join(","), { count: "exact" })
     .eq("version_id", versionId);
   if (type === "rice_price") {
     query = query
@@ -188,6 +195,116 @@ async function datasetRecords(
     },
     { headers: HEADERS }
   );
+}
+
+async function datasetExcel(
+  context: Awaited<ReturnType<typeof getAdminContext>>,
+  type: DatasetType,
+  search: URLSearchParams
+): Promise<Response> {
+  const versionId = requiredUuid(search.get("versionId"));
+  const versionResult = await context.supabase
+    .from("agricultural_dataset_versions")
+    .select("id,version_key,label,revision")
+    .eq("id", versionId)
+    .eq("dataset_type", type)
+    .maybeSingle();
+  if (versionResult.error) throw versionResult.error;
+  if (!versionResult.data) throw new RequestError("ไม่พบเวอร์ชันที่เลือก", 404);
+  const version = versionResult.data;
+
+  let query = context.supabase
+    .from(TABLES[type])
+    .select(["id", ...RECORD_FIELDS[type]].join(","), { count: "exact" })
+    .eq("version_id", version.id);
+  if (type === "rice_price") {
+    query = query
+      .order("observed_on", { ascending: true })
+      .order("rice_type_code", { ascending: true })
+      .order("data_type", { ascending: true })
+      .order("model_version", { ascending: true })
+      .order("id", { ascending: true });
+  } else if (type === "storm") {
+    query = query
+      .order("occurred_on", { ascending: true })
+      .order("province_id", { ascending: true })
+      .order("storm_type", { ascending: true })
+      .order("id", { ascending: true });
+  } else {
+    query = query
+      .order("year", { ascending: true })
+      .order("month", { ascending: true })
+      .order("province_id", { ascending: true })
+      .order("id", { ascending: true });
+  }
+
+  const rows: Record<string, unknown>[] = [];
+  let expectedCount: number | null = null;
+  for (let from = 0; ; from += 1000) {
+    const result = await query.range(from, from + 999);
+    if (result.error) throw result.error;
+    expectedCount ??= result.count ?? 0;
+    if (expectedCount > 20_000) {
+      throw new RequestError("ข้อมูลเกิน 20,000 แถว ไม่สามารถสร้างไฟล์ Excel ได้");
+    }
+    const pageRows = (result.data ?? []) as unknown as Record<string, unknown>[];
+    rows.push(...pageRows);
+    if (pageRows.length < 1000) break;
+  }
+  if (!expectedCount) throw new RequestError("เวอร์ชันนี้ยังไม่มีข้อมูลสำหรับดาวน์โหลด", 404);
+  if (rows.length !== expectedCount) {
+    throw new RequestError("จำนวนแถวเปลี่ยนระหว่างดาวน์โหลด กรุณาลองใหม่", 409);
+  }
+
+  const latestResult = await context.supabase
+    .from("agricultural_dataset_versions")
+    .select("revision")
+    .eq("id", version.id)
+    .single();
+  if (latestResult.error) throw latestResult.error;
+  if (latestResult.data.revision !== version.revision) {
+    throw new RequestError("ข้อมูลเวอร์ชันเปลี่ยนระหว่างดาวน์โหลด กรุณาลองใหม่", 409);
+  }
+
+  const columns = [...RECORD_FIELDS[type]];
+  let exportRows = rows.map((row) => {
+    const { id: _id, ...record } = row;
+    void _id;
+    if (type === "rice_price") {
+      return { ...record, metadata: JSON.stringify(record.metadata ?? {}) };
+    }
+    return record;
+  });
+  if (type !== "rice_price") {
+    const provincesResult = await context.supabase
+      .from("rice_provinces")
+      .select("id,province_th");
+    if (provincesResult.error) throw provincesResult.error;
+    const provinceNames = new Map((provincesResult.data ?? []).map((province) => [province.id, province.province_th]));
+    const provinceIndex = columns.indexOf("province_id") + 1;
+    columns.splice(provinceIndex, 0, "province");
+    exportRows = exportRows.map((row) => ({
+      ...row,
+      province: provinceNames.get(Number(row.province_id)) ?? "",
+    }));
+  }
+
+  const bytes = createDashboardExcelWorkbook([{
+    name: DATASET_LABEL[type],
+    columns,
+    rows: exportRows,
+  }]);
+  const body = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(body).set(bytes);
+  const safeKey = version.version_key.replace(/[^a-z0-9._-]/gi, "_");
+  return new Response(body, {
+    headers: {
+      ...HEADERS,
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="${type}_${safeKey}.xlsx"`,
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
 
 async function uploadDataset(
@@ -295,6 +412,7 @@ export async function GET(request: Request): Promise<Response> {
     const type = datasetType(search.get("type"));
     const mode = search.get("mode") ?? "versions";
     if (mode === "records") return await datasetRecords(context, type, search);
+    if (mode === "export") return await datasetExcel(context, type, search);
     if (mode !== "versions") throw new RequestError("ประเภทการดูข้อมูลไม่ถูกต้อง");
     const versionsResult = await context.supabase
       .from("agricultural_dataset_versions")
