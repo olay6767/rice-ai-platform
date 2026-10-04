@@ -572,7 +572,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
       </div>
       <div className="flex shrink-0 flex-wrap gap-2">
         <button type="button" className={button} onClick={() => void load()} disabled={loading}><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />รีเฟรช</button>
-        <button type="button" className={primary} disabled={loading || Boolean(error)} onClick={() => setModal({ kind: "create" })}><Plus className="h-4 w-4" />สร้างเวอร์ชัน</button>
+        <button type="button" className={primary} disabled={loading} onClick={() => { setError(""); setSuccess(""); setModal({ kind: "create" }); }}><Plus className="h-4 w-4" />สร้างเวอร์ชัน</button>
       </div>
     </header>
     {error && <Notice message={error} />}
@@ -582,7 +582,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
         <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_minmax(0,1.35fr)] lg:items-end">
           <label className="grid gap-1.5 text-sm font-semibold">
             <span className="flex items-center gap-2"><Layers3 className="h-4 w-4 text-rice-leaf dark:text-rice-mint-light" />เวอร์ชันที่กำลังจัดการ</span>
-            <select className={input} value={selectedId} disabled={loading} onChange={(event) => { setSelectedId(event.target.value); setSuccess(""); setView("overview"); }}>
+            <select className={input} value={selectedId} disabled={loading} onChange={(event) => { setSelectedId(event.target.value); setError(""); setSuccess(""); setView("overview"); }}>
               {data.versions.map((version) => <option key={version.id} value={version.id}>{statusLabel(version.status, version.is_default)} · {version.label}</option>)}
             </select>
           </label>

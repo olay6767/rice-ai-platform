@@ -41,6 +41,7 @@ try {
   const userB = await account("user");
   const admin = await account("admin");
   const superadmin = await account("superadmin");
+  const promotedAdmin = await account("admin");
   for (const [name, actor, expected] of [["user", userA, false], ["admin", admin, true], ["superadmin", superadmin, true]]) {
     const result = await actor.client.rpc("is_admin");
     assert.ifError(result.error);
@@ -51,6 +52,26 @@ try {
   assert.equal(superRole.data, true);
   const adminSuperRole = await admin.client.rpc("is_superadmin");
   assert.equal(adminSuperRole.data, false);
+
+  const promotedBeforeRefresh = await promotedAdmin.client.rpc("is_superadmin");
+  assert.ifError(promotedBeforeRefresh.error);
+  assert.equal(promotedBeforeRefresh.data, false);
+  const promotedUser = await root.auth.admin.updateUserById(promotedAdmin.id, {
+    app_metadata: { role: "superadmin" },
+  });
+  assert.ifError(promotedUser.error);
+  const authoritativePromotedUser = await promotedAdmin.client.auth.getUser();
+  assert.ifError(authoritativePromotedUser.error);
+  assert.equal(authoritativePromotedUser.data.user.app_metadata.role, "superadmin");
+  const staleTokenRole = await promotedAdmin.client.rpc("is_superadmin");
+  assert.ifError(staleTokenRole.error);
+  assert.equal(staleTokenRole.data, false, "database still sees the old JWT role before refresh");
+  const refreshedRoleSession = await promotedAdmin.client.auth.refreshSession();
+  assert.ifError(refreshedRoleSession.error);
+  assert.equal(refreshedRoleSession.data.user.app_metadata.role, "superadmin");
+  const promotedAfterRefresh = await promotedAdmin.client.rpc("is_superadmin");
+  assert.ifError(promotedAfterRefresh.error);
+  assert.equal(promotedAfterRefresh.data, true, "database sees the promoted role after refresh");
 
   const currentDefault = await root.from("agricultural_dataset_versions")
     .select("id,revision").eq("dataset_type", "flood").eq("is_default", true).single();
@@ -153,7 +174,7 @@ try {
     .select("version_id,record_count").eq("version_id", deletedVersionId).single();
   assert.ifError(tombstone.error);
   assert.equal(tombstone.data.record_count, 1);
-  console.log("Live Supabase RLS/version lifecycle passed: isolation, role guards, default-delete guards, import, edit, publish, unpublish, republish, published delete, audited delete");
+  console.log("Live Supabase RLS/version lifecycle passed: isolation, role guards, role refresh, default-delete guards, import, edit, publish, unpublish, republish, published delete, audited delete");
 } finally {
   if (testVersionId) {
     const events = await root.from("agricultural_dataset_events").delete().eq("version_id", testVersionId);

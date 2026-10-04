@@ -5,24 +5,9 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import type { AdminRole } from "@/lib/admin/types";
 
-function configuredSuperAdminEmails(): Set<string> {
-  return new Set(
-    (process.env.SUPER_ADMIN_EMAILS ?? "")
-      .split(",")
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-
 export function getAdminRole(
-  user: Pick<User, "email" | "app_metadata"> | null | undefined
+  user: Pick<User, "app_metadata"> | null | undefined
 ): AdminRole {
-  const email = user?.email?.trim().toLowerCase();
-
-  if (email && configuredSuperAdminEmails().has(email)) {
-    return "superadmin";
-  }
-
   const role = user?.app_metadata?.role;
 
   if (role === "superadmin" || role === "admin") {
@@ -58,11 +43,11 @@ export function adminErrorResponse(
 export async function getAdminContext() {
   const supabase = await createClient();
   const {
-    data: { user },
+    data: { user: currentUser },
     error,
   } = await supabase.auth.getUser();
 
-  if (error || !user) {
+  if (error || !currentUser) {
     return {
       supabase,
       user: null,
@@ -71,6 +56,31 @@ export async function getAdminContext() {
         "กรุณาเข้าสู่ระบบก่อนใช้งานหลังบ้าน"
       ),
     };
+  }
+
+  let user = currentUser;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  // getUser() reads the current role from Supabase Auth, while database RLS/RPC
+  // reads the role embedded in the access-token JWT. Refresh a stale token after
+  // an administrator changes a role so the UI and database authorize identically.
+  if (session && getAdminRole(session.user) !== getAdminRole(currentUser)) {
+    const refreshed = await supabase.auth.refreshSession();
+
+    if (refreshed.error || !refreshed.data.user) {
+      return {
+        supabase,
+        user: null,
+        errorResponse: adminErrorResponse(
+          401,
+          "สิทธิ์บัญชีมีการเปลี่ยนแปลง กรุณาเข้าสู่ระบบใหม่"
+        ),
+      };
+    }
+
+    user = refreshed.data.user;
   }
 
   if (!isAdmin(user)) {
