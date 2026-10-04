@@ -38,6 +38,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import DashboardDataManager from "@/components/admin/DashboardDataManager";
 import AgriculturalDatasetImport from "@/components/admin/AgriculturalDatasetImport";
+import GovernedDatasetRecords from "@/components/admin/GovernedDatasetRecords";
 import { Dialog, Field, button, errorText, input, panel, primary, request } from "@/components/admin/dashboard/shared";
 import type {
   AdminAiModel,
@@ -492,7 +493,7 @@ function datasetDate(value: string | null) {
     : "ยังไม่เผยแพร่";
 }
 
-type DatasetWorkspaceView = "overview" | "import" | "history";
+type DatasetWorkspaceView = "overview" | "import" | "data" | "history";
 type DatasetVersionModal =
   | { kind: "create" }
   | { kind: "edit"; target: DatasetVersion }
@@ -511,6 +512,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
   const selected = data?.versions.find((version) => version.id === selectedId) ?? null;
   const defaultVersion = data?.versions.find((version) => version.is_default) ?? null;
   const canImport = selected?.status === "draft" && selected.record_count === 0;
+  const canInspect = Boolean(selected?.record_count);
 
   async function load(preferredId?: string) {
     setLoading(true);
@@ -525,7 +527,8 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
           : result.versions.find((version) => version.is_default)?.id ?? result.versions[0]?.id ?? "";
       setSelectedId(nextSelectedId);
       const nextSelected = result.versions.find((version) => version.id === nextSelectedId) ?? null;
-      if (view === "import" && (nextSelected?.status !== "draft" || nextSelected.record_count > 0)) {
+      if ((view === "import" && (nextSelected?.status !== "draft" || nextSelected.record_count > 0))
+        || (view === "data" && !nextSelected?.record_count)) {
         setView("overview");
       }
     } catch (cause) {
@@ -642,7 +645,8 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
             <div className="flex min-w-max gap-1">
               {[
                 { id: "overview", label: "ภาพรวม", icon: Layers3 },
-                ...(canImport ? [{ id: "import", label: "นำเข้าข้อมูล", icon: Database }] : []),
+                ...(canImport ? [{ id: "import", label: "นำเข้าข้อมูล", icon: UploadCloud }] : []),
+                ...(canInspect ? [{ id: "data", label: "ตรวจข้อมูล", icon: Database }] : []),
                 { id: "history", label: "ประวัติ", icon: History },
               ].map((item) => <button key={item.id} type="button" role="tab" aria-selected={view === item.id} className={`relative flex min-h-12 items-center gap-2 px-3 text-sm font-semibold transition-colors ${view === item.id ? "text-rice-forest after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-rice-leaf dark:text-rice-mint-light" : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"}`} onClick={() => setView(item.id as DatasetWorkspaceView)}><item.icon className="h-4 w-4" />{item.label}</button>)}
             </div>
@@ -651,6 +655,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
 
         {view === "overview" && <DatasetVersionOverview version={selected} />}
         {view === "import" && canImport && <section className={panel}><div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-rice-mint/45 text-rice-forest"><FileSpreadsheet className="h-5 w-5" /></span><div><h4 className="font-bold">นำเข้าไฟล์ในเวอร์ชัน “{selected.label}”</h4><p className="mt-1 text-sm text-[var(--app-text-secondary)]">ตรวจตัวอย่างก่อนบันทึก ข้อมูลจะถูกบันทึกไว้ในเวอร์ชันนี้</p></div></div><AgriculturalDatasetImport key={`${selected.id}:${selected.revision}`} type={type} version={selected} onSaved={() => load(selected.id)} /></section>}
+        {view === "data" && canInspect && <GovernedDatasetRecords key={`${selected.id}:${selected.revision}`} type={type} versionId={selected.id} versionLabel={selected.label} revision={selected.revision} />}
         {view === "history" && <section className={panel}><h4 className="font-bold">ประวัติเวอร์ชัน</h4>{selected.recent_events.length ? <ol className="mt-4 divide-y divide-[var(--app-border)]">{selected.recent_events.map((event, index) => <li key={`${event.created_at}:${index}`} className="py-3"><p className="font-semibold">{event.summary}</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">{event.action} · {datasetDate(event.created_at)}</p></li>)}</ol> : <p className="mt-3 text-sm text-[var(--app-text-secondary)]">ยังไม่มีประวัติการเปลี่ยนแปลง</p>}</section>}
       </div>}
     </>}

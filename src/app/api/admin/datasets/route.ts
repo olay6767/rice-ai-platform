@@ -17,6 +17,12 @@ const TABLES = {
   drought: "drought_records",
   storm: "storm_records",
 } as const;
+const RECORD_COLUMNS: Record<DatasetType, string> = {
+  rice_price: "id,observed_on,year,month,rice_type,rice_type_code,price,unit,data_type,is_imputed,model_name,model_version,forecast_date,reliability,reliability_label,metadata,source",
+  flood: "id,year,month,province_id,flood_events,affected_area_rai,affected_households,affected_people,agricultural_damage_rai,source",
+  drought: "id,year,month,province_id,drought_events,affected_area_rai,affected_households,agricultural_damage_rai,source",
+  storm: "id,occurred_on,year,month,province_id,storm_type,storm_events,affected_people,affected_households,damaged_houses,agricultural_damage_rai,source",
+};
 type DatasetType = AgriculturalType;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -105,6 +111,83 @@ function requiredUuid(value: unknown): string {
   const id = requiredText(value, "รหัสเวอร์ชัน", 100);
   if (!UUID.test(id)) throw new RequestError("รหัสเวอร์ชันไม่ถูกต้อง");
   return id;
+}
+
+function boundedInteger(value: string | null, minimum: number, maximum: number, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= minimum && parsed <= maximum ? parsed : fallback;
+}
+
+async function datasetRecords(
+  context: Awaited<ReturnType<typeof getAdminContext>>,
+  type: DatasetType,
+  search: URLSearchParams
+): Promise<Response> {
+  const versionId = requiredUuid(search.get("versionId"));
+  const page = boundedInteger(search.get("page"), 1, 100_000, 1);
+  const pageSize = 25;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const versionResult = await context.supabase
+    .from("agricultural_dataset_versions")
+    .select("id")
+    .eq("id", versionId)
+    .eq("dataset_type", type)
+    .maybeSingle();
+  if (versionResult.error) throw versionResult.error;
+  if (!versionResult.data) throw new RequestError("ไม่พบเวอร์ชันที่เลือก", 404);
+
+  let query = context.supabase
+    .from(TABLES[type])
+    .select(RECORD_COLUMNS[type], { count: "exact" })
+    .eq("version_id", versionId);
+  if (type === "rice_price") {
+    query = query
+      .order("observed_on", { ascending: false })
+      .order("rice_type_code", { ascending: true })
+      .order("data_type", { ascending: true })
+      .order("model_version", { ascending: true })
+      .order("id", { ascending: true });
+  } else if (type === "storm") {
+    query = query
+      .order("occurred_on", { ascending: false })
+      .order("province_id", { ascending: true })
+      .order("storm_type", { ascending: true })
+      .order("id", { ascending: true });
+  } else {
+    query = query
+      .order("year", { ascending: false })
+      .order("month", { ascending: false })
+      .order("province_id", { ascending: true })
+      .order("id", { ascending: true });
+  }
+
+  const [rowsResult, provincesResult] = await Promise.all([
+    query.range(from, to),
+    type === "rice_price"
+      ? Promise.resolve({ data: [], error: null })
+      : context.supabase.from("rice_provinces").select("id,province_th").order("province_th"),
+  ]);
+  const firstError = rowsResult.error ?? provincesResult.error;
+  if (firstError) throw firstError;
+
+  return Response.json(
+    {
+      data: {
+        rows: (rowsResult.data ?? []).map((row) => {
+          if (type !== "rice_price") return row;
+          const record = row as unknown as Record<string, unknown>;
+          return { ...record, metadata: JSON.stringify(record.metadata ?? {}) };
+        }),
+        count: rowsResult.count ?? 0,
+        page,
+        pageSize,
+        provinces: provincesResult.data ?? [],
+      },
+    },
+    { headers: HEADERS }
+  );
 }
 
 async function uploadDataset(
@@ -208,7 +291,11 @@ export async function GET(request: Request): Promise<Response> {
   const context = await getAdminContext();
   if (context.errorResponse) return context.errorResponse;
   try {
-    const type = datasetType(new URL(request.url).searchParams.get("type"));
+    const search = new URL(request.url).searchParams;
+    const type = datasetType(search.get("type"));
+    const mode = search.get("mode") ?? "versions";
+    if (mode === "records") return await datasetRecords(context, type, search);
+    if (mode !== "versions") throw new RequestError("ประเภทการดูข้อมูลไม่ถูกต้อง");
     const versionsResult = await context.supabase
       .from("agricultural_dataset_versions")
       .select("*")
