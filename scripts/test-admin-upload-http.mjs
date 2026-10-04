@@ -120,14 +120,9 @@ try {
       assert.equal(edited.status, 200, JSON.stringify(edited.body.error));
       const published = await changeVersion({ type, id, action: "publish", revision: 2 });
       assert.equal(published.status, 200, JSON.stringify(published.body.error));
-      const protectedDelete = await changeVersion({ type, id, action: "delete", revision: 3 });
-      assert.equal(protectedDelete.status, 409);
-      assert.equal(protectedDelete.body.error.code, "PUBLISHED_DELETE_PROTECTED");
-      const unpublished = await changeVersion({ type, id, action: "unpublish", revision: 3 });
-      assert.equal(unpublished.status, 200, JSON.stringify(unpublished.body.error));
-      const deleted = await changeVersion({ type, id, action: "delete", revision: 4 });
+      const deleted = await changeVersion({ type, id, action: "delete", revision: 3 });
       assert.equal(deleted.status, 200, JSON.stringify(deleted.body.error));
-      console.log(`${type}: import plus HTTP edit/publish/unpublish/delete lifecycle passed`);
+      console.log(`${type}: import plus HTTP edit/publish/published-delete lifecycle passed`);
     } else {
       const changed = await actor.rpc("agricultural_dataset_change_version", { p_id: id, p_action: "publish", p_revision: 1 });
       assert.ifError(changed.error);

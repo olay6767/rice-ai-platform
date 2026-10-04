@@ -70,6 +70,8 @@ function fail(error: unknown): Response {
     ARCHIVED_REQUIRED: "เวอร์ชันนี้ไม่ได้อยู่ในคลัง",
     DEFAULT_PROTECTED: "กรุณาเลือกเวอร์ชันเริ่มต้นอื่นก่อนเก็บเวอร์ชันนี้เข้าคลัง",
     PUBLISHED_DELETE_PROTECTED: "ปิดการเผยแพร่หรือเก็บเวอร์ชันเข้าคลังก่อนลบ",
+    REPLACEMENT_REQUIRED: "กรุณาเลือกเวอร์ชันเผยแพร่ที่จะใช้เป็นค่าเริ่มต้นแทน",
+    INVALID_REPLACEMENT: "เวอร์ชันทดแทนต้องเป็นเวอร์ชันที่เผยแพร่แล้วของข้อมูลประเภทเดียวกัน",
     INVALID_VERSION_DETAILS: "กรุณาตรวจชื่อและรายละเอียดเวอร์ชัน",
     INVALID_FILE_TYPE: "รองรับเฉพาะไฟล์ JSON, CSV และ Excel",
     ROW_LIMIT_EXCEEDED: "ไฟล์มีข้อมูลเกิน 20,000 แถว",
@@ -284,9 +286,15 @@ export async function PATCH(request: Request): Promise<Response> {
       throw new RequestError("ประเภทข้อมูลของเวอร์ชันไม่ตรงกัน", 409);
     }
     if (action === "delete") {
-      const result = await context.supabase.rpc("agricultural_dataset_delete_version", {
+      const replacementId = body.replacementId === null
+        || body.replacementId === undefined
+        || body.replacementId === ""
+        ? null
+        : requiredUuid(body.replacementId);
+      const result = await context.supabase.rpc("agricultural_dataset_delete_version_v2", {
         p_id: id,
         p_revision: revision,
+        p_replacement_id: replacementId,
       });
       if (result.error) throw result.error;
       invalidate(type);

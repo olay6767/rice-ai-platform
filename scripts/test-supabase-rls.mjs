@@ -52,6 +52,18 @@ try {
   const adminSuperRole = await admin.client.rpc("is_superadmin");
   assert.equal(adminSuperRole.data, false);
 
+  const currentDefault = await root.from("agricultural_dataset_versions")
+    .select("id,revision").eq("dataset_type", "flood").eq("is_default", true).single();
+  assert.ifError(currentDefault.error);
+  const adminDefaultDelete = await admin.client.rpc("agricultural_dataset_delete_version_v2", {
+    p_id: currentDefault.data.id, p_revision: currentDefault.data.revision, p_replacement_id: null,
+  });
+  assert.equal(adminDefaultDelete.error?.message, "SUPERADMIN_REQUIRED");
+  const missingDefaultReplacement = await superadmin.client.rpc("agricultural_dataset_delete_version_v2", {
+    p_id: currentDefault.data.id, p_revision: currentDefault.data.revision, p_replacement_id: null,
+  });
+  assert.equal(missingDefaultReplacement.error?.message, "REPLACEMENT_REQUIRED");
+
   const ownField = await userA.client.from("rice_farm_fields").insert({ user_id: userA.id, name: "Codex field", province: "กรุงเทพมหานคร", area_rai: 1, rice_variety: "ข้าวหอมมะลิ" }).select("id").single();
   assert.ifError(ownField.error);
   const ownVisible = await userA.client.from("rice_farm_fields").select("id").eq("id", ownField.data.id);
@@ -119,20 +131,20 @@ try {
     p_id: testVersionId, p_action: "publish", p_revision: 2,
   });
   assert.ifError(published.error);
-  const protectedDelete = await admin.client.rpc("agricultural_dataset_delete_version", {
-    p_id: testVersionId, p_revision: 3,
-  });
-  assert.equal(protectedDelete.error?.message, "PUBLISHED_DELETE_PROTECTED");
   const unpublished = await admin.client.rpc("agricultural_dataset_change_version", {
     p_id: testVersionId, p_action: "unpublish", p_revision: 3,
   });
   assert.ifError(unpublished.error);
-  const blockedDelete = await userA.client.rpc("agricultural_dataset_delete_version", {
-    p_id: testVersionId, p_revision: 4,
+  const republished = await admin.client.rpc("agricultural_dataset_change_version", {
+    p_id: testVersionId, p_action: "publish", p_revision: 4,
+  });
+  assert.ifError(republished.error);
+  const blockedDelete = await userA.client.rpc("agricultural_dataset_delete_version_v2", {
+    p_id: testVersionId, p_revision: 5, p_replacement_id: null,
   });
   assert.equal(blockedDelete.error?.message, "ADMIN_REQUIRED");
-  const deleted = await admin.client.rpc("agricultural_dataset_delete_version", {
-    p_id: testVersionId, p_revision: 4,
+  const deleted = await admin.client.rpc("agricultural_dataset_delete_version_v2", {
+    p_id: testVersionId, p_revision: 5, p_replacement_id: null,
   });
   assert.ifError(deleted.error);
   deletedVersionId = testVersionId;
@@ -141,7 +153,7 @@ try {
     .select("version_id,record_count").eq("version_id", deletedVersionId).single();
   assert.ifError(tombstone.error);
   assert.equal(tombstone.data.record_count, 1);
-  console.log("Live Supabase RLS/version lifecycle passed: isolation, role guards, import, edit, publish, unpublish, protected delete, audited delete");
+  console.log("Live Supabase RLS/version lifecycle passed: isolation, role guards, default-delete guards, import, edit, publish, unpublish, republish, published delete, audited delete");
 } finally {
   if (testVersionId) {
     const events = await root.from("agricultural_dataset_events").delete().eq("version_id", testVersionId);

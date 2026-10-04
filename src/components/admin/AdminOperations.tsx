@@ -623,7 +623,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className={button} disabled={loading} onClick={() => setModal({ kind: "edit", target: selected })}><FilePenLine className="h-4 w-4" />แก้ไขรายละเอียด</button>
                   {selected.status !== "archived" && <button type="button" className={button} disabled={loading || selected.is_default} title={selected.is_default ? "เปลี่ยนค่าเริ่มต้นเป็นเวอร์ชันอื่นก่อน" : "เก็บเวอร์ชันไว้โดยไม่แสดงต่อผู้ใช้"} onClick={() => void changeVersion(selected, "archive", "เก็บเข้าคลัง")}><Archive className="h-4 w-4" />เก็บเข้าคลัง</button>}
-                  {selected.status !== "published" && !selected.is_default && <button type="button" className={`${button} border-rose-500/35 text-rose-700 enabled:hover:bg-rose-50 dark:text-rose-200 dark:enabled:hover:bg-rose-500/10`} disabled={loading} onClick={() => setModal({ kind: "delete", target: selected })}><Trash2 className="h-4 w-4" />ลบเวอร์ชัน</button>}
+                  <button type="button" className={`${button} border-rose-500/35 text-rose-700 enabled:hover:bg-rose-50 dark:text-rose-200 dark:enabled:hover:bg-rose-500/10`} disabled={loading} title={selected.is_default ? "ต้องเลือกเวอร์ชันเผยแพร่อื่นเป็นค่าเริ่มต้นทดแทนก่อนลบ" : "ลบเวอร์ชันและข้อมูลภายใน"} onClick={() => setModal({ kind: "delete", target: selected })}><Trash2 className="h-4 w-4" />ลบเวอร์ชัน</button>
                 </div>
                 <dl className="mt-3 grid gap-2 border-t border-[var(--app-border)] pt-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
                   {[["แก้ไขครั้งที่", String(selected.revision)], ["สร้างเมื่อ", datasetDate(selected.created_at)], ["อัปเดตล่าสุด", datasetDate(selected.updated_at)], ["เผยแพร่เมื่อ", datasetDate(selected.published_at)]].map(([label, value]) => <div key={label}><dt className="text-[var(--app-text-muted)]">{label}</dt><dd className="mt-1 break-words font-medium text-[var(--app-text-secondary)]">{value}</dd></div>)}
@@ -650,7 +650,7 @@ function DatasetVersionManager({ category }: { category: Exclude<AgricultureCate
         {view === "history" && <section className={panel}><h4 className="font-bold">ประวัติเวอร์ชัน</h4>{selected.recent_events.length ? <ol className="mt-4 divide-y divide-[var(--app-border)]">{selected.recent_events.map((event, index) => <li key={`${event.created_at}:${index}`} className="py-3"><p className="font-semibold">{event.summary}</p><p className="mt-1 text-xs text-[var(--app-text-muted)]">{event.action} · {datasetDate(event.created_at)}</p></li>)}</ol> : <p className="mt-3 text-sm text-[var(--app-text-secondary)]">ยังไม่มีประวัติการเปลี่ยนแปลง</p>}</section>}
       </div>}
     </>}
-    {modal && <DatasetVersionDialog type={type} modal={modal} onClose={() => setModal(null)} onSaved={async (message, id) => { setModal(null); setSuccess(message); setError(""); await load(id); setView("overview"); }} />}
+    {modal && <DatasetVersionDialog type={type} modal={modal} versions={data?.versions ?? []} canSetDefault={Boolean(data?.canSetDefault)} onClose={() => setModal(null)} onSaved={async (message, id) => { setModal(null); setSuccess(message); setError(""); await load(id); setView("overview"); }} />}
   </div>;
 }
 
@@ -671,9 +671,11 @@ function DatasetVersionOverview({ version }: { version: DatasetVersion }) {
   </section>;
 }
 
-function DatasetVersionDialog({ type, modal, onClose, onSaved }: {
+function DatasetVersionDialog({ type, modal, versions, canSetDefault, onClose, onSaved }: {
   type: GovernedDatasetType;
   modal: DatasetVersionModal;
+  versions: DatasetVersion[];
+  canSetDefault: boolean;
   onClose: () => void;
   onSaved: (message: string, id?: string) => Promise<void>;
 }) {
@@ -685,9 +687,19 @@ function DatasetVersionDialog({ type, modal, onClose, onSaved }: {
   const [sourceUrl, setSourceUrl] = useState(target?.source_url ?? "");
   const [deleteKey, setDeleteKey] = useState("");
   const [confirmed, setConfirmed] = useState(false);
+  const [replacementId, setReplacementId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const title = modal.kind === "create" ? "สร้างเวอร์ชัน" : modal.kind === "edit" ? "แก้ไขรายละเอียดเวอร์ชัน" : "ลบเวอร์ชัน";
+  const needsReplacement = modal.kind === "delete" && modal.target.is_default;
+  const replacementOptions = modal.kind === "delete"
+    ? versions.filter((version) => version.id !== modal.target.id && version.status === "published")
+    : [];
+  const deleteDisabled = modal.kind === "delete" && (
+    !confirmed
+    || deleteKey !== modal.target.version_key
+    || (needsReplacement && (!canSetDefault || !replacementId))
+  );
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -715,9 +727,10 @@ function DatasetVersionDialog({ type, modal, onClose, onSaved }: {
           description,
           sourceName,
           sourceUrl,
+          replacementId: modal.kind === "delete" && modal.target.is_default ? replacementId : undefined,
         }),
       });
-      await onSaved(modal.kind === "delete" ? "ลบเวอร์ชันและข้อมูลภายในแล้ว" : "แก้ไขรายละเอียดเวอร์ชันแล้ว", modal.kind === "edit" ? modal.target.id : undefined);
+      await onSaved(modal.kind === "delete" ? (modal.target.is_default ? "ลบเวอร์ชันและตั้งค่าเริ่มต้นทดแทนแล้ว" : "ลบเวอร์ชันและข้อมูลภายในแล้ว") : "แก้ไขรายละเอียดเวอร์ชันแล้ว", modal.kind === "edit" ? modal.target.id : undefined);
     } catch (cause) {
       setError(errorText(cause));
     } finally {
@@ -727,8 +740,11 @@ function DatasetVersionDialog({ type, modal, onClose, onSaved }: {
 
   return <Dialog title={title} onClose={onClose} busy={busy}><form onSubmit={submit} className="space-y-4">
     {modal.kind === "delete" ? <>
-      <Notice message="การลบจะนำข้อมูลและไฟล์อ้างอิงของเวอร์ชันนี้ออกจากระบบ โดยเก็บประวัติการลบไว้สำหรับตรวจสอบ" />
+      <Notice message={modal.target.status === "published" ? "เวอร์ชันนี้เผยแพร่อยู่ การลบจะนำข้อมูลและไฟล์อ้างอิงออกจากระบบทันที โดยเก็บประวัติการลบไว้สำหรับตรวจสอบ" : "การลบจะนำข้อมูลและไฟล์อ้างอิงของเวอร์ชันนี้ออกจากระบบ โดยเก็บประวัติการลบไว้สำหรับตรวจสอบ"} />
       <p className="text-lg font-bold">{modal.target.label}</p>
+      {needsReplacement && !canSetDefault && <Notice message="เวอร์ชันนี้เป็นค่าเริ่มต้น เฉพาะ Super Admin เท่านั้นที่เลือกค่าเริ่มต้นทดแทนและลบเวอร์ชันนี้ได้" />}
+      {needsReplacement && canSetDefault && replacementOptions.length === 0 && <Notice message="ต้องเผยแพร่เวอร์ชันอื่นของข้อมูลประเภทนี้ก่อน จึงจะใช้เป็นค่าเริ่มต้นทดแทนและลบเวอร์ชันนี้ได้" />}
+      {needsReplacement && canSetDefault && replacementOptions.length > 0 && <Field label="เวอร์ชันค่าเริ่มต้นทดแทน"><select className={input} required value={replacementId} disabled={busy} onChange={(event) => setReplacementId(event.target.value)}><option value="">เลือกเวอร์ชันเผยแพร่</option>{replacementOptions.map((version) => <option key={version.id} value={version.id}>{version.label} · {version.version_key}</option>)}</select><p className="mt-1.5 text-xs leading-5 text-[var(--app-text-muted)]">ระบบจะตั้งเวอร์ชันที่เลือกเป็นค่าเริ่มต้นก่อนลบ เพื่อให้หน้า User มีข้อมูลใช้งานต่อเนื่อง</p></Field>}
       <Field label={`พิมพ์รหัสเวอร์ชัน “${modal.target.version_key}” เพื่อยืนยัน`}><input autoFocus className={input} value={deleteKey} disabled={busy} autoComplete="off" spellCheck={false} onChange={(event) => setDeleteKey(event.target.value)} /></Field>
       <label className="flex items-start gap-3 text-sm leading-6"><input type="checkbox" className="mt-1 h-5 w-5 accent-rice-leaf" checked={confirmed} disabled={busy} onChange={(event) => setConfirmed(event.target.checked)} />ตรวจสอบแล้วและยืนยันลบเวอร์ชันนี้</label>
     </> : <>
@@ -740,7 +756,7 @@ function DatasetVersionDialog({ type, modal, onClose, onSaved }: {
       {modal.kind === "create" && <p className="text-sm leading-6 text-[var(--app-text-secondary)]">เวอร์ชันใหม่จะยังไม่แสดงต่อผู้ใช้ จนกว่าจะนำเข้าข้อมูลและกดเผยแพร่</p>}
     </>}
     {error && <Notice message={error} />}
-    <div className="flex justify-end gap-2"><button type="button" className={button} disabled={busy} onClick={onClose}>ยกเลิก</button><button type="submit" className={modal.kind === "delete" ? `${button} border-rose-500/35 text-rose-700 dark:text-rose-200` : primary} disabled={busy || (modal.kind === "delete" && (!confirmed || deleteKey !== modal.target.version_key))}>{busy && <LoaderCircle className="h-4 w-4 animate-spin" />}{busy ? "กำลังบันทึก..." : modal.kind === "delete" ? "ลบเวอร์ชัน" : modal.kind === "create" ? "สร้างเวอร์ชัน" : "บันทึกการแก้ไข"}</button></div>
+    <div className="flex justify-end gap-2"><button type="button" className={button} disabled={busy} onClick={onClose}>ยกเลิก</button><button type="submit" className={modal.kind === "delete" ? `${button} border-rose-500/35 text-rose-700 dark:text-rose-200` : primary} disabled={busy || deleteDisabled}>{busy && <LoaderCircle className="h-4 w-4 animate-spin" />}{busy ? "กำลังบันทึก..." : modal.kind === "delete" ? "ลบเวอร์ชัน" : modal.kind === "create" ? "สร้างเวอร์ชัน" : "บันทึกการแก้ไข"}</button></div>
   </form></Dialog>;
 }
 
