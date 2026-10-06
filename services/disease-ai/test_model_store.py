@@ -43,6 +43,46 @@ class FakeOpener:
 
 
 class ModelStoreTests(unittest.TestCase):
+    def test_explicit_release_url_uses_its_own_cache_key(self):
+        with tempfile.TemporaryDirectory() as temporary_dir:
+            cache_dir = Path(temporary_dir) / "cache"
+            opener = FakeOpener(FakeResponse(b"release-model"))
+            with (
+                patch.object(model_store, "CACHE_DIR", cache_dir),
+                patch.object(model_store, "build_opener", return_value=opener),
+                patch.dict(os.environ, {"BLOB_READ_WRITE_TOKEN": "test-token"}),
+            ):
+                path = model_store.resolve_model_url(PRIVATE_URL, "classifier.keras")
+
+            self.assertEqual(path.read_bytes(), b"release-model")
+            self.assertTrue(path.name.endswith("-classifier.keras"))
+            self.assertEqual(path.parent.name, "classifier")
+            self.assertEqual(len(opener.calls), 1)
+
+    def test_classifier_cache_evicts_previous_release(self):
+        with tempfile.TemporaryDirectory() as temporary_dir:
+            cache_dir = Path(temporary_dir) / "cache"
+            second_url = PRIVATE_URL.replace("validator.keras", "classifier-v2.keras")
+            with (
+                patch.object(model_store, "CACHE_DIR", cache_dir),
+                patch.dict(os.environ, {"BLOB_READ_WRITE_TOKEN": "test-token"}),
+            ):
+                with patch.object(
+                    model_store,
+                    "build_opener",
+                    return_value=FakeOpener(FakeResponse(b"first")),
+                ):
+                    first = model_store.resolve_model_url(PRIVATE_URL)
+                with patch.object(
+                    model_store,
+                    "build_opener",
+                    return_value=FakeOpener(FakeResponse(b"second")),
+                ):
+                    second = model_store.resolve_model_url(second_url)
+
+            self.assertFalse(first.exists())
+            self.assertEqual(second.read_bytes(), b"second")
+
     def test_private_download_is_streamed_and_cached(self):
         with tempfile.TemporaryDirectory() as temporary_dir:
             cache_dir = Path(temporary_dir) / "cache"
@@ -102,7 +142,8 @@ class ModelStoreTests(unittest.TestCase):
                     model_store.resolve_model_path(
                         Path(temporary_dir) / "validator.keras", "VALIDATOR_MODEL_URL"
                     )
-            self.assertEqual(list(cache_dir.iterdir()), [])
+            self.assertEqual(list(cache_dir.rglob("*.part")), [])
+            self.assertEqual(list(cache_dir.rglob("*.keras")), [])
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import hashlib
 import importlib
 import json
 import os
@@ -11,7 +12,7 @@ from typing import Any
 import numpy as np
 from PIL import Image, ImageOps, UnidentifiedImageError
 
-from model_store import resolve_model_path
+from model_store import resolve_model_path, resolve_model_url
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -87,24 +88,102 @@ if not 0 <= RICE_THRESHOLD <= 1:
 if not 0 <= DISEASE_THRESHOLD <= 1:
     raise RuntimeError("DISEASE_THRESHOLD ต้องอยู่ระหว่าง 0 ถึง 1")
 
-_models: tuple[Any, Any] | None = None
+_validator_model: Any | None = None
+_classifier_model: Any | None = None
+_classifier_key: str | None = None
 _models_lock = Lock()
 
 
-def _get_models() -> tuple[Any, Any]:
-    global _models
-    if _models is not None:
-        return _models
+def _classifier_output_count(model: Any) -> int:
+    output_shape = model.output_shape
+    if isinstance(output_shape, list):
+        raise RuntimeError("Classifier ต้องมี output เดียว")
+    if not output_shape or output_shape[-1] is None:
+        raise RuntimeError("ไม่สามารถตรวจจำนวน Class ของโมเดลได้")
+    return int(output_shape[-1])
+
+
+def _validate_classifier_contract(model: Any) -> None:
+    """Run one real inference batch before a release can be activated."""
+
+    batch = np.zeros((1, 224, 224, 3), dtype=np.float32)
+    if PREPROCESS_MODE == "resnet50":
+        tf = importlib.import_module("tensorflow")
+        batch = tf.keras.applications.resnet50.preprocess_input(batch)
+
+    output = np.asarray(model.predict(batch, verbose=0))
+    expected_shape = (1, len(CLASS_NAMES))
+    if output.shape != expected_shape:
+        raise RuntimeError(
+            f"Classifier smoke test ต้องได้ shape {expected_shape} แต่พบ {output.shape}"
+        )
+    if not np.all(np.isfinite(output)):
+        raise RuntimeError("Classifier ส่งค่า NaN หรือ Infinity")
+    if np.any(output < 0) or np.any(output > 1):
+        raise RuntimeError("Classifier ต้องส่งค่าความน่าจะเป็นระหว่าง 0 ถึง 1")
+
+
+def _load_classifier(classifier_model_url: str | None = None) -> tuple[Any, str]:
+    global _classifier_model, _classifier_key
+
+    model_key = classifier_model_url or "environment-default"
+    if _classifier_model is not None and _classifier_key == model_key:
+        return _classifier_model, model_key
 
     with _models_lock:
-        if _models is None:
-            validator_path = resolve_model_path(VALIDATOR_MODEL_PATH, "VALIDATOR_MODEL_URL")
-            classifier_path = resolve_model_path(CLASSIFIER_MODEL_PATH, "CLASSIFIER_MODEL_URL")
+        if _classifier_model is None or _classifier_key != model_key:
+            classifier_path = (
+                resolve_model_url(classifier_model_url, "classifier.keras")
+                if classifier_model_url
+                else resolve_model_path(CLASSIFIER_MODEL_PATH, "CLASSIFIER_MODEL_URL")
+            )
             tf = importlib.import_module("tensorflow")
-            validator = tf.keras.models.load_model(validator_path, compile=False)
             classifier = tf.keras.models.load_model(classifier_path, compile=False)
-            _models = (validator, classifier)
-    return _models
+            output_count = _classifier_output_count(classifier)
+            if output_count != len(CLASS_NAMES):
+                raise RuntimeError(
+                    f"Classifier output มี {output_count} ค่า "
+                    f"แต่ class_names มี {len(CLASS_NAMES)} คลาส"
+                )
+            _validate_classifier_contract(classifier)
+            _classifier_model = classifier
+            _classifier_key = model_key
+    return _classifier_model, model_key
+
+
+def _get_validator_model() -> Any:
+    global _validator_model
+    if _validator_model is not None:
+        return _validator_model
+
+    with _models_lock:
+        if _validator_model is None:
+            validator_path = resolve_model_path(VALIDATOR_MODEL_PATH, "VALIDATOR_MODEL_URL")
+            tf = importlib.import_module("tensorflow")
+            _validator_model = tf.keras.models.load_model(validator_path, compile=False)
+    return _validator_model
+
+
+def validate_classifier_model(classifier_model_url: str) -> dict[str, Any]:
+    classifier, model_key = _load_classifier(classifier_model_url)
+    classifier_path = resolve_model_url(
+        classifier_model_url,
+        "classifier.keras",
+        cache_group="classifier",
+    )
+    digest = hashlib.sha256()
+    with classifier_path.open("rb") as model_file:
+        while chunk := model_file.read(1024 * 1024):
+            digest.update(chunk)
+    return {
+        "status": "ready",
+        "model_key": model_key,
+        "class_count": _classifier_output_count(classifier),
+        "class_names": CLASS_NAMES,
+        "input_shape": [224, 224, 3],
+        "preprocess_mode": PREPROCESS_MODE,
+        "artifact_sha256": digest.hexdigest(),
+    }
 
 
 def _open_rgb_image(image_bytes: bytes) -> Image.Image:
@@ -155,9 +234,13 @@ def _to_probability(value: Any) -> float:
     return probability
 
 
-def predict_image(image_bytes: bytes) -> dict[str, Any]:
+def predict_image(
+    image_bytes: bytes,
+    classifier_model_url: str | None = None,
+) -> dict[str, Any]:
     batch = preprocess_image(image_bytes)
-    validator_model, classifier_model = _get_models()
+    validator_model = _get_validator_model()
+    classifier_model, _model_key = _load_classifier(classifier_model_url)
 
     validator_output = validator_model.predict(batch, verbose=0)
     rice_probability = _to_probability(

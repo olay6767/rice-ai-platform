@@ -33,7 +33,7 @@ uvicorn app:app --host 127.0.0.1 --port 8000
 
 ตั้งค่า `DISEASE_API_URL=http://127.0.0.1:8000` ใน `.env.local` ของโปรเจกต์ Next.js แล้วเปิดเว็บตามปกติ
 
-`.env.example` เป็นรายการตัวแปรอ้างอิง ตัวบริการ Python อ่านค่าจาก environment ของ process โดยตรง หากต้องการทดสอบ token ในเครื่อง ให้ตั้ง `DISEASE_API_TOKEN` ค่าเดียวกันใน process ของ FastAPI และใน `.env.local` ของ Next.js เมื่อกำหนด token แล้ว `POST /predict` ต้องมี `Authorization: Bearer <token>` ส่วน `GET /health` ยังเปิดให้ตรวจสถานะได้ ห้ามใช้ตัวแปร `NEXT_PUBLIC_` กับ token นี้
+`.env.example` เป็นรายการตัวแปรอ้างอิง ตัวบริการ Python อ่านค่าจาก environment ของ process โดยตรง `npm run dev:all` จะตั้ง token สำหรับการพัฒนาให้ทั้งสามบริการอัตโนมัติ หากเปิด `uvicorn` เอง ต้องตั้ง `DISEASE_API_TOKEN` ค่าเดียวกันใน process ของ FastAPI และใน `.env.local` ของ Next.js ระบบจะปฏิเสธ `POST /predict` และ `POST /models/validate` เมื่อไม่มี token ส่วน `GET /health` ยังเปิดให้ตรวจสถานะได้ ห้ามใช้ตัวแปร `NEXT_PUBLIC_` กับ token นี้
 
 ## Deploy บริการตรวจโรคแยกจากเว็บหลักบน Vercel
 
@@ -68,6 +68,6 @@ Vercel Functions จำกัด [request body 4.5 MB](https://vercel.com/docs/f
 
 - `GET /health`
 - `POST /predict` โดยใช้ `multipart/form-data` field ชื่อ `file`
-- เมื่อกำหนด `DISEASE_API_TOKEN` ต้องส่ง `Authorization: Bearer <token>` กับ `POST /predict`
+- `POST /predict` และ `POST /models/validate` ต้องส่ง `Authorization: Bearer <token>` เสมอ
 
 โมเดลจำแนกได้ `Healthy`, `Sheath Blight`, `Bacterial Leaf Blight`, `Brown Spot`, `Rice Blast` และ `Neck Blast` เท่านั้น จึงยังไม่รองรับโรคเมล็ดด่าง

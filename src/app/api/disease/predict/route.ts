@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   DiseaseApiError,
   DiseaseHistoryApiSuccess,
@@ -41,6 +42,12 @@ interface DiseasePredictionRow {
   confidence: number | string | null;
   all_probabilities: unknown;
   created_at: string;
+}
+
+interface ActiveDiseaseModel {
+  version: string;
+  classifierModelUrl: string | null;
+  preprocessMode: string | null;
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
@@ -238,7 +245,8 @@ async function readServiceError(response: Response): Promise<string> {
 
 async function savePrediction(
   user: OptionalUser,
-  prediction: DiseasePrediction
+  prediction: DiseasePrediction,
+  modelVersion: string
 ): Promise<boolean> {
   const { error } = await user.supabase
     .from("disease_predictions")
@@ -251,9 +259,7 @@ async function savePrediction(
       confidence: prediction.prediction?.confidence ?? null,
       all_probabilities:
         prediction.prediction?.allProbabilities ?? {},
-      model_version:
-        process.env.DISEASE_MODEL_VERSION?.trim() ||
-        "set2-resnet50-finetuned",
+      model_version: modelVersion,
     });
 
   if (error) {
@@ -266,6 +272,39 @@ async function savePrediction(
   }
 
   return true;
+}
+
+async function getActiveDiseaseModel(): Promise<ActiveDiseaseModel> {
+  const fallback = {
+    version: process.env.DISEASE_MODEL_VERSION?.trim() || "set2-resnet50-finetuned",
+    classifierModelUrl: null,
+    preprocessMode: null,
+  };
+  try {
+    const admin = createAdminClient();
+    const result = await admin
+      .from("rice_disease_model_releases")
+      .select("model_version,classifier_model_url,preprocess_mode")
+      .eq("is_active", true)
+      .maybeSingle();
+    if (result.error || !result.data) {
+      if (result.error && result.error.code !== "42P01" && result.error.code !== "PGRST205") {
+        console.error("Unable to read active disease model:", {
+          code: result.error.code,
+          message: result.error.message,
+        });
+      }
+      return fallback;
+    }
+    return {
+      version: result.data.model_version,
+      classifierModelUrl: result.data.classifier_model_url,
+      preprocessMode: result.data.preprocess_mode,
+    };
+  } catch (error) {
+    console.error("Unable to initialize active disease model lookup:", error);
+    return fallback;
+  }
 }
 
 function mapHistoryRow(row: DiseasePredictionRow): DiseaseHistoryEntry {
@@ -423,16 +462,23 @@ export async function POST(request: Request): Promise<Response> {
   );
 
   let serviceResponse: Response;
+  const activeModel = await getActiveDiseaseModel();
 
   try {
+    const serviceHeaders: Record<string, string> = {};
+    if (diseaseApiToken) serviceHeaders.Authorization = `Bearer ${diseaseApiToken}`;
+    if (activeModel.classifierModelUrl) {
+      serviceHeaders["X-Disease-Classifier-Url"] = activeModel.classifierModelUrl;
+    }
+    if (activeModel.preprocessMode) {
+      serviceHeaders["X-Disease-Preprocess-Mode"] = activeModel.preprocessMode;
+    }
     serviceResponse = await fetch(
       `${diseaseServiceUrl.replace(/\/+$/, "")}/predict`,
       {
         method: "POST",
         body: serviceFormData,
-        headers: diseaseApiToken
-          ? { Authorization: `Bearer ${diseaseApiToken}` }
-          : undefined,
+        headers: serviceHeaders,
         cache: "no-store",
         signal: AbortSignal.timeout(SERVICE_TIMEOUT_MS),
       }
@@ -485,7 +531,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   if (user) {
-    prediction.savedToHistory = await savePrediction(user, prediction);
+    prediction.savedToHistory = await savePrediction(user, prediction, activeModel.version);
   }
 
   return Response.json(

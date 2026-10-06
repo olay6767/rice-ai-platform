@@ -1,5 +1,7 @@
 "use client";
 
+import { upload as uploadBlob } from "@vercel/blob/client";
+
 import {
   Archive,
   Bot,
@@ -15,17 +17,14 @@ import {
   FileSpreadsheet,
   FolderOpen,
   History,
-  ImageUp,
   Layers3,
   LoaderCircle,
   Mail,
   MapPin,
-  Pencil,
   Phone,
   Plus,
   Power,
   RefreshCw,
-  Save,
   Search,
   ShieldCheck,
   Star,
@@ -44,6 +43,7 @@ import { Dialog, Field, button, download, errorText, input, panel, primary, requ
 import type {
   AdminAiModel,
   AdminDisease,
+  AdminDiseaseModelRelease,
   AdminRole,
   AdminUser,
   AdminUserDetails,
@@ -827,26 +827,211 @@ export function ModelsPanel() {
   return <section className="space-y-5"><div><p className="text-xs font-bold text-rice-leaf dark:text-rice-mint-light">Forecast & AI</p><h2 className="text-2xl font-bold">จัดการโมเดล</h2></div>{error && <Notice message={error} />}{loading ? <Busy /> : !models.length ? <Empty>ยังไม่มีข้อมูลโมเดล</Empty> : <div className="grid gap-4 xl:grid-cols-2">{models.map((model) => <article key={model.model_version} className={panel}><div className="flex items-start justify-between gap-3"><span className="rounded-xl bg-rice-mint/40 p-3 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light"><Bot className="h-6 w-6" /></span><div className="flex flex-wrap justify-end gap-2">{model.is_active && <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200">Active</span>}<span className={`rounded-full px-3 py-1 text-xs font-bold ${model.is_visible ? "bg-sky-100 text-sky-700 dark:bg-sky-400/10 dark:text-sky-200" : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/60"}`}>{model.is_visible ? "แสดงหน้า User" : "ซ่อน"}</span></div></div><h3 className="mt-4 text-lg font-bold">{model.model_name}</h3><p className="text-xs text-[var(--app-text-muted)]">Version {model.model_version} · {model.target}</p><dl className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">{[["Accuracy", ["accuracy", "Accuracy"]], ["MAE", ["mae", "MAE"]], ["RMSE", ["rmse", "RMSE"]], ["R²", ["r2", "r_squared", "R²"]]].map(([label, keys]) => <div key={label as string} className="rounded-xl bg-[var(--app-surface-soft)] p-3 text-center"><dt className="text-[10px] text-[var(--app-text-muted)]">{label as string}</dt><dd className="mt-1 font-bold">{metric(model, keys as string[])}</dd></div>)}</dl><div className="mt-5 flex flex-wrap gap-2"><button className={model.is_active ? button : primary} disabled={model.is_active} onClick={() => void update(model, { active: true })}><CheckCircle2 className="h-4 w-4" />{model.is_active ? "โมเดลปัจจุบัน" : "ตั้งเป็น Active"}</button><button className={button} onClick={() => void update(model, { visible: !model.is_visible })}><Power className="h-4 w-4" />{model.is_visible ? "ปิด Forecast" : "เปิด Forecast"}</button><a className={button} href={`${mainSiteUrl}/analytics/yield`} target="_blank" rel="noreferrer">ดู Forecast</a></div></article>)}</div>}</section>;
 }
 
+type DiseaseModelResponse = {
+  models: AdminDiseaseModelRelease[];
+  canManage: boolean;
+  serviceStatus: "online" | "offline" | "not_configured";
+  classNames: readonly string[];
+};
+
+const MAX_DISEASE_MODEL_BYTES = 300 * 1024 * 1024;
+
+function modelSize(bytes: number | null): string {
+  if (!bytes) return "ใช้ไฟล์เดิมของระบบ";
+  return `${(bytes / (1024 * 1024)).toLocaleString("th-TH", { maximumFractionDigits: 1 })} MB`;
+}
+
 export function DiseasesPanel() {
   const [items, setItems] = useState<AdminDisease[]>([]);
-  const [draft, setDraft] = useState({ diseaseCode: "", nameTh: "", nameEn: "", imageUrl: "", symptoms: "", causes: "", prevention: "", treatment: "", isActive: true });
-  const [editing, setEditing] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [modelData, setModelData] = useState<DiseaseModelResponse | null>(null);
+  const [loadingDiseases, setLoadingDiseases] = useState(true);
+  const [loadingModels, setLoadingModels] = useState(true);
+  const [modelDialog, setModelDialog] = useState(false);
+  const [modelVersion, setModelVersion] = useState("");
+  const [modelName, setModelName] = useState("");
+  const [modelFile, setModelFile] = useState<File | null>(null);
+  const [confirmClassOrder, setConfirmClassOrder] = useState(false);
+  const [preprocessMode, setPreprocessMode] = useState<"raw" | "rescale_01" | "resnet50">("raw");
+  const [activateModel, setActivateModel] = useState(true);
+  const [savingModel, setSavingModel] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [busyModelId, setBusyModelId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  async function load() { setLoading(true); setError(""); try { setItems(await request<AdminDisease[]>("/api/admin/diseases")); } catch (cause) { setError(errorText(cause)); } finally { setLoading(false); } }
+  const [modelError, setModelError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function loadModels() {
+    setLoadingModels(true);
+    setModelError("");
+    try {
+      setModelData(await request<DiseaseModelResponse>("/api/admin/disease-models"));
+    } catch (cause) {
+      setModelError(errorText(cause));
+    } finally {
+      setLoadingModels(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
-    request<AdminDisease[]>("/api/admin/diseases")
-      .then((data) => { if (active) setItems(data); })
-      .catch((cause) => { if (active) setError(errorText(cause)); })
-      .finally(() => { if (active) setLoading(false); });
+    Promise.allSettled([
+      request<AdminDisease[]>("/api/admin/diseases"),
+      request<DiseaseModelResponse>("/api/admin/disease-models"),
+    ]).then(([diseasesResult, modelsResult]) => {
+      if (!active) return;
+      if (diseasesResult.status === "fulfilled") setItems(diseasesResult.value);
+      else setError(errorText(diseasesResult.reason));
+      if (modelsResult.status === "fulfilled") setModelData(modelsResult.value);
+      else setModelError(errorText(modelsResult.reason));
+      setLoadingDiseases(false);
+      setLoadingModels(false);
+    });
     return () => { active = false; };
   }, []);
-  function edit(item: AdminDisease) { setEditing(item.id); setDraft({ diseaseCode: item.disease_code, nameTh: item.name_th, nameEn: item.name_en, imageUrl: item.image_url ?? "", symptoms: item.symptoms, causes: item.causes, prevention: item.prevention, treatment: item.treatment, isActive: item.is_active }); setOpen(true); }
-  async function save(event: FormEvent) { event.preventDefault(); if (!editing) return; try { await request("/api/admin/diseases", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...draft, id: editing }) }); setOpen(false); await load(); } catch (cause) { setError(errorText(cause)); } }
-  async function upload(file: File) { const body = new FormData(); body.append("file", file); try { const data = await request<{ publicUrl: string }>("/api/admin/media", { method: "POST", body }); setDraft((current) => ({ ...current, imageUrl: data.publicUrl })); } catch (cause) { setError(errorText(cause)); } }
-  return <section className="space-y-5"><div><p className="text-xs font-bold text-rice-leaf dark:text-rice-mint-light">Rice Disease</p><h2 className="text-2xl font-bold">จัดการโรคข้าว</h2><p className="mt-1 text-sm text-[var(--app-text-secondary)]">Class ทั้ง 6 รายการผูกกับลำดับผลลัพธ์ของโมเดล จึงแก้ได้เฉพาะชื่อ รายละเอียด รูป และสถานะการแสดงผล</p></div>{error && <Notice message={error} />}{open && <form onSubmit={save} className={panel + " space-y-4"}><div className="flex items-center justify-between"><h3 className="font-bold">แก้ไขข้อมูลโรค</h3><button type="button" className={button} onClick={() => setOpen(false)}><X className="h-4 w-4" /></button></div><div className="grid gap-3 md:grid-cols-2"><input className={input} disabled value={draft.diseaseCode} aria-label="รหัส Class จากโมเดล" /><input className={input} required value={draft.nameTh} onChange={(event) => setDraft({ ...draft, nameTh: event.target.value })} placeholder="ชื่อโรคภาษาไทย" /><input className={input} required value={draft.nameEn} onChange={(event) => setDraft({ ...draft, nameEn: event.target.value })} placeholder="ชื่อโรคภาษาอังกฤษ" /><div className="flex gap-2"><input className={input} value={draft.imageUrl} onChange={(event) => setDraft({ ...draft, imageUrl: event.target.value })} placeholder="URL รูป" /><label className={button + " cursor-pointer px-3"}><ImageUp className="h-4 w-4" /><input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { const file = event.target.files?.[0]; if (file) void upload(file); }} /></label></div>{[["symptoms", "อาการ"], ["causes", "สาเหตุ"], ["prevention", "วิธีป้องกัน"], ["treatment", "วิธีรักษา"]].map(([key, label]) => <textarea key={key} className={input} rows={3} value={draft[key as keyof typeof draft] as string} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} placeholder={label} />)}</div><label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={draft.isActive} onChange={(event) => setDraft({ ...draft, isActive: event.target.checked })} />เปิดใช้งาน</label><button className={primary} type="submit"><Save className="h-4 w-4" />บันทึก</button></form>}{loading ? <Busy /> : !items.length ? <Empty>ยังไม่มีรายการโรค</Empty> : <div className="grid gap-3">{items.map((item) => <article key={item.id} className={panel + " flex flex-col gap-4 sm:flex-row sm:items-center"}>{item.image_url ? <Image unoptimized src={item.image_url} alt="" width={96} height={80} className="h-20 w-24 rounded-xl object-cover" /> : <span className="flex h-20 w-24 items-center justify-center rounded-xl bg-rice-mint/30 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light"><ShieldCheck className="h-7 w-7" /></span>}<div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold">{item.name_th}</h3><span className="text-xs text-[var(--app-text-muted)]">{item.name_en}</span><span className="rounded-full bg-[var(--app-surface-soft)] px-2 py-1 text-[10px] text-[var(--app-text-secondary)]">{item.disease_code}</span>{!item.is_active && <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-600 dark:bg-white/10 dark:text-white/60">ปิดใช้งาน</span>}</div><p className="mt-1 line-clamp-2 text-xs text-[var(--app-text-secondary)]">{item.symptoms || "ยังไม่มีรายละเอียดอาการ"}</p><p className="mt-2 text-xs font-bold text-rice-leaf dark:text-rice-mint-light">ตรวจพบ {item.detection_count.toLocaleString("th-TH")} ครั้ง</p></div><button className={button} onClick={() => edit(item)}><Pencil className="h-4 w-4" />แก้ไข</button></article>)}</div>}<div className={panel}><h3 className="font-bold">Disease Model</h3><p className="mt-1 text-sm text-[var(--app-text-secondary)]">โมเดลและ Class Order จัดการผ่านกระบวนการ Model Release เท่านั้น หน้า Admin นี้ไม่แก้ไฟล์โมเดล Threshold หรือ Preprocessing</p><a href="http://127.0.0.1:8000/health" target="_blank" rel="noreferrer" className={button + " mt-3"}>ตรวจสถานะ Disease Model</a></div></section>;
+
+  function resetModelForm() {
+    setModelVersion("");
+    setModelName("");
+    setModelFile(null);
+    setConfirmClassOrder(false);
+    setPreprocessMode("raw");
+    setActivateModel(true);
+    setUploadProgress(0);
+  }
+
+  async function addModel(event: FormEvent) {
+    event.preventDefault();
+    setModelError("");
+    setSuccess("");
+    const version = modelVersion.trim();
+    const name = modelName.trim();
+    const file = modelFile;
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{1,99}$/.test(version)) {
+      setModelError("เวอร์ชันใช้ได้เฉพาะตัวอักษร ตัวเลข จุด ขีดกลาง และขีดล่าง");
+      return;
+    }
+    if (name.length < 2) {
+      setModelError("กรุณากรอกชื่อโมเดลอย่างน้อย 2 ตัวอักษร");
+      return;
+    }
+    if (!file || !file.name.toLowerCase().endsWith(".keras")) {
+      setModelError("กรุณาเลือกไฟล์โมเดล .keras");
+      return;
+    }
+    if (!file.size || file.size > MAX_DISEASE_MODEL_BYTES) {
+      setModelError("ไฟล์โมเดลต้องมีขนาดไม่เกิน 300 MB");
+      return;
+    }
+    const classNames = [...(modelData?.classNames ?? [])];
+    if (!confirmClassOrder || classNames.length !== 6) {
+      setModelError("กรุณายืนยันลำดับ Class ของโมเดลก่อนอัปโหลด");
+      return;
+    }
+
+    setSavingModel(true);
+    setUploadProgress(0);
+    try {
+      const safeFilename = file.name.replace(/[^A-Za-z0-9._-]/g, "_");
+      const blob = await uploadBlob(`disease-models/${version}/${safeFilename}`, file, {
+        access: "private",
+        contentType: "application/octet-stream",
+        handleUploadUrl: "/api/admin/disease-models/upload",
+        clientPayload: JSON.stringify({ modelVersion: version }),
+        multipart: true,
+        onUploadProgress: ({ percentage }) => setUploadProgress(Math.round(percentage)),
+      });
+      await request<AdminDiseaseModelRelease>("/api/admin/disease-models", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          modelVersion: version,
+          modelName: name,
+          classifierModelUrl: blob.url,
+          artifactSizeBytes: file.size,
+          classNames,
+          preprocessMode,
+          activate: activateModel,
+        }),
+      });
+      setModelDialog(false);
+      resetModelForm();
+      setSuccess(activateModel
+        ? "เพิ่มและตั้งโมเดลโรคเป็นโมเดลปัจจุบันแล้ว"
+        : "เพิ่มโมเดลโรคแล้ว");
+      await loadModels();
+    } catch (cause) {
+      setModelError(errorText(cause));
+    } finally {
+      setSavingModel(false);
+    }
+  }
+
+  async function activate(release: AdminDiseaseModelRelease) {
+    if (!window.confirm(`ยืนยันใช้โมเดล “${release.model_name}” กับการตรวจโรคของผู้ใช้?`)) return;
+    setBusyModelId(release.id);
+    setModelError("");
+    setSuccess("");
+    try {
+      await request<AdminDiseaseModelRelease>("/api/admin/disease-models", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: release.id, active: true }),
+      });
+      setSuccess(`เปลี่ยนโมเดลปัจจุบันเป็น ${release.model_name} แล้ว`);
+      await loadModels();
+    } catch (cause) {
+      setModelError(errorText(cause));
+    } finally {
+      setBusyModelId(null);
+    }
+  }
+
+  const activeModel = modelData?.models.find((model) => model.is_active) ?? null;
+  const serviceLabel = modelData?.serviceStatus === "online"
+    ? "บริการออนไลน์"
+    : modelData?.serviceStatus === "offline"
+      ? "บริการไม่ตอบสนอง"
+      : "ยังไม่ได้ตั้งค่าบริการ";
+
+  return <section className="space-y-5">
+    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p className="text-xs font-bold text-rice-leaf dark:text-rice-mint-light">Rice Disease</p>
+        <h2 className="text-2xl font-bold">จัดการโมเดลโรคข้าว</h2>
+        <p className="mt-1 text-sm text-[var(--app-text-secondary)]">เพิ่มไฟล์โมเดลจำแนกโรคและเลือกเวอร์ชันที่ใช้กับหน้า User รายการ Class ด้านล่างเป็นข้อมูลอ้างอิงแบบอ่านอย่างเดียว</p>
+      </div>
+      {modelData?.canManage && <button type="button" className={primary} onClick={() => { setModelError(""); setSuccess(""); setModelDialog(true); }}><Plus className="h-4 w-4" />เพิ่มโมเดลโรค</button>}
+    </header>
+
+    {error && <Notice message={error} />}
+    {modelError && <Notice message={modelError} />}
+    {success && <Notice message={success} success />}
+
+    {modelDialog && <Dialog title="เพิ่มโมเดลโรค" busy={savingModel} onClose={() => { setModelDialog(false); resetModelForm(); }}>
+      <form className="space-y-4" onSubmit={(event) => void addModel(event)}>
+        <Field label="เวอร์ชันโมเดล"><input className={input} required maxLength={100} value={modelVersion} onChange={(event) => setModelVersion(event.target.value)} placeholder="เช่น disease-resnet50-v2" /></Field>
+        <Field label="ชื่อโมเดล"><input className={input} required maxLength={160} value={modelName} onChange={(event) => setModelName(event.target.value)} placeholder="เช่น Rice Disease ResNet50 v2" /></Field>
+        <Field label="ไฟล์โมเดลจำแนกโรค (.keras)"><input className={input} required type="file" accept=".keras,application/octet-stream" onChange={(event) => setModelFile(event.target.files?.[0] ?? null)} /></Field>
+        <Field label="Preprocessing ที่ใช้ตอน Train"><select className={input} value={preprocessMode} onChange={(event) => setPreprocessMode(event.target.value as "raw" | "rescale_01" | "resnet50")}><option value="raw">raw (ค่า pixel 0–255)</option><option value="rescale_01">rescale_01 (หาร 255)</option><option value="resnet50">resnet50 preprocess_input</option></select></Field>
+        <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-3 text-xs leading-6 text-[var(--app-text-secondary)]"><p className="font-bold text-[var(--app-text)]">Class Order ที่ไฟล์โมเดลต้องใช้</p><ol className="mt-1 grid gap-x-4 sm:grid-cols-2">{modelData?.classNames.map((className, index) => <li key={className}>{index}. {className}</li>)}</ol><p className="mt-2">ระบบจะรันทดสอบจริง 1 รอบ ตรวจ input 224×224×3, output 6 ค่า และช่วงความน่าจะเป็นก่อนบันทึก ตัวตรวจว่าเป็นใบข้าวและค่า Threshold ยังคงใช้ค่าของระบบ</p></div>
+        <label className="flex items-start gap-3 rounded-xl border border-[var(--app-border)] p-3 text-sm font-semibold"><input className="mt-1" required type="checkbox" checked={confirmClassOrder} onChange={(event) => setConfirmClassOrder(event.target.checked)} /><span>ยืนยันว่า output index 0–5 ของไฟล์ตรงกับ Class Order ด้านบน<span className="mt-1 block text-xs font-normal text-[var(--app-text-muted)]">ไฟล์ .keras ไม่เก็บชื่อ Class ไว้ให้ระบบอ่านอัตโนมัติ จึงต้องยืนยันลำดับก่อนเปิดใช้</span></span></label>
+        <label className="flex items-start gap-3 rounded-xl border border-[var(--app-border)] p-3 text-sm font-semibold"><input className="mt-1" type="checkbox" checked={activateModel} onChange={(event) => setActivateModel(event.target.checked)} /><span>ตั้งเป็นโมเดลปัจจุบันหลังตรวจสอบผ่าน<span className="mt-1 block text-xs font-normal text-[var(--app-text-muted)]">การตรวจโรคครั้งถัดไปจะใช้โมเดลรุ่นนี้</span></span></label>
+        {savingModel && <div aria-live="polite"><div className="mb-1 flex justify-between text-xs font-semibold"><span>{uploadProgress < 100 ? "กำลังอัปโหลดโมเดล" : "กำลังตรวจสอบโมเดล"}</span><span>{uploadProgress}%</span></div><div className="h-2 overflow-hidden rounded-full bg-[var(--app-surface-soft)]"><div className="h-full rounded-full bg-rice-leaf transition-[width]" style={{ width: `${uploadProgress}%` }} /></div></div>}
+        <div className="flex justify-end gap-2"><button type="button" className={button} disabled={savingModel} onClick={() => { setModelDialog(false); resetModelForm(); }}>ยกเลิก</button><button type="submit" className={primary} disabled={savingModel}>{savingModel ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <UploadCloud className="h-4 w-4" />}{savingModel ? "กำลังเพิ่มโมเดล..." : "อัปโหลดและตรวจสอบ"}</button></div>
+      </form>
+    </Dialog>}
+
+    <section className={panel} aria-label="เวอร์ชันโมเดลโรค">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div><p className="text-xs font-bold uppercase tracking-[0.12em] text-rice-leaf dark:text-rice-mint-light">Disease Model</p><h3 className="mt-1 text-xl font-bold">{activeModel?.model_name ?? "ยังไม่มีโมเดลปัจจุบัน"}</h3><p className="mt-1 text-sm text-[var(--app-text-secondary)]">{activeModel ? `Version ${activeModel.model_version} · ${activeModel.class_count} Classes` : "เพิ่มโมเดลเพื่อเริ่มจัดการเวอร์ชัน"}</p></div>
+        <span className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${modelData?.serviceStatus === "online" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-400/10 dark:text-amber-200"}`}>{serviceLabel}</span>
+      </div>
+      {loadingModels ? <div className="mt-4"><Busy /></div> : modelData?.models.length ? <div className="mt-5 grid gap-3 xl:grid-cols-2">{modelData.models.map((model) => <article key={model.id} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-4"><div className="flex items-start justify-between gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rice-mint/40 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light"><Bot className="h-5 w-5" /></span>{model.is_active && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-200">กำลังใช้งาน</span>}</div><h4 className="mt-3 font-bold">{model.model_name}</h4><p className="mt-1 break-all text-xs text-[var(--app-text-muted)]">{model.model_version}</p><p className="mt-2 text-xs text-[var(--app-text-secondary)]">{modelSize(model.artifact_size_bytes)} · {model.preprocess_mode} · ตรวจสอบ {datasetDate(model.validated_at)}</p>{modelData.canManage && !model.is_active && <button type="button" className={button + " mt-3"} disabled={busyModelId === model.id} onClick={() => void activate(model)}>{busyModelId === model.id ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}ตรวจสอบและตั้งเป็นโมเดลปัจจุบัน</button>}</article>)}</div> : <p className="mt-4 text-sm text-[var(--app-text-secondary)]">ยังไม่มีรายการโมเดล</p>}
+    </section>
+
+    <div><h3 className="text-lg font-bold">Class ที่โมเดลรองรับ</h3><p className="mt-1 text-xs text-[var(--app-text-muted)]">รายการด้านล่างเรียงตามจำนวนครั้งที่ตรวจพบ ไม่ใช่ลำดับ output ของโมเดล</p></div>
+    {loadingDiseases ? <Busy /> : !items.length ? <Empty>ยังไม่มีรายการโรค</Empty> : <div className="grid gap-3">{items.map((item) => <article key={item.id} className={panel + " flex flex-col gap-4 sm:flex-row sm:items-center"}>{item.image_url ? <Image unoptimized src={item.image_url} alt="" width={96} height={80} className="h-20 w-24 rounded-xl object-cover" /> : <span className="flex h-20 w-24 items-center justify-center rounded-xl bg-rice-mint/30 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light"><ShieldCheck className="h-7 w-7" /></span>}<div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-bold">{item.name_th}</h3><span className="text-xs text-[var(--app-text-muted)]">{item.name_en}</span><span className="rounded-full bg-[var(--app-surface-soft)] px-2 py-1 text-[10px] text-[var(--app-text-secondary)]">{item.disease_code}</span>{!item.is_active && <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] text-slate-600 dark:bg-white/10 dark:text-white/60">ปิดใช้งาน</span>}</div><p className="mt-1 line-clamp-2 text-xs text-[var(--app-text-secondary)]">{item.symptoms || "ยังไม่มีรายละเอียดอาการ"}</p><p className="mt-2 text-xs font-bold text-rice-leaf dark:text-rice-mint-light">ตรวจพบ {item.detection_count.toLocaleString("th-TH")} ครั้ง</p></div></article>)}</div>}
+  </section>;
 }
 
 type ActivityItem = { id: string; admin: string; action: string; resource_type: string; summary: string; created_at: string };

@@ -11,7 +11,9 @@ from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 
-MAX_MODEL_BYTES = 512 * 1024 * 1024
+# Keep enough /tmp headroom for the validator, one classifier and runtime files.
+# Vercel Functions expose at most 500 MB of writable /tmp storage.
+MAX_MODEL_BYTES = 300 * 1024 * 1024
 CHUNK_BYTES = 1024 * 1024
 CACHE_DIR = Path(tempfile.gettempdir()) / "rice-ai-disease-models"
 PRIVATE_BLOB_HOST = re.compile(r"^[a-z0-9-]+\.private\.blob\.vercel-storage\.com$")
@@ -83,14 +85,42 @@ def resolve_model_path(local_path: Path, url_variable: str) -> Path:
     url = os.getenv(url_variable, "").strip()
     if not url:
         raise RuntimeError(f"Model file is missing and {url_variable} is not configured")
+
+    cache_group = "validator" if url_variable == "VALIDATOR_MODEL_URL" else "classifier"
+    return resolve_model_url(url, local_path.name, cache_group=cache_group)
+
+
+def resolve_model_url(
+    url: str,
+    filename: str = "classifier.keras",
+    *,
+    cache_group: str = "classifier",
+) -> Path:
+    """Resolve one explicitly selected private model artifact into the runtime cache."""
+
     validate_private_blob_url(url)
 
     token = os.getenv("BLOB_READ_WRITE_TOKEN", "").strip()
     if not token:
         raise RuntimeError("BLOB_READ_WRITE_TOKEN is required for private model downloads")
 
+    safe_filename = Path(filename).name
+    if not safe_filename.endswith(".keras"):
+        raise ValueError("Model filename must end with .keras")
+    if cache_group not in {"validator", "classifier"}:
+        raise ValueError("Unknown model cache group")
+
     fingerprint = hashlib.sha256(url.encode()).hexdigest()[:16]
-    cached_path = CACHE_DIR / f"{fingerprint}-{local_path.name}"
+    group_dir = CACHE_DIR / cache_group
+    cached_path = group_dir / f"{fingerprint}-{safe_filename}"
+
+    # Only one artifact per role is retained. This prevents the normal release
+    # validation flow from filling Vercel's 500 MB /tmp volume.
+    group_dir.mkdir(parents=True, exist_ok=True)
+    for candidate in group_dir.iterdir():
+        if candidate.is_file() and candidate != cached_path:
+            candidate.unlink(missing_ok=True)
+
     if not cached_path.is_file() or cached_path.stat().st_size == 0:
         _download_model(url, token, cached_path)
     return cached_path

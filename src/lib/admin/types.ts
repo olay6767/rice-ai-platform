@@ -178,6 +178,23 @@ export interface AdminDisease {
   updated_at: string;
 }
 
+export interface AdminDiseaseModelRelease {
+  id: string;
+  model_version: string;
+  model_name: string;
+  artifact_size_bytes: number | null;
+  artifact_sha256: string | null;
+  class_count: number;
+  class_names: string[];
+  input_shape: number[];
+  preprocess_mode: "raw" | "rescale_01" | "resnet50";
+  is_active: boolean;
+  validated_at: string | null;
+  activated_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export function isAdminResource(value: string): value is AdminResource {
   return (ADMIN_RESOURCES as readonly string[]).includes(value);
 }

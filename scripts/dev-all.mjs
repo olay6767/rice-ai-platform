@@ -11,6 +11,7 @@ const python = process.env.RICE_AI_PYTHON || (process.platform === "win32"
   ? path.join(service, ".venv", "Scripts", "python.exe")
   : path.join(service, ".venv", "bin", "python"));
 const next = path.join(root, "node_modules", "next", "dist", "bin", "next");
+const localDiseaseApiToken = process.env.DISEASE_API_TOKEN || "rice-ai-local-development";
 const requiredFiles = [
   python,
   next,
@@ -54,13 +55,15 @@ function portIsOpen(port, host) {
 const services = [
   { name: "เว็บหลัก", port: 3000, host: "127.0.0.1", command: process.execPath, args: [next, "dev", "-p", "3000"], options: {
     cwd: root, stdio: "inherit", windowsHide: true,
+    env: { ...process.env, DISEASE_API_TOKEN: localDiseaseApiToken },
   }},
   ...(includeAdmin ? [{ name: "หน้า Admin", port: 3001, host: "127.0.0.1", command: process.execPath, args: [next, "dev", "-p", "3001"], options: {
     cwd: path.join(root, "admin-portal"), stdio: "inherit", windowsHide: true,
+    env: { ...process.env, DISEASE_API_TOKEN: localDiseaseApiToken },
   }}] : []),
   { name: "โมเดลตรวจโรค", port: 8000, host: "127.0.0.1", command: python, args: ["-m", "uvicorn", "app:app", "--host", "127.0.0.1", "--port", "8000"], options: {
     cwd: service, stdio: "inherit", windowsHide: true,
-    env: { ...process.env, PYTHONUNBUFFERED: "1" },
+    env: { ...process.env, DISEASE_API_TOKEN: localDiseaseApiToken, PYTHONUNBUFFERED: "1" },
   }},
 ];
 
