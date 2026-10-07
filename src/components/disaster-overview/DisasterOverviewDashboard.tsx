@@ -1105,15 +1105,6 @@ export default function DisasterOverviewDashboard() {
     return () => controller.abort();
   }, [reloadKey]);
 
-  useEffect(() => {
-    if (!detailProvince) return;
-    const frame = window.requestAnimationFrame(() => {
-      detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      detailRef.current?.focus({ preventScroll: true });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [detailProvince]);
-
   const summary = useMemo(
     () => (data ? deriveDisasterOverview(data, DEFAULT_OVERVIEW_FILTERS) : null),
     [data]
@@ -1210,17 +1201,17 @@ export default function DisasterOverviewDashboard() {
       ...current,
       province: province ?? ALL,
     }));
-    setDetailProvince(null);
+    setDetailProvince(province);
   };
   const openProvinceDetails = (province: string) => {
     setMapFilters((current) => ({ ...current, province }));
     setDetailProvince(province);
-    if (detailProvince === province) {
+    window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         detailRef.current?.focus({ preventScroll: true });
       });
-    }
+    });
   };
 
   return (
