@@ -157,7 +157,6 @@ export const DEFAULT_BOTTOM_NAVIGATION_ITEMS: BottomNavigationItem[] =
       href: "/dashboard",
       icon: Home,
       description: "ไปหน้าแดชบอร์ด",
-      matchPaths: ["/analytics/rice-price"],
     },
     {
       id: "analytics",

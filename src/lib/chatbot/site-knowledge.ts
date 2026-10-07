@@ -11,7 +11,6 @@ const TOPIC_ROUTES: Record<KnowledgeTopic, string> = {
   storm: "/analytics/storm",
   drought: "/analytics/drought",
   yield: "/analytics/yield",
-  price: "/analytics/rice-price",
 };
 
 const TOPIC_KEYWORDS: Record<KnowledgeTopic, string[]> = {
@@ -19,7 +18,6 @@ const TOPIC_KEYWORDS: Record<KnowledgeTopic, string[]> = {
   storm: ["พายุ", "วาตภัย", "storm"],
   drought: ["ภัยแล้ง", "แล้ง", "ฝนทิ้งช่วง", "drought"],
   yield: ["ผลผลิต", "กิโลกรัมต่อไร่", "กก./ไร่", "yield"],
-  price: ["ราคาข้าว", "ราคา ข้าว", "ราคาตลาด", "rice price"],
 };
 
 const FOLLOW_UP_PATTERN = /(แล้ว|เทียบ|มากสุด|น้อยสุด|อันดับ|ปี|เดือน|จังหวัด|ต่อ|อีก|ก่อนหน้า|ล่าสุด|แนวโน้ม|\d)/i;
@@ -37,14 +35,6 @@ const MONTHS = [
   { month: 10, names: ["ตุลาคม", "ต.ค.", "ตค"] },
   { month: 11, names: ["พฤศจิกายน", "พ.ย.", "พย"] },
   { month: 12, names: ["ธันวาคม", "ธ.ค.", "ธค"] },
-];
-
-const RICE_TYPES = [
-  "ข้าวหอมปทุมธานี",
-  "ข้าวหอมมะลิ",
-  "ข้าวเหนียว",
-  "ข้าวนึ่ง",
-  "ข้าวขาว",
 ];
 
 const textCache = new Map<
@@ -118,47 +108,6 @@ async function readDataText(...segments: string[]): Promise<string> {
 
 async function readJson<T>(...segments: string[]): Promise<T> {
   return JSON.parse(await readDataText(...segments)) as T;
-}
-
-function parseCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let cell = "";
-  let quoted = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const character = line[index];
-
-    if (character === '"') {
-      if (quoted && line[index + 1] === '"') {
-        cell += '"';
-        index += 1;
-      } else {
-        quoted = !quoted;
-      }
-    } else if (character === "," && !quoted) {
-      cells.push(cell);
-      cell = "";
-    } else {
-      cell += character;
-    }
-  }
-
-  cells.push(cell);
-  return cells;
-}
-
-function parseCsv(text: string): Array<Record<string, string>> {
-  const lines = text.replace(/^\uFEFF/, "").trim().split(/\r?\n/);
-  const headers = parseCsvLine(lines.shift() ?? "");
-
-  return lines
-    .filter((line) => line.trim())
-    .map((line) => {
-      const values = parseCsvLine(line);
-      return Object.fromEntries(
-        headers.map((header, index) => [header, values[index] ?? ""])
-      );
-    });
 }
 
 function includesAny(message: string, keywords: string[]): boolean {
@@ -403,63 +352,6 @@ async function yieldContext(message: string): Promise<string> {
   ].join("\n");
 }
 
-async function priceContext(message: string): Promise<string> {
-  const [monthlyText, summaryText] = await Promise.all([
-    readDataText("rice-price", "rice_price_monthly.csv"),
-    readDataText("rice-price", "rice_summary.csv"),
-  ]);
-  const monthly = parseCsv(monthlyText);
-  const summaries = parseCsv(summaryText);
-  const years = queryYears(message);
-  const months = queryMonths(message);
-  const requestedTypes = RICE_TYPES.filter((riceType) =>
-    message.includes(riceType)
-  );
-  const hasFilters =
-    years.length > 0 || months.length > 0 || requestedTypes.length > 0;
-  const matching = monthly
-    .filter(
-      (row) =>
-        (years.length === 0 || years.includes(Number(row.year_be))) &&
-        (months.length === 0 || months.includes(Number(row.month))) &&
-        (requestedTypes.length === 0 || requestedTypes.includes(row.rice_type))
-    )
-    .map((row) => ({
-      date: row.date,
-      year_be: Number(row.year_be),
-      month: Number(row.month),
-      month_name_th: row.month_name_th,
-      rice_type: row.rice_type,
-      price: Number(row.price),
-      data_type: row.data_type,
-      forecast_reliability: row.forecast_reliability || null,
-      source: row.source || null,
-    }));
-  const latestByType = RICE_TYPES.map((riceType) =>
-    monthly.filter((row) => row.rice_type === riceType).at(-1)
-  )
-    .filter(Boolean)
-    .map((row) => ({
-      date: row?.date,
-      rice_type: row?.rice_type,
-      price: Number(row?.price),
-      data_type: row?.data_type,
-      forecast_reliability: row?.forecast_reliability || null,
-    }));
-
-  return [
-    "[ข้อมูลราคาข้าวภายในเว็บไซต์]",
-    "แหล่งข้อมูล: แดชบอร์ดราคาข้าวไทย /analytics/rice-price",
-    "หน่วยราคา: บาทต่อ 100 กิโลกรัม; data_type=forecast คือค่าพยากรณ์ ไม่ใช่ราคาซื้อขายที่รับประกัน",
-    "ข้อมูลระดับประเทศเท่านั้น ยังไม่มีราคาแยกภูมิภาคหรือจังหวัด",
-    `สรุปพยากรณ์ปี 2569: ${compact(summaries)}`,
-    `ข้อมูลล่าสุดแยกชนิดข้าว: ${compact(latestByType)}`,
-    `ข้อมูลที่ตรงคำถาม: ${compact(
-      (hasFilters ? matching : matching.slice(-24)).slice(0, 60)
-    )}`,
-  ].join("\n");
-}
-
 export async function buildSiteKnowledgeContext(
   message: string,
   pagePath?: string,
@@ -474,7 +366,7 @@ export async function buildSiteKnowledgeContext(
     return {
       topics,
       context:
-        "เว็บไซต์มีแดชบอร์ดน้ำท่วม พายุ ภัยแล้ง ผลผลิตข้าว และราคาข้าว หากคำถามเกี่ยวข้องให้แนะนำผู้ใช้ระบุปี เดือน จังหวัด หรือชนิดข้าวเพื่อค้นข้อมูลได้ตรงขึ้น",
+        "เว็บไซต์มีแดชบอร์ดน้ำท่วม พายุ ภัยแล้ง และผลผลิตข้าว หากคำถามเกี่ยวข้องให้แนะนำผู้ใช้ระบุปี เดือน หรือจังหวัดเพื่อค้นข้อมูลได้ตรงขึ้น",
     };
   }
 
@@ -484,8 +376,7 @@ export async function buildSiteKnowledgeContext(
       if (topic === "storm" || topic === "drought") {
         return disasterContext(topic, message);
       }
-      if (topic === "yield") return yieldContext(message);
-      return priceContext(message);
+      return yieldContext(message);
     })
   );
   const pageNote = pagePath

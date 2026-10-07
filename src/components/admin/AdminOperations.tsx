@@ -427,8 +427,8 @@ export function UsersPanel({
   );
 }
 
-type AgricultureCategory = "yield" | "price" | "flood" | "drought" | "storm";
-type GovernedDatasetType = "rice_price" | "flood" | "drought" | "storm";
+type AgricultureCategory = "yield" | "flood" | "drought" | "storm";
+type GovernedDatasetType = "flood" | "drought" | "storm";
 type DatasetValidation = {
   rowCount?: number;
   provinceCount?: number;
@@ -469,13 +469,11 @@ type DatasetResponse = {
 
 const AGRI_TABS: Array<{ id: AgricultureCategory; label: string }> = [
   { id: "yield", label: "ผลผลิตข้าว" },
-  { id: "price", label: "ราคาข้าว" },
   { id: "flood", label: "น้ำท่วม" },
   { id: "drought", label: "ภัยแล้ง" },
   { id: "storm", label: "พายุ" },
 ];
 const DATASET_TYPE: Record<Exclude<AgricultureCategory, "yield">, GovernedDatasetType> = {
-  price: "rice_price",
   flood: "flood",
   drought: "drought",
   storm: "storm",
@@ -777,7 +775,7 @@ function DatasetVersionDialog({ type, modal, versions, canSetDefault, onClose, o
       <Field label={`พิมพ์รหัสเวอร์ชัน “${modal.target.version_key}” เพื่อยืนยัน`}><input autoFocus className={input} value={deleteKey} disabled={busy} autoComplete="off" spellCheck={false} onChange={(event) => setDeleteKey(event.target.value)} /></Field>
       <label className="flex items-start gap-3 text-sm leading-6"><input type="checkbox" className="mt-1 h-5 w-5 accent-rice-leaf" checked={confirmed} disabled={busy} onChange={(event) => setConfirmed(event.target.checked)} />ตรวจสอบแล้วและยืนยันลบเวอร์ชันนี้</label>
     </> : <>
-      {modal.kind === "create" && <Field label="รหัสเวอร์ชัน (เปลี่ยนภายหลังไม่ได้)"><input autoFocus className={input} required minLength={2} maxLength={50} pattern="[a-z0-9][a-z0-9._-]{1,49}" placeholder="เช่น rice-price-2027-v1" value={key} disabled={busy} onChange={(event) => setKey(event.target.value.toLowerCase())} /></Field>}
+      {modal.kind === "create" && <Field label="รหัสเวอร์ชัน (เปลี่ยนภายหลังไม่ได้)"><input autoFocus className={input} required minLength={2} maxLength={50} pattern="[a-z0-9][a-z0-9._-]{1,49}" placeholder="เช่น flood-2027-v1" value={key} disabled={busy} onChange={(event) => setKey(event.target.value.toLowerCase())} /></Field>}
       <Field label="ชื่อเวอร์ชัน"><input className={input} required minLength={2} maxLength={120} value={label} disabled={busy} onChange={(event) => setLabel(event.target.value)} /></Field>
       <Field label="รายละเอียด / สิ่งที่เปลี่ยน"><textarea className={input} rows={4} maxLength={1000} value={description} disabled={busy} onChange={(event) => setDescription(event.target.value)} /></Field>
       <Field label="ชื่อแหล่งข้อมูล"><input className={input} maxLength={200} value={sourceName} disabled={busy} onChange={(event) => setSourceName(event.target.value)} /></Field>

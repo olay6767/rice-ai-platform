@@ -172,7 +172,6 @@ export const DEFAULT_SIDEBAR_MENU_SECTIONS: SidebarMenuSection[] = [
         href: "/dashboard",
         icon: LayoutDashboard,
         description: "ดูภาพรวมข้อมูลและสถิติ",
-        matchPaths: ["/analytics/rice-price"],
       },
       {
         id: "disease",

@@ -13,11 +13,6 @@ const links = [
   },
   { href: "/dashboard", label: "ผลผลิต", icon: "/images/4.png" },
   {
-    href: "/analytics/rice-price",
-    label: "ราคาข้าวไทย",
-    icon: "/images/5.png",
-  },
-  {
     href: "/analytics/flood",
     label: "สถานการณ์น้ำท่วม",
     icon: "/images/2.png",

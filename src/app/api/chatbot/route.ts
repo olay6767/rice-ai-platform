@@ -25,7 +25,6 @@ const KNOWLEDGE_TOPICS: KnowledgeTopic[] = [
   "storm",
   "drought",
   "yield",
-  "price",
 ];
 
 interface RateLimitEntry {

@@ -25,7 +25,7 @@ export async function GET(request: Request): Promise<Response> {
     const rangeStart = new Date(Date.now() - (days - 1) * 86_400_000);
     rangeStart.setUTCHours(0, 0, 0, 0);
 
-    const [posts, publishedPosts, activeAlerts, prices, recommendations, activity, diseaseChecks, assistantUses] =
+    const [posts, publishedPosts, activeAlerts, recommendations, activity, diseaseChecks, assistantUses] =
       await Promise.all([
         context.supabase.from("news_posts").select("*", { count: "exact", head: true }),
         context.supabase
@@ -36,9 +36,6 @@ export async function GET(request: Request): Promise<Response> {
           .from("management_alerts")
           .select("*", { count: "exact", head: true })
           .eq("is_active", true),
-        context.supabase
-          .from("rice_price_updates")
-          .select("*", { count: "exact", head: true }),
         context.supabase
           .from("farmer_recommendations")
           .select("*", { count: "exact", head: true })
@@ -62,7 +59,6 @@ export async function GET(request: Request): Promise<Response> {
       posts.error,
       publishedPosts.error,
       activeAlerts.error,
-      prices.error,
       recommendations.error,
       activity.error,
     ].find(Boolean);
@@ -90,14 +86,8 @@ export async function GET(request: Request): Promise<Response> {
       console.error("Unable to count admin users", error);
     }
 
-    const [dashboardSummary, latestPrice, stormImports] = await Promise.all([
+    const [dashboardSummary, stormImports] = await Promise.all([
       context.supabase.rpc("rice_dashboard_admin_summary"),
-      context.supabase
-        .from("rice_price_updates")
-        .select("observed_at")
-        .order("observed_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
       context.supabase
         .from("agricultural_import_files")
         .select("id,validation_summary")
@@ -122,19 +112,6 @@ export async function GET(request: Request): Promise<Response> {
       : null;
 
     const systemAlerts: AdminOverview["systemAlerts"] = [];
-    if (!latestPrice.error) {
-      const observedAt = latestPrice.data?.observed_at
-        ? Date.parse(String(latestPrice.data.observed_at))
-        : Number.NaN;
-      if (!Number.isFinite(observedAt) || Date.now() - observedAt > 7 * 86_400_000) {
-        systemAlerts.push({
-          id: "rice-price-stale",
-          severity: "warning",
-          message: latestPrice.data ? "ข้อมูลราคาข้าวยังไม่อัปเดต" : "ยังไม่มีข้อมูลราคาข้าว",
-        });
-      }
-    }
-
     if (!stormImports.error) {
       const failedStormUploads = (stormImports.data ?? []).filter((row) => {
         const summary = row.validation_summary as Record<string, unknown> | null;
@@ -176,7 +153,6 @@ export async function GET(request: Request): Promise<Response> {
     const totalContent =
       (posts.count ?? 0) +
       (activeAlerts.count ?? 0) +
-      (prices.count ?? 0) +
       (recommendations.count ?? 0);
 
     const data: AdminOverview = {
@@ -188,7 +164,7 @@ export async function GET(request: Request): Promise<Response> {
         posts: posts.count ?? 0,
         publishedPosts: publishedPosts.count ?? 0,
         activeAlerts: activeAlerts.count ?? 0,
-        prices: prices.count ?? 0,
+        prices: 0,
         recommendations: recommendations.count ?? 0,
       },
       dailyUsage,

@@ -2,8 +2,7 @@ export type KnowledgeTopic =
   | "flood"
   | "storm"
   | "drought"
-  | "yield"
-  | "price";
+  | "yield";
 
 export interface ChatbotRequest {
   message: string;

@@ -65,11 +65,10 @@ test("renders the mascot, summary, and recommendation without a source line", ()
   assert.ok(html.includes("dashboard-mascot-speech"));
 });
 
-test("is connected to all six dashboards", async () => {
+test("is connected to all five active dashboards", async () => {
   const dashboardFiles = [
     "../src/components/disaster-overview/DisasterOverviewDashboard.tsx",
     "../src/components/rice-yield/RiceYieldDashboard.tsx",
-    "../src/components/rice-price/RicePriceDashboard.tsx",
     "../src/components/flood/FloodDashboard.tsx",
     "../src/components/drought/DroughtDashboard.tsx",
     "../src/components/storm/StormDashboard.tsx",

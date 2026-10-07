@@ -149,7 +149,6 @@ export const DEFAULT_NAVBAR_MENU_ITEMS: NavbarMenuItem[] = [
       "/analytics/yield/research",
       "/analytics/yield/about-data",
       "/analytics/yield/province",
-      "/analytics/rice-price",
     ],
   },
   {
