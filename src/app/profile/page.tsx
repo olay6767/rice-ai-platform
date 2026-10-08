@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   BadgeCheck,
   CalendarDays,
+  ChevronRight,
   Mail,
   ScanLine,
   ShieldCheck,
@@ -10,6 +12,7 @@ import {
 } from "lucide-react";
 
 import ProfileSettings from "@/components/profile/ProfileSettings";
+import ProfileAvatarUploader from "@/components/profile/ProfileAvatarUploader";
 import FarmFieldManager from "@/components/profile/FarmFieldManager";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +20,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "โปรไฟล์ผู้ใช้งาน",
-  description: "จัดการข้อมูลส่วนตัวและความปลอดภัยของบัญชี Rice AI",
+  description: "จัดการข้อมูลส่วนตัว รูปโปรไฟล์ และความปลอดภัยของบัญชี SmartRiceHub",
 };
 
 function metadataText(value: unknown): string {
@@ -87,7 +90,8 @@ export default async function ProfilePage() {
   const fullName =
     metadataText(user.user_metadata?.full_name) ||
     user.email ||
-    "ผู้ใช้งาน Rice AI";
+    "ผู้ใช้งาน SmartRiceHub";
+  const avatarUrl = metadataText(user.user_metadata?.avatar_url);
   const role = user.app_metadata?.role === "superadmin"
     ? "ผู้ดูแลระบบสูงสุด"
     : user.app_metadata?.role === "admin"
@@ -119,7 +123,7 @@ export default async function ProfilePage() {
   ];
 
   return (
-    <main className="relative isolate overflow-hidden py-8 sm:py-12 lg:py-14">
+    <main className="relative isolate overflow-hidden pb-24 pt-5 sm:py-12 lg:py-14">
       <div
         aria-hidden="true"
         className="ambient-orb -left-28 top-8 h-80 w-80 bg-rice-mint/45 dark:bg-rice-leaf/10"
@@ -130,44 +134,72 @@ export default async function ProfilePage() {
       />
 
       <div className="dashboard-container relative z-10">
-        <section className="overflow-hidden rounded-[2.25rem] bg-rice-forest text-white shadow-[0_24px_70px_rgba(11,46,28,0.2)] dark:bg-[#0a2a1a]">
-          <div className="relative px-5 py-7 sm:px-8 sm:py-9">
+        <section className="overflow-hidden rounded-[1.75rem] bg-rice-forest text-white shadow-[0_24px_70px_rgba(11,46,28,0.2)] sm:rounded-[2.25rem] dark:bg-[#0a2a1a]">
+          <div className="relative px-5 py-7 sm:px-8 sm:py-9 lg:px-10">
             <div
               aria-hidden="true"
               className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-rice-mint/10"
             />
+            <div aria-hidden="true" className="absolute -bottom-28 left-1/3 h-56 w-56 rounded-full bg-rice-gold/[0.07] blur-2xl" />
 
-            <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-4 sm:gap-5">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.4rem] bg-rice-mint text-xl font-bold text-rice-forest ring-4 ring-white/10 sm:h-20 sm:w-20 sm:text-2xl">
-                  {initials(fullName)}
-                </span>
-                <div className="min-w-0">
+            <div className="relative grid gap-7 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
+              <ProfileAvatarUploader
+                avatarUrl={avatarUrl}
+                fullName={fullName}
+                initials={initials(fullName)}
+              />
+
+              <div className="min-w-0 text-center sm:text-left">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-bold text-rice-mint-light">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     {role}
                   </div>
-                  <h1 className="mt-2 truncate font-heading text-2xl font-bold sm:text-3xl">
-                    {fullName}
-                  </h1>
-                  <p className="mt-1 flex items-center gap-2 truncate text-sm text-white/60">
-                    <Mail className="h-4 w-4 shrink-0" />
-                    {user.email}
-                  </p>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-[11px] font-bold text-emerald-100">
+                    <BadgeCheck className="h-3.5 w-3.5" />
+                    {user.email_confirmed_at ? "ยืนยันอีเมลแล้ว" : "รอยืนยันอีเมล"}
+                  </span>
                 </div>
+                <h1 className="mt-3 break-words font-heading text-3xl font-bold leading-tight text-white sm:text-4xl">
+                  {fullName}
+                </h1>
+                <p className="mt-2 flex items-center justify-center gap-2 text-sm text-white/65 sm:justify-start">
+                  <Mail className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{user.email}</span>
+                </p>
+                <p className="mt-3 max-w-xl text-xs leading-5 text-white/55 sm:text-sm sm:leading-6">
+                  จัดการข้อมูลบัญชี รูปโปรไฟล์ ความปลอดภัย และข้อมูลแปลงนาของคุณได้จากที่เดียว
+                </p>
               </div>
 
-              <span className="inline-flex w-fit items-center gap-2 rounded-2xl border border-emerald-300/20 bg-emerald-300/10 px-4 py-3 text-xs font-bold text-emerald-100">
-                <BadgeCheck className="h-4 w-4" />
-                {user.email_confirmed_at ? "ยืนยันอีเมลแล้ว" : "รอยืนยันอีเมล"}
-              </span>
+              <nav aria-label="ทางลัดการตั้งค่าโปรไฟล์" className="grid gap-2 sm:grid-cols-3 lg:w-52 lg:grid-cols-1">
+                {[
+                  ["ข้อมูลส่วนตัว", "#personal-info"],
+                  ["ความปลอดภัย", "#security"],
+                  ["ข้อมูลแปลงนา", "#farm-fields"],
+                ].map(([label, href]) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="flex min-h-11 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.07] px-4 text-xs font-bold text-white transition hover:bg-white/[0.13]"
+                  >
+                    {label}
+                    <ChevronRight className="h-4 w-4 text-white/55" />
+                  </Link>
+                ))}
+              </nav>
             </div>
           </div>
         </section>
 
+        <div className="mb-4 mt-7 sm:mt-8">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-rice-leaf">ภาพรวมบัญชี</p>
+          <h2 className="mt-1 font-heading text-2xl font-bold text-rice-forest dark:text-white">ข้อมูลของคุณใน SmartRiceHub</h2>
+        </div>
+
         <section
           aria-label="สรุปบัญชี"
-          className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+          className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3"
         >
           {summaryCards.map((card) => {
             const Icon = card.icon;
@@ -175,12 +207,12 @@ export default async function ProfilePage() {
             return (
               <article
                 key={card.label}
-                className="rounded-3xl border border-rice-forest/10 bg-white/75 p-5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.04]"
+                className="group rounded-[1.6rem] border border-rice-forest/10 bg-white/80 p-5 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:shadow-card dark:border-white/10 dark:bg-white/[0.04]"
               >
                 <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.tone}`}>
                   <Icon className="h-5 w-5" />
                 </span>
-                <p className="mt-4 font-heading text-2xl font-bold text-rice-forest dark:text-white">
+                <p className="mt-4 font-heading text-[1.7rem] font-bold leading-tight text-rice-forest dark:text-white">
                   {card.value}
                 </p>
                 <h2 className="mt-1 text-sm font-bold text-rice-forest dark:text-white">
@@ -194,7 +226,7 @@ export default async function ProfilePage() {
           })}
         </section>
 
-        <section className="mt-6">
+        <section className="mt-6 sm:mt-8">
           <ProfileSettings
             fullName={fullName}
             email={user.email ?? ""}

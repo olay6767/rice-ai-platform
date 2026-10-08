@@ -78,8 +78,9 @@ export default function ProfileSettings({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
       <form
+        id="personal-info"
         action={profileAction}
-        className="rounded-[2rem] border border-rice-forest/10 bg-white/80 p-5 shadow-card backdrop-blur sm:p-7 dark:border-white/10 dark:bg-white/[0.045]"
+        className="scroll-mt-24 rounded-[1.75rem] border border-rice-forest/10 bg-white/85 p-5 shadow-card backdrop-blur sm:rounded-[2rem] sm:p-7 dark:border-white/10 dark:bg-white/[0.045]"
       >
         <div className="flex items-start gap-3 border-b border-rice-forest/10 pb-5 dark:border-white/10">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rice-mint/60 text-rice-forest dark:bg-rice-leaf/20 dark:text-rice-mint-light">
@@ -187,11 +188,11 @@ export default function ProfileSettings({
           </label>
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-stretch sm:justify-end">
           <button
             type="submit"
             disabled={profilePending}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-rice-natural px-5 py-2.5 text-sm font-bold text-white shadow-primary transition hover:-translate-y-0.5 hover:bg-rice-forest disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-rice-natural px-5 py-2.5 text-sm font-bold text-white shadow-primary transition hover:-translate-y-0.5 hover:bg-rice-forest disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto"
           >
             {profilePending ? (
               <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -204,8 +205,9 @@ export default function ProfileSettings({
       </form>
 
       <form
+        id="security"
         action={passwordAction}
-        className="h-fit rounded-[2rem] border border-rice-forest/10 bg-white/80 p-5 shadow-card backdrop-blur sm:p-7 dark:border-white/10 dark:bg-white/[0.045]"
+        className="h-fit scroll-mt-24 rounded-[1.75rem] border border-rice-forest/10 bg-white/85 p-5 shadow-card backdrop-blur sm:rounded-[2rem] sm:p-7 dark:border-white/10 dark:bg-white/[0.045]"
       >
         <div className="flex items-start gap-3 border-b border-rice-forest/10 pb-5 dark:border-white/10">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rice-gold/20 text-amber-700 dark:bg-rice-gold/10 dark:text-rice-gold">
