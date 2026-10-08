@@ -235,7 +235,7 @@ function FooterNavLink({
 export default function Footer({
   id = "site-footer",
 
-  brandName = "Rice AI Platform",
+  brandName = "SmartRiceHub",
 
   description = (
     <>

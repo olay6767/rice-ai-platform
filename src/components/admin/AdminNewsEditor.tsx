@@ -620,7 +620,7 @@ export default function AdminNewsEditor({
             summary: summary.trim() || trimmedTitle,
             body,
             category: DATABASE_CATEGORY_VALUES[category],
-            sourceName: "Rice AI Platform",
+            sourceName: "SmartRiceHub",
             imageUrl: coverRemoteUrl,
             imageAlt: trimmedTitle,
             isFeatured: false,

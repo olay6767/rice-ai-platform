@@ -112,7 +112,7 @@ export default function RegisterPage() {
               dark:text-rice-mint
             "
           >
-            Rice AI Platform
+            SmartRiceHub
           </p>
 
           <h1

@@ -7,7 +7,7 @@ import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 export const metadata: Metadata = {
   title: "ลืมรหัสผ่าน",
   description:
-    "ขอลิงก์ตั้งรหัสผ่านใหม่สำหรับบัญชี Rice AI Platform",
+    "ขอลิงก์ตั้งรหัสผ่านใหม่สำหรับบัญชี SmartRiceHub",
 };
 
 export default function ForgotPasswordPage() {

@@ -245,7 +245,7 @@ export default function Sidebar({
   profileHref = "/profile",
   settingsHref = "/settings",
 
-  brandName = "Rice AI Platform",
+  brandName = "SmartRiceHub",
   brandSubtitle = "ระบบเกษตรอัจฉริยะ",
 
   desktopOnly = true,

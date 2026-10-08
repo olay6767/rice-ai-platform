@@ -888,7 +888,7 @@ export default function AdminConsole({
             </div>
 
             <div className={`absolute bottom-5 right-5 z-10 rounded-lg border border-white/25 bg-rice-forest/75 px-4 py-3 text-white shadow-lg backdrop-blur-md ${activeTab === "posts" ? "hidden lg:block" : "hidden sm:block"}`}>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/65">Rice AI Platform</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/65">SmartRiceHub</p>
               <p className="mt-1 text-sm font-bold">ข้อมูลเพื่อการเกษตรที่จัดการได้ง่าย</p>
             </div>
           </header>

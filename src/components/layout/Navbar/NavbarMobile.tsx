@@ -519,7 +519,7 @@ export default function NavbarMobile({
                       "dark:text-white"
                     )}
                   >
-                    Rice AI Platform
+                    SmartRiceHub
                   </span>
 
                   <span

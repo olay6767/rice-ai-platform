@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     default: "Rice AI Admin",
     template: "%s | Rice AI Admin",
   },
-  description: "ระบบจัดการเนื้อหาและผู้ใช้ Rice AI Platform",
+  description: "ระบบจัดการเนื้อหาและผู้ใช้ SmartRiceHub",
   robots: { index: false, follow: false },
 };
 

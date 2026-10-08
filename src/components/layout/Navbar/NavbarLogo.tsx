@@ -7,7 +7,7 @@ export default function NavbarLogo() {
   return (
     <Link
       href="/"
-      aria-label="SmartRice Hub"
+      aria-label="SmartRiceHub"
       className="
         group
         flex
@@ -41,7 +41,7 @@ export default function NavbarLogo() {
       >
         <Image
           src="/images/44.png"
-          alt="โลโก้ SmartRice Hub"
+          alt="โลโก้ SmartRiceHub"
           fill
           priority
           sizes="44px"
@@ -72,7 +72,7 @@ export default function NavbarLogo() {
 
         <span
           className="
-            ml-1.5 text-lg
+            text-lg
             font-medium tracking-tight
             text-[#E9B949]
             dark:text-[#FFE8A3]

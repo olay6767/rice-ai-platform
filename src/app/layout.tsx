@@ -36,14 +36,14 @@ const ibmPlexSansThai = IBM_Plex_Sans_Thai({
 export const metadata: Metadata = {
   title: {
     default:
-      "Rice AI — เกษตรอัจฉริยะสำหรับคนปลูกข้าว",
-    template: "%s | Rice AI",
+      "SmartRiceHub — เกษตรอัจฉริยะสำหรับคนปลูกข้าว",
+    template: "%s | SmartRiceHub",
   },
 
   description:
     "แพลตฟอร์มเกษตรอัจฉริยะสำหรับวิเคราะห์โรคข้าว ติดตามสุขภาพแปลงนา จัดการต้นทุน และวางแผนการเพาะปลูกด้วยข้อมูลและ AI",
 
-  applicationName: "Rice AI",
+  applicationName: "SmartRiceHub",
 
   keywords: [
     "Rice AI",
@@ -56,15 +56,15 @@ export const metadata: Metadata = {
     "Crop Management",
   ],
 
-  creator: "Rice AI",
-  publisher: "Rice AI",
+  creator: "SmartRiceHub",
+  publisher: "SmartRiceHub",
 
   openGraph: {
     type: "website",
     locale: "th_TH",
-    siteName: "Rice AI",
+    siteName: "SmartRiceHub",
     title:
-      "Rice AI — เกษตรอัจฉริยะสำหรับคนปลูกข้าว",
+      "SmartRiceHub — เกษตรอัจฉริยะสำหรับคนปลูกข้าว",
     description:
       "วิเคราะห์โรคข้าว ติดตามสุขภาพแปลงนา และจัดการข้อมูลการเพาะปลูกในแพลตฟอร์มเดียว",
   },
@@ -72,7 +72,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title:
-      "Rice AI — เกษตรอัจฉริยะสำหรับคนปลูกข้าว",
+      "SmartRiceHub — เกษตรอัจฉริยะสำหรับคนปลูกข้าว",
     description:
       "วิเคราะห์โรคข้าว ติดตามสุขภาพแปลงนา และจัดการข้อมูลการเพาะปลูกในแพลตฟอร์มเดียว",
   },
