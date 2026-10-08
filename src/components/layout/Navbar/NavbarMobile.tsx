@@ -10,6 +10,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -22,7 +23,6 @@ import {
   ShieldCheck,
   UserCircle,
   UserPlus,
-  Wheat,
   X,
 } from "lucide-react";
 
@@ -498,15 +498,17 @@ export default function NavbarMobile({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    "flex h-10 w-10 shrink-0",
-                    "items-center justify-center",
-                    "rounded-xl",
-                    "bg-gradient-to-br",
-                    "from-green-500 to-emerald-700",
-                    "text-white shadow-sm"
+                    "relative h-11 w-11 shrink-0",
+                    "overflow-hidden rounded-xl"
                   )}
                 >
-                  <Wheat className="h-6 w-6" />
+                  <Image
+                    src="/images/44.png"
+                    alt=""
+                    fill
+                    sizes="44px"
+                    className="object-contain"
+                  />
                 </span>
 
                 <span className="min-w-0">
