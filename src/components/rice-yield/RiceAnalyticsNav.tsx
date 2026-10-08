@@ -41,9 +41,9 @@ export default function RiceAnalyticsNav({
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       activeLinkRef.current?.scrollIntoView({
-        behavior: "smooth",
+        behavior: "auto",
         block: "nearest",
-        inline: "center",
+        inline: "nearest",
       });
     });
 
@@ -51,7 +51,7 @@ export default function RiceAnalyticsNav({
   }, [pathname]);
 
   return (
-    <ul className="flex min-w-max snap-x snap-mandatory gap-2">
+    <ul className="flex min-w-max snap-x snap-mandatory gap-1.5 sm:gap-2">
       {links.map(({ href, label, icon }) => {
         const isActive = pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
         const keepVersion = href === "/dashboard" || href.startsWith("/analytics/yield");
@@ -66,7 +66,7 @@ export default function RiceAnalyticsNav({
                   : href
               }
               aria-current={isActive ? "page" : undefined}
-              className={`relative inline-flex min-h-10 items-center gap-2 overflow-hidden whitespace-nowrap rounded-md px-3 text-xs font-semibold transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:min-h-11 sm:px-4 sm:text-sm ${
+              className={`relative inline-flex min-h-11 items-center gap-2 overflow-hidden whitespace-nowrap rounded-lg px-3.5 text-xs font-semibold transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] sm:px-4 sm:text-sm ${
                 appearance === "light"
                   ? isActive
                     ? "bg-amber-100 text-amber-950 shadow-[0_8px_22px_rgba(120,83,20,0.20)]"

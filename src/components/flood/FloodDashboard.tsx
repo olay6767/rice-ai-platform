@@ -307,7 +307,7 @@ export default function FloodDashboard() {
   );
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-[#f7f8f3] pb-14 text-[#11251a] sm:pb-20 dark:bg-[#07140c] dark:text-white">
+    <main className="min-h-dvh overflow-x-hidden bg-[#f7f8f3] pb-24 text-[#11251a] sm:pb-20 dark:bg-[#07140c] dark:text-white">
       <section className="relative isolate overflow-hidden bg-[#eef6ee] dark:bg-[#091b11]">
         <Image
           src="/images/28.png"
@@ -315,29 +315,29 @@ export default function FloodDashboard() {
           fill
           priority
           sizes="100vw"
-          className="-z-20 object-cover object-center opacity-55 dark:opacity-30"
+          className="-z-20 object-cover object-[68%_center] opacity-45 sm:object-center sm:opacity-55 dark:opacity-30"
         />
         <div
           aria-hidden="true"
-          className="absolute inset-0 -z-10 bg-gradient-to-r from-[#eef6ee] via-[#f5f7ef]/95 to-[#e9f3f4]/35 dark:from-[#091b11] dark:via-[#091b11]/95 dark:to-[#0b2534]/50"
+          className="absolute inset-0 -z-10 bg-gradient-to-r from-[#eef6ee] via-[#f5f7ef]/95 to-[#e9f3f4]/60 sm:to-[#e9f3f4]/35 dark:from-[#091b11] dark:via-[#091b11]/95 dark:to-[#0b2534]/50"
         />
-        <div className="dashboard-container relative py-9 sm:py-14">
+        <div className="dashboard-container relative pb-5 pt-7 sm:py-14">
           <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-700/15 bg-white/65 px-3 py-1 text-xs font-semibold text-sky-800 dark:border-sky-300/20 dark:bg-white/5 dark:text-sky-200">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-sky-700/15 bg-white/75 px-3 py-1 text-[11px] font-semibold text-sky-800 backdrop-blur-sm sm:text-xs dark:border-sky-300/20 dark:bg-white/5 dark:text-sky-200">
                 <CloudRain aria-hidden="true" className="h-4 w-4" />
                 Flood Intelligence · Thailand
               </div>
-              <h1 className="text-[2rem] font-bold leading-[1.15] tracking-tight sm:text-4xl lg:text-5xl">
+              <h1 className="max-w-[21rem] text-[1.85rem] font-bold leading-[1.12] tracking-tight sm:max-w-none sm:text-4xl lg:text-5xl">
                 แดชบอร์ดสถานการณ์น้ำท่วม
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-emerald-950/65 sm:text-base sm:leading-7 dark:text-white/65">
+              <p className="mt-3 max-w-[22rem] text-[13px] leading-[1.7] text-emerald-950/70 sm:max-w-2xl sm:text-base sm:leading-7 dark:text-white/65">
                 สำรวจแนวโน้มและการกระจายตัวของเหตุการณ์น้ำท่วมรายปี รายเดือน
                 และรายจังหวัดจากข้อมูลรายปี พ.ศ. 2563–2568 และข้อมูลรายเดือนถึง พ.ศ. 2567
               </p>
           </div>
           <nav
             aria-label="เมนูแดชบอร์ดการเกษตรและสภาพอากาศ"
-            className="-mx-4 mt-5 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:mt-7 sm:px-0 [&::-webkit-scrollbar]:hidden"
+            className="-mx-5 mt-4 overflow-x-auto px-5 pb-2 [scroll-padding-inline:1.25rem] [scrollbar-width:none] sm:mx-0 sm:mt-7 sm:px-0 [&::-webkit-scrollbar]:hidden"
           >
             <Suspense fallback={<div className="h-11" />}>
               <RiceAnalyticsNav />
@@ -346,7 +346,7 @@ export default function FloodDashboard() {
         </div>
       </section>
 
-      <div className="dashboard-container space-y-5 py-5 sm:space-y-7 sm:py-10">
+      <div className="dashboard-container space-y-4 py-5 sm:space-y-7 sm:py-10">
         {loading ? <RiceLoadingState label="กำลังโหลดข้อมูลสถานการณ์น้ำท่วม…" /> : null}
         {error ? (
           <RiceErrorState message={error} onRetry={() => setReloadKey((value) => value + 1)} />
@@ -368,7 +368,7 @@ export default function FloodDashboard() {
               }
             />
 
-            <section aria-label="ตัวชี้วัดสถานการณ์น้ำท่วม" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+            <section aria-label="ตัวชี้วัดสถานการณ์น้ำท่วม" className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
               {cards.map(({ label, value, unit, imageSrc, imageFit }) => (
                 <FloodKpiCard
                   key={label}
@@ -515,7 +515,7 @@ function FloodChartFilters({
 
   return (
     <details className="group relative z-40 self-start">
-      <summary className="inline-flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-full bg-[#edf2e5] px-3.5 text-xs font-semibold text-[#557060] transition-colors hover:bg-[#e3ead9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/35 [&::-webkit-details-marker]:hidden dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15">
+      <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-full bg-[#edf2e5] px-3.5 text-xs font-semibold text-[#557060] transition-colors hover:bg-[#e3ead9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/35 [&::-webkit-details-marker]:hidden dark:bg-white/10 dark:text-emerald-100 dark:hover:bg-white/15">
         <Funnel aria-hidden="true" className="h-3.5 w-3.5" />
         เลือกข้อมูล
         <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
@@ -578,25 +578,30 @@ function FloodKpiCard({
   imageFit: "contain" | "cover";
 }) {
   return (
-    <article className="flex min-h-[128px] min-w-0 items-center gap-2.5 rounded-2xl bg-white p-2.5 shadow-[0_12px_34px_rgba(11,46,28,0.07)] sm:min-h-[136px] sm:gap-4 sm:p-4 dark:bg-[#0d2014]">
-      <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-[0_7px_18px_rgba(11,46,28,0.14)] sm:h-[72px] sm:w-[72px] dark:bg-white/95">
-        <Image
-          src={imageSrc}
-          alt=""
-          width={72}
-          height={72}
-          sizes="72px"
-          className={imageFit === "cover" ? "h-full w-full object-cover" : "h-11 w-11 object-contain sm:h-14 sm:w-14"}
-        />
-      </div>
-      <div className="min-w-0">
-        <p className="break-words text-xl font-bold leading-none tracking-tight text-sky-700 tabular-nums sm:text-2xl dark:text-sky-300">
+    <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-2xl bg-white p-3.5 shadow-[0_12px_34px_rgba(11,46,28,0.07)] sm:min-h-[136px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-4 dark:bg-[#0d2014]">
+      <div className="flex min-w-0 items-center gap-2.5 sm:contents">
+        <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-[0_7px_18px_rgba(11,46,28,0.14)] sm:h-[72px] sm:w-[72px] dark:bg-white/95">
+          <Image
+            src={imageSrc}
+            alt=""
+            width={72}
+            height={72}
+            sizes="(max-width: 639px) 44px, 72px"
+            className={imageFit === "cover" ? "h-full w-full object-cover" : "h-8 w-8 object-contain sm:h-14 sm:w-14"}
+          />
+        </div>
+        <p className="min-w-0 break-words text-[1.35rem] font-bold leading-[1.05] tracking-tight text-sky-700 tabular-nums sm:hidden dark:text-sky-300">
           {value}
         </p>
-        <p className="mt-1.5 line-clamp-2 text-[11px] font-semibold leading-4 text-emerald-950/75 dark:text-white/75">
+      </div>
+      <div className="min-w-0">
+        <p className="hidden break-words text-2xl font-bold leading-none tracking-tight text-sky-700 tabular-nums sm:block dark:text-sky-300">
+          {value}
+        </p>
+        <p className="line-clamp-2 text-xs font-semibold leading-[1.45] text-emerald-950/75 sm:mt-1.5 sm:text-[11px] sm:leading-4 dark:text-white/75">
           {label}
         </p>
-        <p className="mt-1 text-[9px] leading-4 text-emerald-950/45 sm:text-[10px] dark:text-white/45">
+        <p className="mt-1 text-[10px] leading-4 text-emerald-950/45 dark:text-white/45">
           {unit}
         </p>
       </div>
