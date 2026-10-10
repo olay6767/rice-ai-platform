@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, KeyRound } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
+import AuthBrandMark from "@/components/auth/AuthBrandMark";
 import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
 
 export const metadata: Metadata = {
@@ -17,12 +18,9 @@ export default function ForgotPasswordPage() {
       className="flex min-h-dvh items-center justify-center bg-rice-background px-4 py-10 sm:px-6 dark:bg-[#07140c]"
     >
       <section className="glass-card w-full max-w-lg p-7 text-center sm:p-10">
-        <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-rice-mint/50 text-rice-forest dark:bg-rice-leaf/15 dark:text-rice-mint-light">
-          <KeyRound
-            aria-hidden="true"
-            className="h-7 w-7"
-          />
-        </span>
+        <div className="flex justify-center">
+          <AuthBrandMark size="hero" />
+        </div>
         <h1 className="mt-5 font-heading text-2xl font-bold text-rice-forest dark:text-white">
           ลืมรหัสผ่าน
         </h1>

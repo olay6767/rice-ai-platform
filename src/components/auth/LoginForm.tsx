@@ -10,7 +10,6 @@ import {
   LogIn,
   Mail,
   ShieldCheck,
-  Sprout,
 } from "lucide-react";
 import {
   useActionState,
@@ -21,6 +20,7 @@ import {
   loginAction,
   type LoginState,
 } from "@/app/login/actions";
+import AuthBrandMark from "@/components/auth/AuthBrandMark";
 
 const initialLoginState: LoginState = {
   status: "idle",
@@ -82,22 +82,7 @@ export default function LoginForm({
           dark:border-white/10
         "
       >
-        <span
-          className="
-            flex h-11 w-11
-            shrink-0 items-center
-            justify-center rounded-2xl
-            bg-rice-mint/60
-            text-rice-forest
-            dark:bg-rice-leaf/20
-            dark:text-rice-mint
-          "
-        >
-          <Sprout
-            aria-hidden="true"
-            className="h-5 w-5"
-          />
-        </span>
+        <AuthBrandMark />
 
         <div>
           <h1

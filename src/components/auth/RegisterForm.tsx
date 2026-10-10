@@ -10,7 +10,6 @@ import {
   LockKeyhole,
   Mail,
   ShieldCheck,
-  Sprout,
   UserRound,
 } from "lucide-react";
 import {
@@ -22,6 +21,7 @@ import {
   registerAction,
   type RegisterState,
 } from "@/app/register/actions";
+import AuthBrandMark from "@/components/auth/AuthBrandMark";
 
 /*
  * ค่าเริ่มต้นต้องอยู่ใน Client Component
@@ -263,22 +263,7 @@ export default function RegisterForm() {
           dark:border-white/10
         "
       >
-        <span
-          className="
-            flex h-11 w-11
-            shrink-0 items-center
-            justify-center rounded-2xl
-            bg-rice-mint/60
-            text-rice-forest
-            dark:bg-rice-leaf/20
-            dark:text-rice-mint
-          "
-        >
-          <Sprout
-            aria-hidden="true"
-            className="h-5 w-5"
-          />
-        </span>
+        <AuthBrandMark />
 
         <div>
           <h2
