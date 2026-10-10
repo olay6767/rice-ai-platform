@@ -499,9 +499,35 @@ export default function NavbarActions({
               </Link>
 
               <Link
+                href="/login"
+                className={cn(
+                  "inline-flex h-10 items-center gap-2 sm:hidden",
+                  "rounded-lg bg-green-600 px-3",
+                  "text-sm font-medium text-white",
+                  "transition-colors",
+
+                  "hover:bg-green-700",
+
+                  "focus-visible:outline-none",
+                  "focus-visible:ring-2",
+                  "focus-visible:ring-green-500",
+                  "focus-visible:ring-offset-2",
+
+                  "dark:focus-visible:ring-offset-gray-950"
+                )}
+              >
+                <LogIn
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                />
+
+                เข้าสู่ระบบ
+              </Link>
+
+              <Link
                 href="/register"
                 className={cn(
-                  "inline-flex h-10 items-center gap-2",
+                  "hidden h-10 items-center gap-2 sm:inline-flex",
                   "rounded-lg bg-green-600 px-3",
                   "text-sm font-medium text-white",
                   "transition-colors",
@@ -521,13 +547,7 @@ export default function NavbarActions({
                   className="h-4 w-4"
                 />
 
-                <span className="hidden sm:inline">
-                  สมัครสมาชิก
-                </span>
-
-                <span className="sm:hidden">
-                  สมัคร
-                </span>
+                สมัครสมาชิก
               </Link>
             </div>
           )}
