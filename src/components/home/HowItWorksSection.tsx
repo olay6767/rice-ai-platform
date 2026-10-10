@@ -205,49 +205,13 @@ export default function HowItWorksSection({
       data-component="how-it-works-section"
       className={cn(
         "relative isolate overflow-hidden",
-        "bg-rice-surface-soft",
+        "border-y border-rice-forest/10 bg-rice-background",
         "px-5 py-20",
         "sm:px-6 sm:py-24",
         "lg:px-8 lg:py-28",
-        "dark:bg-[#08170e]",
         className
       )}
     >
-      {/* Background decoration */}
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute -left-40 top-20 -z-10
-          h-96 w-96 rounded-full
-          bg-rice-mint/30 blur-3xl
-          dark:bg-rice-leaf/10
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute -right-36 bottom-10 -z-10
-          h-96 w-96 rounded-full
-          bg-rice-gold/15 blur-3xl
-          dark:bg-rice-gold/[0.06]
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute inset-0 -z-20
-          opacity-[0.022]
-          [background-image:linear-gradient(to_right,#0B2E1C_1px,transparent_1px),linear-gradient(to_bottom,#0B2E1C_1px,transparent_1px)]
-          [background-size:48px_48px]
-          dark:opacity-[0.035]
-        "
-      />
-
       <div className="mx-auto w-full max-w-7xl">
         {/* Heading */}
         <div

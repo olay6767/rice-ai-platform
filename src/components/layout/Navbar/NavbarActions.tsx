@@ -5,13 +5,9 @@ import {
   Bell,
   LogIn,
   LogOut,
-  Moon,
-  Sun,
   UserPlus,
 } from "lucide-react";
 import {
-  useCallback,
-  useEffect,
   useState,
   type ComponentPropsWithoutRef,
   type ReactNode,
@@ -44,7 +40,6 @@ export interface NavbarActionsProps
   showSearch?: boolean;
   searchVisibility?: NavbarSearchVisibility;
 
-  showTheme?: boolean;
   showNotifications?: boolean;
   showProfile?: boolean;
   showProfileSeparator?: boolean;
@@ -53,8 +48,6 @@ export interface NavbarActionsProps
   leadingActions?: ReactNode;
   trailingActions?: ReactNode;
 }
-
-type ThemeMode = "light" | "dark";
 
 function cn(
   ...classNames: Array<string | null | undefined | false>
@@ -101,27 +94,6 @@ function getInitials(name: string): string {
   return `${words[0].charAt(0)}${words[1].charAt(0)}`.toUpperCase();
 }
 
-function getInitialTheme(): ThemeMode {
-  if (typeof window === "undefined") {
-    return "light";
-  }
-
-  try {
-    const savedTheme =
-      window.localStorage.getItem("rice-ai-theme");
-
-    if (savedTheme === "light" || savedTheme === "dark") {
-      return savedTheme;
-    }
-  } catch {
-    // Browser อาจปิด localStorage
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
-}
-
 export default function NavbarActions({
   user = null,
   unreadNotificationCount = 0,
@@ -130,7 +102,6 @@ export default function NavbarActions({
   showSearch = false,
   searchVisibility = "wide",
 
-  showTheme = true,
   showNotifications = true,
   showProfile = true,
   showProfileSeparator = false,
@@ -143,8 +114,6 @@ export default function NavbarActions({
   "aria-label": ariaLabel = "เครื่องมือบนแถบนำทาง",
   ...divProps
 }: NavbarActionsProps) {
-  const [theme, setTheme] = useState<ThemeMode>("light");
-  const [isThemeReady, setIsThemeReady] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] =
     useState<string | null>(null);
@@ -160,7 +129,6 @@ export default function NavbarActions({
   const initials = user ? getInitials(displayName) : "";
 
   const hasMainActions =
-    showTheme ||
     showNotifications ||
     showProfile;
 
@@ -168,45 +136,6 @@ export default function NavbarActions({
     Boolean(leadingActions) ||
     hasMainActions ||
     Boolean(trailingActions);
-
-  /* Theme readiness intentionally begins after hydration because it depends on browser preferences. */
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    const initialTheme = getInitialTheme();
-
-    setTheme(initialTheme);
-
-    document.documentElement.classList.toggle(
-      "dark",
-      initialTheme === "dark"
-    );
-
-    setIsThemeReady(true);
-  }, []);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  const toggleTheme = useCallback(() => {
-    setTheme((currentTheme) => {
-      const nextTheme: ThemeMode =
-        currentTheme === "dark" ? "light" : "dark";
-
-      document.documentElement.classList.toggle(
-        "dark",
-        nextTheme === "dark"
-      );
-
-      try {
-        window.localStorage.setItem(
-          "rice-ai-theme",
-          nextTheme
-        );
-      } catch {
-        // Browser อาจปิด localStorage
-      }
-
-      return nextTheme;
-    });
-  }, []);
 
   const handleSignOut = async (): Promise<void> => {
     if (!onSignOut || isSigningOut) {
@@ -259,56 +188,6 @@ export default function NavbarActions({
       )}
 
       
-      {showTheme && (
-        <button
-          type="button"
-          disabled={!isThemeReady}
-          onClick={toggleTheme}
-          aria-label={
-            theme === "dark"
-              ? "เปลี่ยนเป็นธีมสว่าง"
-              : "เปลี่ยนเป็นธีมมืด"
-          }
-          title={
-            theme === "dark"
-              ? "เปลี่ยนเป็นธีมสว่าง"
-              : "เปลี่ยนเป็นธีมมืด"
-          }
-          className={cn(
-            "inline-flex h-10 w-10 shrink-0",
-            "items-center justify-center",
-            "rounded-lg text-gray-600",
-            "transition-colors",
-
-            "hover:bg-gray-100",
-            "hover:text-gray-950",
-
-            "focus-visible:outline-none",
-            "focus-visible:ring-2",
-            "focus-visible:ring-green-500",
-
-            "disabled:cursor-wait",
-            "disabled:opacity-50",
-
-            "dark:text-gray-300",
-            "dark:hover:bg-gray-800",
-            "dark:hover:text-white"
-          )}
-        >
-          {theme === "dark" ? (
-            <Sun
-              aria-hidden="true"
-              className="h-5 w-5"
-            />
-          ) : (
-            <Moon
-              aria-hidden="true"
-              className="h-5 w-5"
-            />
-          )}
-        </button>
-      )}
-
       {showNotifications && user && (
         <Link
           href="/notifications"
@@ -365,8 +244,8 @@ export default function NavbarActions({
 
       {showProfile &&
   showProfileSeparator &&
-  (showTheme ||
-    (showNotifications && Boolean(user))) && (
+  showNotifications &&
+  Boolean(user) && (
           <span
             aria-hidden="true"
             className={cn(

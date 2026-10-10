@@ -67,11 +67,6 @@ export interface NavbarProps
   searchVisibility?: NavbarSearchVisibility;
 
   /**
-   * แสดงปุ่มเปลี่ยนธีม
-   */
-  showTheme?: boolean;
-
-  /**
    * แสดงปุ่มแจ้งเตือน
    */
   showNotifications?: boolean;
@@ -132,7 +127,6 @@ export default function Navbar({
 
   showSearch = true,
   searchVisibility = "wide",
-  showTheme = true,
   showNotifications = true,
   showProfile = true,
   showProfileSeparator = true,
@@ -260,7 +254,6 @@ export default function Navbar({
           onSignOut={onSignOut}
           showSearch={showSearch}
           searchVisibility={searchVisibility}
-          showTheme={showTheme}
           showNotifications={
             showNotifications
           }

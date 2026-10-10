@@ -312,50 +312,13 @@ export default function HeroSection({
       data-component="home-hero"
       className={cn(
         "relative isolate overflow-hidden",
-        "bg-rice-ambient",
+        "border-b border-rice-forest/10 bg-rice-background",
         "px-5 pb-20 pt-10",
         "sm:px-6 sm:pb-24 sm:pt-14",
         "lg:px-8 lg:pb-28 lg:pt-20",
-        "dark:bg-rice-ambient-dark",
         className
       )}
     >
-      {/* Ambient background */}
-      <div
-        aria-hidden="true"
-        className="
-          ambient-orb
-          -left-28 top-16
-          h-72 w-72
-          bg-rice-mint/45
-          dark:bg-rice-leaf/15
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          ambient-orb
-          -right-24 top-44
-          h-80 w-80
-          bg-rice-gold/15
-          animation-delay-400
-          dark:bg-rice-gold/10
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute inset-0 -z-10
-          opacity-[0.025]
-          [background-image:linear-gradient(to_right,#0B2E1C_1px,transparent_1px),linear-gradient(to_bottom,#0B2E1C_1px,transparent_1px)]
-          [background-size:40px_40px]
-          dark:opacity-[0.035]
-        "
-      />
-
       <div
         className="
           relative mx-auto grid

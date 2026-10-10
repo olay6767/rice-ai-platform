@@ -43,7 +43,6 @@ import {
   UsersPanel,
 } from "@/components/admin/AdminOperations";
 import AdminNewsEditor from "@/components/admin/AdminNewsEditor";
-import AdminThemeToggle from "@/components/admin/AdminThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 
 type AdminTab =
@@ -838,9 +837,6 @@ export default function AdminConsole({
             <p className="mt-1 px-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#b94f0b]">
               {administratorRole === "superadmin" ? "Super Admin" : "Admin"}
             </p>
-            <div className="mt-2">
-              <AdminThemeToggle showLabel={false} />
-            </div>
             <button
               type="button"
               onClick={() => void signOut()}

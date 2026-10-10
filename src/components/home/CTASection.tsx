@@ -133,39 +133,13 @@ export default function CTASection({
       data-component="home-cta-section"
       className={cn(
         "relative isolate overflow-hidden",
-        "bg-rice-background",
+        "border-t border-rice-forest/10 bg-rice-background",
         "px-5 py-20",
         "sm:px-6 sm:py-24",
         "lg:px-8 lg:py-28",
-        "dark:bg-[#07140c]",
         className
       )}
     >
-      {/* Section background */}
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute -left-40 top-10 -z-10
-          h-96 w-96 rounded-full
-          bg-rice-mint/30
-          blur-3xl
-          dark:bg-rice-leaf/10
-        "
-      />
-
-      <div
-        aria-hidden="true"
-        className="
-          pointer-events-none
-          absolute -right-40 bottom-0 -z-10
-          h-96 w-96 rounded-full
-          bg-rice-gold/15
-          blur-3xl
-          dark:bg-rice-gold/[0.06]
-        "
-      />
-
       <div className="mx-auto w-full max-w-7xl">
         <div
           className="

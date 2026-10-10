@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
-import AdminThemeToggle from "@/components/admin/AdminThemeToggle";
 
 const userLoginUrl = `${(
   process.env.NEXT_PUBLIC_MAIN_SITE_URL?.trim() ||
@@ -82,10 +81,6 @@ export default function AdminLoginPage() {
 
   return (
     <main className="relative flex min-h-dvh items-center justify-center bg-[var(--app-background)] px-4 py-10 text-[var(--app-text)]">
-      <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
-        <AdminThemeToggle />
-      </div>
-
       <section className="w-full max-w-md rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface-glass)] p-7 shadow-floating backdrop-blur-xl sm:p-9">
         <div className="flex items-center gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rice-mint/90 text-rice-forest">

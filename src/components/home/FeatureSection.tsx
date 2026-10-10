@@ -210,10 +210,7 @@ function FeatureCard({ feature }: { feature: PlatformFeature }) {
 
 export default function FeatureSection() {
   return (
-    <section id="home-features" aria-labelledby="home-features-title" className="relative isolate overflow-hidden bg-rice-background px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24 dark:bg-[#07140c]">
-      <div aria-hidden="true" className="pointer-events-none absolute -left-32 top-32 -z-10 h-80 w-80 rounded-full bg-rice-mint/30 blur-3xl dark:bg-rice-leaf/10" />
-      <div aria-hidden="true" className="pointer-events-none absolute -right-32 bottom-20 -z-10 h-96 w-96 rounded-full bg-rice-gold/15 blur-3xl dark:bg-rice-gold/5" />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-20 opacity-[0.025] [background-image:linear-gradient(to_right,#0B2E1C_1px,transparent_1px),linear-gradient(to_bottom,#0B2E1C_1px,transparent_1px)] [background-size:48px_48px] dark:opacity-[0.04]" />
+    <section id="home-features" aria-labelledby="home-features-title" className="relative overflow-hidden bg-rice-surface-soft px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
 
       <div className="mx-auto w-full max-w-7xl">
         <div className="grid items-end gap-6 lg:grid-cols-[1fr_0.72fr]">

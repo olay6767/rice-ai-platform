@@ -91,18 +91,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
 
-  colorScheme: "light dark",
-
-  themeColor: [
-    {
-      media: "(prefers-color-scheme: light)",
-      color: "#FAF9F6",
-    },
-    {
-      media: "(prefers-color-scheme: dark)",
-      color: "#07140C",
-    },
-  ],
+  colorScheme: "light",
+  themeColor: "#FAF9F6",
 };
 
 export interface RootLayoutProps {
@@ -161,7 +151,7 @@ export default async function RootLayout({
     <html
       lang="th"
       suppressHydrationWarning
-      className={ibmPlexSansThai.variable}
+      className={`${ibmPlexSansThai.variable} light`}
     >
       <body
         className="
@@ -172,8 +162,6 @@ export default async function RootLayout({
           antialiased
           selection:bg-rice-mint
           selection:text-rice-dark
-          dark:bg-[#07140c]
-          dark:text-white
         "
       >
         <div

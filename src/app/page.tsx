@@ -6,7 +6,7 @@ import NewsSliderSection from "@/components/home/NewsSliderSection";
 
 export default function HomePage() {
   return (
-    <main className="min-h-dvh overflow-hidden">
+    <main className="min-h-dvh overflow-hidden bg-rice-background text-rice-text">
       <HeroSection />
       <FeatureSection />
       <HowItWorksSection />
