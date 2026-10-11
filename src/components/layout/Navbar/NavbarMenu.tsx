@@ -200,7 +200,7 @@ export const DEFAULT_NAVBAR_MENU_ITEMS: NavbarMenuItem[] = [
     label: "อินโฟกราฟิก",
     href: "/infographic",
     iconImage: "/images/57.png",
-    description: "สร้างอินโฟกราฟิกจากข้อมูลการเกษตร",
+    description: "อ่านข่าวสารและความรู้เกี่ยวกับข้าว ค้นหาตามเรื่องและหมวดหมู่",
   },
   {
     id: "admin",
