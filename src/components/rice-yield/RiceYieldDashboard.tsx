@@ -11,6 +11,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import DashboardMascotInsight from "@/components/insights/DashboardMascotInsight";
+import ProvinceMapSelect from "@/components/analytics/ProvinceMapSelect";
 import type {
   RiceProvinceGeoJson,
   RiceYieldDashboardData,
@@ -328,7 +329,17 @@ export default function RiceYieldDashboard() {
         <RicePanel
           title="แผนที่ผลผลิตรายจังหวัด"
           description={`ปี ${selectedYear} · หน่วย ${data.dashboard.metadata.unit}`}
-          action={<ForecastBadge isForecast={Boolean(selectedYearDefinition?.is_forecast)} />}
+          action={
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <ForecastBadge isForecast={Boolean(selectedYearDefinition?.is_forecast)} />
+              <ProvinceMapSelect
+                value={selectedProvince}
+                provinces={data.dashboard.provinces}
+                includeAll={false}
+                onChange={(province) => updateQuery({ yieldProvince: province })}
+              />
+            </div>
+          }
           className={`min-w-0 ${YIELD_PANEL_CLASS}`}
         >
           <ThailandYieldChoropleth

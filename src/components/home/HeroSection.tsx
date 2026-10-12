@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDown, ArrowRight, ChartNoAxesCombined, ScanLine, Sprout } from "lucide-react";
+import { ArrowDown, ArrowRight, Sprout } from "lucide-react";
 
 export default function HeroSection() {
   return (
@@ -21,7 +21,7 @@ export default function HeroSection() {
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Link href="/disease" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-rice-forest px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-rice-natural">
-              <ScanLine aria-hidden="true" className="h-5 w-5" />
+              <Image src="/images/54.png" alt="" width={20} height={20} className="h-5 w-5 object-contain brightness-0 invert" aria-hidden="true" />
               ตรวจโรคจากภาพ
               <ArrowRight aria-hidden="true" className="h-4 w-4" />
             </Link>
@@ -44,7 +44,7 @@ export default function HeroSection() {
           </div>
           <Link href="/dashboard" className="group absolute inset-x-5 bottom-5 flex items-center gap-4 rounded-2xl border border-white/80 bg-white/95 p-4 transition-colors hover:bg-white sm:inset-x-7 sm:bottom-7 sm:p-5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rice-mint/40 text-rice-natural">
-              <ChartNoAxesCombined aria-hidden="true" className="h-6 w-6" />
+              <Image src="/images/51.png" alt="" width={28} height={28} className="h-7 w-7 object-contain" aria-hidden="true" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-xs text-rice-muted">เริ่มจากภาพรวม</span>

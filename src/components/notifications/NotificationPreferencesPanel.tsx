@@ -55,7 +55,7 @@ function Toggle({
         onChange={(event) => onChange(event.target.checked)}
         className="peer sr-only"
       />
-      <span className="relative h-5 w-9 rounded-full bg-rice-muted/30 transition peer-checked:bg-rice-leaf dark:bg-white/20 dark:peer-checked:bg-rice-mint-light">
+      <span className="relative h-5 w-9 rounded-full bg-rice-muted/30 transition peer-focus-visible:ring-4 peer-focus-visible:ring-rice-mint peer-checked:bg-rice-leaf dark:bg-white/20 dark:peer-checked:bg-rice-mint-light">
         <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition peer-checked:translate-x-4" />
       </span>
       {label}
@@ -172,7 +172,8 @@ export default function NotificationPreferencesPanel({
 
   return (
     <section
-      className="mb-5 rounded-[1.75rem] border border-rice-forest/10 bg-white/75 p-4 shadow-card backdrop-blur sm:mb-6 sm:rounded-[2rem] sm:p-6 dark:border-white/10 dark:bg-white/[0.04]"
+      id="notification-preferences"
+      className="mb-5 scroll-mt-24 rounded-[1.75rem] border border-rice-forest/10 bg-white/90 p-4 shadow-card backdrop-blur sm:mb-6 sm:rounded-[2rem] sm:p-6 dark:border-white/10 dark:bg-white/[0.04]"
       aria-label="ตั้งค่าการแจ้งเตือนอัตโนมัติ"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -193,15 +194,15 @@ export default function NotificationPreferencesPanel({
           type="button"
           onClick={() => void save()}
           disabled={loading || saving || !hasUnsavedChanges}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-rice-forest px-4 py-2 text-xs font-bold text-white transition hover:bg-rice-leaf disabled:cursor-not-allowed disabled:opacity-45 dark:bg-rice-mint-light dark:text-rice-dark"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-rice-forest px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-rice-leaf disabled:cursor-not-allowed disabled:bg-rice-surface-soft disabled:text-rice-muted disabled:shadow-none sm:w-auto dark:bg-rice-mint-light dark:text-rice-dark"
         >
-          {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {saving ? "กำลังบันทึก" : "บันทึกการตั้งค่า"}
+          {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : hasUnsavedChanges ? <Save className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          {saving ? "กำลังบันทึก" : hasUnsavedChanges ? "บันทึกการตั้งค่า" : "บันทึกแล้ว"}
         </button>
       </div>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-3">
-        <article className="rounded-2xl border border-sky-700/12 bg-sky-50/55 p-4 dark:border-sky-400/15 dark:bg-sky-400/[0.06]">
+        <article data-enabled={preferences.heavyRainEnabled} className={`rounded-2xl border p-4 transition ${preferences.heavyRainEnabled ? "border-sky-300/70 bg-sky-50/70 shadow-sm" : "border-rice-forest/10 bg-rice-surface-soft/55 opacity-75"}`}>
           <div className="flex items-start justify-between gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600 text-white"><CloudRain className="h-5 w-5" /></span>
             <Toggle checked={preferences.heavyRainEnabled} label={preferences.heavyRainEnabled ? "เปิด" : "ปิด"} onChange={(heavyRainEnabled) => update({ heavyRainEnabled })} />
@@ -213,7 +214,7 @@ export default function NotificationPreferencesPanel({
           </label>
         </article>
 
-        <article className="rounded-2xl border border-amber-700/12 bg-amber-50/55 p-4 dark:border-amber-400/15 dark:bg-amber-400/[0.06]">
+        <article data-enabled={preferences.highHumidityDiseaseEnabled} className={`rounded-2xl border p-4 transition ${preferences.highHumidityDiseaseEnabled ? "border-amber-300/70 bg-amber-50/70 shadow-sm" : "border-rice-forest/10 bg-rice-surface-soft/55 opacity-75"}`}>
           <div className="flex items-start justify-between gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white"><Droplets className="h-5 w-5" /></span>
             <Toggle checked={preferences.highHumidityDiseaseEnabled} label={preferences.highHumidityDiseaseEnabled ? "เปิด" : "ปิด"} onChange={(highHumidityDiseaseEnabled) => update({ highHumidityDiseaseEnabled })} />
@@ -225,13 +226,13 @@ export default function NotificationPreferencesPanel({
           </label>
         </article>
 
-        <article className="rounded-2xl border border-rice-leaf/15 bg-rice-mint/25 p-4 dark:border-rice-mint-light/15 dark:bg-rice-leaf/15">
+        <article data-enabled={preferences.fertilizerReminderEnabled} className={`rounded-2xl border p-4 transition ${preferences.fertilizerReminderEnabled ? "border-rice-leaf/25 bg-rice-mint/30 shadow-sm" : "border-rice-forest/10 bg-rice-surface-soft/55 opacity-75"}`}>
           <div className="flex items-start justify-between gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rice-leaf text-white"><Sprout className="h-5 w-5" /></span>
             <Toggle checked={preferences.fertilizerReminderEnabled} label={preferences.fertilizerReminderEnabled ? "เปิด" : "ปิด"} onChange={(fertilizerReminderEnabled) => update({ fertilizerReminderEnabled })} />
           </div>
           <h3 className="mt-4 font-heading text-base font-bold text-rice-forest dark:text-white">ใกล้ถึงช่วงใส่ปุ๋ย</h3>
-          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
+          <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_6.5rem] sm:gap-2">
             <label className="min-w-0 text-xs font-bold text-rice-muted dark:text-white/55">
               วันที่ครั้งถัดไป
               <input type="date" value={preferences.nextFertilizerDate ?? ""} disabled={!preferences.fertilizerReminderEnabled || loading} onChange={(event) => update({ nextFertilizerDate: event.target.value || null })} className={fieldClassName} />

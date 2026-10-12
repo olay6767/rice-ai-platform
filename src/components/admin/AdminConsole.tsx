@@ -64,8 +64,6 @@ const TAB_ITEMS: Array<{
   { id: "overview", label: "Dashboard", icon: LayoutDashboard },
   { id: "users", label: "ผู้ใช้งาน", icon: UsersRound },
   { id: "agriculture", label: "ข้อมูลการเกษตร", icon: Wheat },
-  { id: "models", label: "Forecast & AI Model", icon: BrainCircuit },
-  { id: "diseases", label: "โรคข้าว", icon: Bug },
   { id: "posts", label: "ข่าวและอินโฟกราฟิก", icon: Newspaper },
   { id: "activity", label: "Activity Log", icon: ScrollText },
 ];
@@ -795,8 +793,15 @@ export default function AdminConsole({
       <div className="grid min-h-dvh w-full min-w-0 gap-3 lg:grid-cols-[270px_minmax(0,1fr)] lg:gap-4">
         <aside className="flex min-w-0 flex-col rounded-[22px] border border-rice-forest/10 bg-white shadow-[0_12px_36px_rgba(11,46,28,0.07)] lg:sticky lg:top-0 lg:h-dvh lg:self-start lg:rounded-l-none">
           <div className="flex items-center gap-3 px-4 py-4 sm:px-5 lg:px-6 lg:py-6">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[#fff0dc] text-[#b94f0b]">
-              <Wheat className="h-6 w-6" aria-hidden="true" />
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-rice-forest/10 bg-[#fff8e8] shadow-sm">
+              <Image
+                src="/logo/rice-ai-farmer-mark.png"
+                alt="โลโก้ SmartRiceHub"
+                width={48}
+                height={48}
+                className="h-full w-full object-contain"
+                preload
+              />
             </div>
             <div className="min-w-0">
               <h1 className="truncate font-heading text-xl font-bold tracking-[-0.025em] text-rice-forest">Rice AI Admin</h1>

@@ -73,10 +73,6 @@ export function ThailandYieldChoropleth({
     () => new Map(records.map((record) => [record.province, record])),
     [records]
   );
-  const provinceOptions = useMemo(
-    () => geoJson.features.map((feature) => feature.properties.province_th).sort((a, b) => a.localeCompare(b, "th")),
-    [geoJson.features]
-  );
   const values = records.map((record) => record.yield_kg_rai);
   const minimum = values.length ? Math.min(...values) : 0;
   const maximum = values.length ? Math.max(...values) : 1;
@@ -190,25 +186,6 @@ export function ThailandYieldChoropleth({
         }
       }}
     >
-        <label className="block px-3 pt-3 text-xs font-semibold text-[#173523] md:hidden">
-          เลือกจังหวัดที่ต้องการดู
-          <select
-            aria-label="เลือกจังหวัดบนแผนที่"
-            value={selectedProvince}
-            onChange={(event) => {
-              selectProvince(event.target.value);
-              setViewBox({ x: 0, y: 0, width: MAP_WIDTH, height: MAP_HEIGHT });
-            }}
-            className="mt-2 min-h-11 w-full min-w-0 rounded-lg border border-emerald-900/15 bg-[#f5faf6] px-3 text-base font-semibold text-[#173523] outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
-          >
-            {provinceOptions.map((province) => (
-              <option key={province} value={province} disabled={!recordByProvince.has(province)}>
-                {province}{recordByProvince.has(province) ? "" : " (ไม่มีข้อมูล)"}
-              </option>
-            ))}
-          </select>
-        </label>
-
         <div className="flex items-center justify-between gap-2 px-3 pt-3 md:absolute md:left-3 md:top-3 md:z-10 md:p-0">
           <p className="text-xs leading-5 text-[#557060] md:hidden">หรือแตะจังหวัด<br />บนแผนที่</p>
           <div className="flex gap-2 md:flex-col">

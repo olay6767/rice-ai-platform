@@ -9,6 +9,7 @@ import {
   Bug,
   Check,
   CheckCheck,
+  CircleCheck,
   CloudRain,
   CloudSun,
   Droplets,
@@ -21,6 +22,7 @@ import {
   Wind,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import NotificationPreferencesPanel from "@/components/notifications/NotificationPreferencesPanel";
@@ -166,6 +168,10 @@ function readStorageKey(userId: string): string {
   return `rice-ai:notification-reads:${userId}`;
 }
 
+function deliveredStorageKey(userId: string): string {
+  return `rice-ai:notification-delivered:${userId}`;
+}
+
 function getSavedWeatherLocation(): SavedWeatherLocation {
   try {
     const stored = window.localStorage.getItem(
@@ -233,6 +239,7 @@ export default function NotificationCenter({
   userId,
   loadError = null,
 }: NotificationCenterProps) {
+  const router = useRouter();
   const [readIds, setReadIds] = useState<string[]>([]);
   const [readFilter, setReadFilter] = useState<ReadFilter>("all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
@@ -244,6 +251,54 @@ export default function NotificationCenter({
   const [notificationPreferences, setNotificationPreferences] =
     useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [primaryFarmName, setPrimaryFarmName] = useState<string | null>(null);
+  const [browserPermission, setBrowserPermission] = useState<
+    NotificationPermission | "unsupported"
+  >("default");
+  const [deliveredIds, setDeliveredIds] = useState<string[]>([]);
+  const [deliveryReady, setDeliveryReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    queueMicrotask(() => {
+      if (!active) return;
+
+      if (!("Notification" in window)) {
+        setBrowserPermission("unsupported");
+        setDeliveryReady(true);
+        return;
+      }
+
+      setBrowserPermission(Notification.permission);
+
+      try {
+        const stored = window.localStorage.getItem(deliveredStorageKey(userId));
+        const parsed: unknown = stored ? JSON.parse(stored) : [];
+        setDeliveredIds(
+          Array.isArray(parsed)
+            ? parsed.filter((value): value is string => typeof value === "string")
+            : []
+        );
+      } catch {
+        setDeliveredIds([]);
+      } finally {
+        setDeliveryReady(true);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setWeatherRefreshKey((value) => value + 1);
+      router.refresh();
+    }, 10 * 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, [router]);
 
   useEffect(() => {
     let active = true;
@@ -300,14 +355,14 @@ export default function NotificationCenter({
     const controller = new AbortController();
 
     async function loadWeather(): Promise<void> {
-      const location = await getPreferredWeatherLocation(controller.signal);
-      const params = new URLSearchParams({
-        latitude: String(location.latitude),
-        longitude: String(location.longitude),
-        name: weatherLocationLabel(location),
-      });
-
       try {
+        const location = await getPreferredWeatherLocation(controller.signal);
+        const params = new URLSearchParams({
+          latitude: String(location.latitude),
+          longitude: String(location.longitude),
+          name: weatherLocationLabel(location),
+        });
+
         const response = await fetch(`/api/weather?${params.toString()}`, {
           cache: "no-store",
           signal: controller.signal,
@@ -396,6 +451,55 @@ export default function NotificationCenter({
     [allAlerts, readFilter, readSet, severityFilter, typeFilter]
   );
 
+  useEffect(() => {
+    if (browserPermission !== "granted" || !deliveryReady) return;
+
+    const deliveredSet = new Set(deliveredIds);
+    const newAlerts = allAlerts
+      .filter((alert) => !deliveredSet.has(alert.id) && !readSet.has(alert.id))
+      .slice(0, 3);
+
+    if (!newAlerts.length) return;
+
+    newAlerts.forEach((alert) => {
+      try {
+        const notification = new Notification(alert.title, {
+          body: `${severityLabel(alert.severity)} · ${alert.areaName}\n${alert.description}`,
+          icon: "/logo/rice-ai-farmer-mark.png",
+          badge: "/logo/rice-ai-farmer-mark.png",
+          tag: `rice-ai-${alert.id}`,
+        });
+
+        notification.onclick = () => {
+          window.focus();
+          document.getElementById(`notification-${alert.id}`)?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+          notification.close();
+        };
+      } catch {
+        // เบราว์เซอร์บางตัวอนุญาตสิทธิ์ แต่ปิดการแจ้งเตือนระดับระบบไว้
+      }
+    });
+
+    const nextDeliveredIds = Array.from(new Set([
+      ...deliveredIds,
+      ...newAlerts.map((alert) => alert.id),
+    ]));
+
+    try {
+      window.localStorage.setItem(
+        deliveredStorageKey(userId),
+        JSON.stringify(nextDeliveredIds)
+      );
+    } catch {
+      // หาก localStorage ใช้งานไม่ได้ การแจ้งเตือนในหน้ายังทำงานตามปกติ
+    }
+
+    queueMicrotask(() => setDeliveredIds(nextDeliveredIds));
+  }, [allAlerts, browserPermission, deliveredIds, deliveryReady, readSet, userId]);
+
   function saveReadIds(nextIds: string[]): void {
     const uniqueIds = Array.from(new Set(nextIds));
     setReadIds(uniqueIds);
@@ -404,6 +508,53 @@ export default function NotificationCenter({
       window.localStorage.setItem(readStorageKey(userId), JSON.stringify(uniqueIds));
     } catch {
       // เบราว์เซอร์อาจปิดการใช้งาน localStorage แต่หน้ายังใช้งานต่อได้
+    }
+  }
+
+  function saveDeliveredIds(nextIds: string[]): void {
+    const uniqueIds = Array.from(new Set(nextIds));
+    setDeliveredIds(uniqueIds);
+
+    try {
+      window.localStorage.setItem(
+        deliveredStorageKey(userId),
+        JSON.stringify(uniqueIds)
+      );
+    } catch {
+      // หาก localStorage ใช้งานไม่ได้ การแจ้งเตือนในหน้ายังทำงานตามปกติ
+    }
+  }
+
+  function showTestNotification(): void {
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+      return;
+    }
+
+    const notification = new Notification("เปิดการแจ้งเตือน SmartRiceHub แล้ว", {
+      body: "เมื่อมีความเสี่ยงหรือข้อมูลสำคัญ ระบบจะแจ้งเตือนบนอุปกรณ์นี้",
+      icon: "/logo/rice-ai-farmer-mark.png",
+      badge: "/logo/rice-ai-farmer-mark.png",
+      tag: "rice-ai-notification-test",
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+  }
+
+  async function enableBrowserNotifications(): Promise<void> {
+    if (!("Notification" in window)) {
+      setBrowserPermission("unsupported");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    setBrowserPermission(permission);
+
+    if (permission === "granted") {
+      saveDeliveredIds(allAlerts.map((alert) => alert.id));
+      showTestNotification();
     }
   }
 
@@ -425,7 +576,39 @@ export default function NotificationCenter({
 
   return (
     <>
-      <section className="mb-5 overflow-hidden rounded-[1.75rem] border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-rice-mint/35 p-4 shadow-card sm:mb-6 sm:rounded-[2rem] sm:p-6 dark:border-sky-400/15 dark:from-sky-400/[0.07] dark:via-white/[0.035] dark:to-rice-leaf/[0.08]">
+      <section className="mb-5 flex flex-col gap-4 rounded-[1.5rem] border border-rice-leaf/20 bg-[linear-gradient(120deg,#f2f8ef_0%,#ffffff_100%)] p-4 shadow-sm sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:p-5" aria-label="การแจ้งเตือนบนอุปกรณ์">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rice-mint text-rice-forest">
+            {browserPermission === "granted" ? <CircleCheck className="h-5 w-5" /> : <BellRing className="h-5 w-5" />}
+          </span>
+          <div className="min-w-0">
+            <h2 className="font-heading text-base font-bold text-rice-forest sm:text-lg">แจ้งเตือนบนอุปกรณ์นี้</h2>
+            <p className="mt-1 text-xs leading-5 text-rice-muted sm:text-sm">
+              {browserPermission === "granted"
+                ? "เปิดใช้งานแล้ว ระบบจะแจ้งเตือนเมื่อพบรายการใหม่ขณะเปิดหน้าการแจ้งเตือนนี้อยู่"
+                : browserPermission === "denied"
+                  ? "เบราว์เซอร์ปิดสิทธิ์แจ้งเตือนอยู่ กรุณาอนุญาตจากไอคอนข้างแถบที่อยู่"
+                  : browserPermission === "unsupported"
+                    ? "เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนบนอุปกรณ์"
+                    : "อนุญาตให้ SmartRiceHub แจ้งเตือนเมื่อพบความเสี่ยงหรือข้อมูลสำคัญ"}
+            </p>
+          </div>
+        </div>
+
+        {browserPermission === "granted" ? (
+          <button type="button" onClick={showTestNotification} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-rice-forest/15 bg-white px-4 text-xs font-bold text-rice-forest transition hover:bg-rice-mint/30 sm:w-auto">
+            <BellRing className="h-4 w-4" />
+            ทดสอบแจ้งเตือน
+          </button>
+        ) : browserPermission === "default" ? (
+          <button type="button" onClick={() => void enableBrowserNotifications()} className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl bg-rice-forest px-4 text-xs font-bold text-white shadow-sm transition hover:bg-rice-leaf sm:w-auto">
+            <BellRing className="h-4 w-4" />
+            เปิดการแจ้งเตือน
+          </button>
+        ) : null}
+      </section>
+
+      <section id="notification-weather" className="mb-5 scroll-mt-24 overflow-hidden rounded-[1.75rem] border border-sky-200/80 bg-gradient-to-br from-sky-50 via-white to-rice-mint/35 p-4 shadow-card sm:mb-6 sm:rounded-[2rem] sm:p-6 dark:border-sky-400/15 dark:from-sky-400/[0.07] dark:via-white/[0.035] dark:to-rice-leaf/[0.08]">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-sky-600 text-white shadow-sm">
@@ -464,8 +647,8 @@ export default function NotificationCenter({
         </div>
 
         {weatherLoading && !weather ? (
-          <div className="mt-5 grid grid-cols-2 animate-pulse gap-2.5 sm:gap-3 lg:grid-cols-5">
-            <div className="col-span-2 h-28 rounded-2xl bg-sky-200/45 dark:bg-white/[0.07]" />
+          <div role="status" aria-label="กำลังโหลดข้อมูลสภาพอากาศ" className="mt-5 grid grid-cols-2 animate-pulse gap-2.5 sm:gap-3 lg:grid-cols-5">
+            <div className="col-span-2 flex h-28 items-end rounded-2xl bg-sky-200/45 p-4 text-xs font-semibold text-sky-900/55 dark:bg-white/[0.07] dark:text-white/50">กำลังอ่านสภาพอากาศของแปลงหลัก…</div>
             {[0, 1, 2].map((item) => (
               <div
                 key={item}
@@ -607,8 +790,26 @@ export default function NotificationCenter({
         ))}
       </section>
 
-      <section className="mt-5 rounded-[1.75rem] border border-rice-forest/10 bg-white/75 p-3.5 shadow-card backdrop-blur sm:mt-6 sm:rounded-[2rem] sm:p-6 dark:border-white/10 dark:bg-white/[0.04]">
-        <div className="flex flex-col gap-4 border-b border-rice-forest/10 pb-5 dark:border-white/10 lg:flex-row lg:items-center lg:justify-between">
+      <section id="notification-list" className="mt-5 scroll-mt-24 rounded-[1.75rem] border border-rice-forest/10 bg-white/90 p-3.5 shadow-card backdrop-blur sm:mt-6 sm:rounded-[2rem] sm:p-6 dark:border-white/10 dark:bg-white/[0.04]">
+        <div className="flex flex-col gap-3 border-b border-rice-forest/10 pb-5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-rice-natural">Notification Inbox</p>
+            <h2 className="mt-1 font-heading text-xl font-bold text-rice-forest dark:text-white">รายการแจ้งเตือน</h2>
+            <p className="mt-1 text-xs text-rice-muted dark:text-white/50">แสดง {visibleAlerts.length.toLocaleString("th-TH")} จาก {allAlerts.length.toLocaleString("th-TH")} รายการ</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={markAllAsRead}
+            disabled={!unreadCount}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 self-start rounded-xl border border-rice-forest/15 px-4 py-2 text-xs font-bold text-rice-forest transition hover:bg-rice-mint/25 disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto sm:self-auto dark:border-white/15 dark:text-white"
+          >
+            <CheckCheck className="h-4 w-4" />
+            อ่านทั้งหมดแล้ว
+          </button>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex gap-2 overflow-x-auto pb-1">
             {([
               ["all", "ทั้งหมด"],
@@ -630,15 +831,6 @@ export default function NotificationCenter({
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={markAllAsRead}
-            disabled={!unreadCount}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 self-start rounded-full border border-rice-forest/15 px-4 py-2 text-xs font-bold text-rice-forest transition hover:bg-rice-mint/25 disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto lg:min-h-10 lg:self-auto dark:border-white/15 dark:text-white"
-          >
-            <CheckCheck className="h-4 w-4" />
-            อ่านทั้งหมดแล้ว
-          </button>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
@@ -695,6 +887,7 @@ export default function NotificationCenter({
 
           return (
             <article
+              id={`notification-${alert.id}`}
               key={alert.id}
               className={`relative overflow-hidden rounded-[1.5rem] border bg-white/80 p-4 shadow-sm transition sm:rounded-3xl sm:p-6 dark:bg-white/[0.045] ${styles.border} ${
                 isRead ? "opacity-70" : "shadow-[0_12px_35px_rgba(11,46,28,0.08)]"

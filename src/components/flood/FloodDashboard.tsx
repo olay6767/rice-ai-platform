@@ -11,6 +11,7 @@ import Image from "next/image";
 import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import DashboardMascotInsight from "@/components/insights/DashboardMascotInsight";
+import ProvinceMapSelect from "@/components/analytics/ProvinceMapSelect";
 import { readJsonResponse } from "@/lib/http/json";
 import {
   RiceBarChart,
@@ -447,7 +448,16 @@ export default function FloodDashboard() {
               <RicePanel
                 title="แผนที่ความถี่เหตุการณ์น้ำท่วม"
                 description="สีเข้มหมายถึงจำนวนเหตุการณ์สูง แตะหรือคลิกจังหวัดเพื่อใช้เป็นตัวกรอง"
-                action={chartFilters()}
+                action={
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                    {chartFilters()}
+                    <ProvinceMapSelect
+                      value={provinceFilter}
+                      provinces={provinces}
+                      onChange={setProvinceFilter}
+                    />
+                  </div>
+                }
               >
                 <ThailandFloodMap
                   values={provinceTotals}

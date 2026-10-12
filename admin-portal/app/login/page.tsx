@@ -4,8 +4,8 @@ import {
   ArrowLeft,
   LockKeyhole,
   LogIn,
-  Sprout,
 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
@@ -83,8 +83,15 @@ export default function AdminLoginPage() {
     <main className="relative flex min-h-dvh items-center justify-center bg-[var(--app-background)] px-4 py-10 text-[var(--app-text)]">
       <section className="w-full max-w-md rounded-[2rem] border border-[var(--app-border)] bg-[var(--app-surface-glass)] p-7 shadow-floating backdrop-blur-xl sm:p-9">
         <div className="flex items-center gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rice-mint/90 text-rice-forest">
-            <Sprout className="h-6 w-6" aria-hidden="true" />
+          <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-rice-forest/10 bg-[#fff8e8] shadow-sm">
+            <Image
+              src="/logo/rice-ai-farmer-mark.png"
+              alt="โลโก้ SmartRiceHub"
+              width={48}
+              height={48}
+              className="h-full w-full object-contain"
+              preload
+            />
           </span>
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-rice-leaf dark:text-rice-mint-light">Rice AI</p>

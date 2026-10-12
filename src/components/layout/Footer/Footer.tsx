@@ -14,6 +14,7 @@ export interface FooterProps
   ctaDescription?: ReactNode;
   ctaHref?: string;
   ctaLabel?: string;
+  isAuthenticated?: boolean;
 }
 
 const FOOTER_GROUPS = [
@@ -53,6 +54,7 @@ export default function Footer({
   ctaDescription = "อัปโหลดภาพเพื่อดูผลคาดการณ์โรคข้าวและระดับความมั่นใจจาก AI",
   ctaHref = "/disease",
   ctaLabel = "เริ่มตรวจโรคข้าว",
+  isAuthenticated = false,
   className,
   ...footerProps
 }: FooterProps) {
@@ -119,7 +121,9 @@ export default function Footer({
                   {group.title}
                 </h2>
                 <ul className="mt-3 space-y-1">
-                  {group.links.map((link) => (
+                  {group.links
+                    .filter((link) => !(isAuthenticated && link.href === "/login"))
+                    .map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
@@ -132,7 +136,7 @@ export default function Footer({
                         />
                       </Link>
                     </li>
-                  ))}
+                    ))}
                 </ul>
               </div>
             ))}

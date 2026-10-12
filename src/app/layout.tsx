@@ -179,7 +179,7 @@ export default async function RootLayout({
                 onSignOut={signOutAction}
               />
             }
-            footer={<Footer />}
+            footer={<Footer isAuthenticated={Boolean(navbarUser)} />}
             overlays={
               <>
                 <GlobalRiceAssistant

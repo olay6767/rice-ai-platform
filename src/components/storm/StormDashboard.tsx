@@ -22,6 +22,7 @@ import {
 } from "recharts";
 
 import ThailandFrequencyMap from "@/components/drought/ThailandDroughtMap";
+import ProvinceMapSelect from "@/components/analytics/ProvinceMapSelect";
 import DashboardMascotInsight from "@/components/insights/DashboardMascotInsight";
 import {
   RiceErrorState,
@@ -971,7 +972,16 @@ export default function StormDashboard() {
       <div className="grid items-stretch gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <StormPanel
           title="แผนที่ประเทศไทยรายจังหวัด"
-          action={chartFilters()}
+          action={
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              {chartFilters()}
+              <ProvinceMapSelect
+                value={provinceFilter}
+                provinces={data.filters.provinces}
+                onChange={setProvinceFilter}
+              />
+            </div>
+          }
         >
           <ThailandFrequencyMap
             values={dashboard.mapValues}

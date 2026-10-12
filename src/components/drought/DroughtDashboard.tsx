@@ -21,6 +21,7 @@ import {
 } from "recharts";
 
 import DashboardMascotInsight from "@/components/insights/DashboardMascotInsight";
+import ProvinceMapSelect from "@/components/analytics/ProvinceMapSelect";
 import { RiceErrorState, RiceLoadingState } from "@/components/rice-yield/RiceAnalyticsShell";
 import { readJsonResponse } from "@/lib/http/json";
 import {
@@ -574,7 +575,16 @@ export default function DroughtDashboard() {
       <div className="grid items-stretch gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] sm:gap-7">
         <DroughtPanel
           title="แผนที่ความถี่ที่พบบันทึกภัยแล้ง"
-          action={chartFilters()}
+          action={
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              {chartFilters()}
+              <ProvinceMapSelect
+                value={provinceFilter}
+                provinces={provinceOptions}
+                onChange={setProvinceFilter}
+              />
+            </div>
+          }
         >
           <ThailandDroughtMap
             values={dashboard.mapValues}
