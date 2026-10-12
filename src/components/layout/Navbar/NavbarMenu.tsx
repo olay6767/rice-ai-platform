@@ -1,15 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Bot,
-  ChartNoAxesCombined,
-  CloudSun,
-  Newspaper,
-  ScanLine,
   ShieldCheck,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import type {
@@ -46,6 +41,11 @@ export interface NavbarMenuItem {
    * Icon จาก lucide-react
    */
   icon?: LucideIcon;
+
+  /**
+   * Icon รูปภาพจาก public
+   */
+  iconImage?: string;
 
   /**
    * คำอธิบายสำหรับ Accessibility และ Tooltip
@@ -141,7 +141,7 @@ export const DEFAULT_NAVBAR_MENU_ITEMS: NavbarMenuItem[] = [
     id: "dashboard",
     label: "แดชบอร์ด",
     href: "/dashboard",
-    icon: ChartNoAxesCombined,
+    iconImage: "/images/51.png",
     description: "วิเคราะห์ผลผลิตข้าวรายจังหวัด แผนที่ และข้อมูลวิจัย",
     matchPaths: [
       "/analytics/yield/monthly",
@@ -155,7 +155,7 @@ export const DEFAULT_NAVBAR_MENU_ITEMS: NavbarMenuItem[] = [
     id: "disease",
     label: "ตรวจโรค",
     href: "/disease",
-    icon: ScanLine,
+    iconImage: "/images/54.png",
     description: "ตรวจและจำแนกโรคข้าวด้วย AI",
     matchPaths: ["/disease/history", "/disease/predictions"],
   },
@@ -163,7 +163,7 @@ export const DEFAULT_NAVBAR_MENU_ITEMS: NavbarMenuItem[] = [
     id: "analytics",
     label: "สภาพอากาศ",
     href: "/analytics/weather",
-    icon: CloudSun,
+    iconImage: "/images/55.png",
     description: "ดูพยากรณ์อากาศ ฝน และความชื้น",
     matchPaths: [
       "/analytics/production",
@@ -180,14 +180,14 @@ export const DEFAULT_NAVBAR_MENU_ITEMS: NavbarMenuItem[] = [
     id: "chatbot",
     label: "แชตบอต",
     href: "/chatbot",
-    icon: Bot,
+    iconImage: "/images/53.png",
     description: "ถามคำถามเกี่ยวกับการปลูกและดูแลข้าว",
   },
   {
     id: "finance",
     label: "การเงิน",
     href: "/finance",
-    icon: Wallet,
+    iconImage: "/images/52.png",
     description: "จัดการรายรับ รายจ่าย และกำไรของฟาร์ม",
     matchPaths: [
       "/finance/transactions",
@@ -199,7 +199,7 @@ export const DEFAULT_NAVBAR_MENU_ITEMS: NavbarMenuItem[] = [
     id: "infographic",
     label: "อินโฟกราฟิก",
     href: "/infographic",
-    icon: Newspaper,
+    iconImage: "/images/57.png",
     description: "อ่านข่าวสารและความรู้เกี่ยวกับข้าว ค้นหาตามเรื่องและหมวดหมู่",
   },
   {
@@ -335,6 +335,7 @@ export default function NavbarMenu({
       >
         {visibleItems.map((item) => {
           const Icon = item.icon;
+          const iconImage = item.iconImage;
           const isActive = isNavbarPathActive(pathname, item);
 
           const commonClassName = combineClassNames(
@@ -372,7 +373,22 @@ export default function NavbarMenu({
 
           const content = (
             <>
-              {showIcons && Icon && (
+              {showIcons && iconImage && (
+                <Image
+                  aria-hidden="true"
+                  src={iconImage}
+                  alt=""
+                  width={24}
+                  height={24}
+                  className={combineClassNames(
+                    "h-6 w-6 shrink-0 object-contain",
+                    "transition-transform duration-200",
+                    !item.disabled && "group-hover:scale-105"
+                  )}
+                />
+              )}
+
+              {showIcons && !iconImage && Icon && (
                 <Icon
                   aria-hidden="true"
                   className={combineClassNames(
