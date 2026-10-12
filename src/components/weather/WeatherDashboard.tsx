@@ -352,7 +352,7 @@ function WeatherSkeleton() {
       className="space-y-6"
     >
       <div className="h-72 animate-pulse rounded-[2rem] bg-rice-forest/10 dark:bg-white/10" />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
@@ -370,35 +370,36 @@ function MetricCard({
   label,
   value,
   helper,
-  className = "",
 }: {
   icon: { src: string; width: number; height: number };
   label: string;
   value: string;
   helper: string;
-  className?: string;
 }) {
   return (
-    <article className={`flex min-h-[118px] min-w-0 items-center rounded-xl bg-white px-4 py-4 text-[#23654c] shadow-[0_10px_28px_rgba(64,145,108,0.16)] dark:bg-white/[0.07] dark:text-rice-mint-light ${className}`}>
-      <div className="flex w-full items-center gap-3.5">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white shadow-[0_7px_20px_rgba(30,53,38,0.18)] dark:bg-white/10">
+    <article className="flex min-h-[158px] min-w-0 flex-col justify-between rounded-2xl bg-white p-3.5 text-[#23654c] shadow-[0_10px_28px_rgba(64,145,108,0.16)] max-[359px]:min-h-[180px] sm:min-h-[118px] sm:flex-row sm:items-center sm:justify-start sm:gap-3.5 sm:rounded-xl sm:px-4 sm:py-4 dark:bg-white/[0.07] dark:text-rice-mint-light">
+      <div className="flex min-w-0 items-center gap-2.5 max-[359px]:flex-col max-[359px]:items-start sm:contents">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white shadow-[0_7px_20px_rgba(30,53,38,0.18)] sm:h-14 sm:w-14 dark:bg-white/10">
           <Image
             src={icon.src}
             alt=""
             width={icon.width}
             height={icon.height}
-            className="h-9 w-10 object-contain"
+            className="h-8 w-8 object-contain sm:h-9 sm:w-10"
           />
         </span>
-        <div className="min-w-0">
-          <p className="break-words font-heading text-[23px] font-semibold leading-7 tracking-tight tabular-nums sm:text-2xl">
-            {value}
-          </p>
-          <p className="mt-0.5 text-xs font-medium leading-4">{label}</p>
-          <p className="mt-0.5 text-[11px] leading-4 text-[#23654c]/75 dark:text-white/55">
-            {helper}
-          </p>
-        </div>
+        <p className="min-w-0 break-words font-heading text-[1.3rem] font-semibold leading-tight tracking-tight tabular-nums sm:hidden">
+          {value}
+        </p>
+      </div>
+      <div className="min-w-0">
+        <p className="hidden break-words font-heading text-2xl font-semibold leading-7 tracking-tight tabular-nums sm:block">
+          {value}
+        </p>
+        <p className="mt-0.5 text-xs font-medium leading-4">{label}</p>
+        <p className="mt-0.5 text-[10px] leading-4 text-[#23654c]/75 sm:text-[11px] dark:text-white/55">
+          {helper}
+        </p>
       </div>
     </article>
   );
@@ -864,22 +865,20 @@ export default function WeatherDashboard() {
                   ตัวชี้วัดสภาพอากาศ
                 </h2>
                 <div
-                  aria-label="ตัวชี้วัดสภาพอากาศ เลื่อนแนวนอนได้"
-                  className="-mx-1 flex touch-pan-x snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-3 [scrollbar-width:thin] sm:mx-0 sm:grid sm:touch-auto sm:snap-none sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 xl:grid-cols-4"
+                  aria-label="ตัวชี้วัดสภาพอากาศ"
+                  className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4"
                 >
                   <MetricCard
                     icon={{ src: "/images/38.png", width: 434, height: 434 }}
                     label="ความชื้นสัมพัทธ์"
                     value={`${weather.current.relativeHumidity}%`}
                     helper="ความชื้นในอากาศ ณ เวลาปัจจุบัน"
-                    className="w-[76vw] max-w-[260px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink"
                   />
                   <MetricCard
                     icon={{ src: "/images/39.png", width: 435, height: 435 }}
                     label="ฝนวันนี้"
                     value={`${weather.agriculture.rainToday} มม.`}
                     helper={`โอกาสฝนสูงสุด ${weather.daily[0]?.precipitationProbabilityMax ?? 0}%`}
-                    className="w-[76vw] max-w-[260px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink"
                   />
                   <MetricCard
                     icon={{ src: "/images/40.png", width: 871, height: 435 }}
@@ -890,7 +889,6 @@ export default function WeatherDashboard() {
                         : `${soilMoisturePercent}%`
                     }
                     helper="ค่าประมาณจากแบบจำลองที่ระดับผิวดิน 0–1 ซม."
-                    className="w-[76vw] max-w-[260px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink"
                   />
                   <MetricCard
                     icon={{ src: "/images/41.png", width: 435, height: 435 }}
@@ -901,7 +899,6 @@ export default function WeatherDashboard() {
                         : `${weather.agriculture.evapotranspirationToday} มม.`
                     }
                     helper="ค่าประมาณการสูญเสียน้ำอ้างอิงของวันนี้"
-                    className="w-[76vw] max-w-[260px] shrink-0 snap-start sm:w-auto sm:max-w-none sm:shrink"
                   />
                 </div>
               </section>

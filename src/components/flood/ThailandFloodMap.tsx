@@ -242,6 +242,23 @@ export default function ThailandFloodMap({
 
   return (
     <div className="relative overflow-hidden rounded-[18px] bg-white shadow-[inset_0_0_0_1px_rgba(11,46,28,0.08)] dark:bg-white dark:shadow-[inset_0_0_0_1px_rgba(11,46,28,0.16)]">
+      <div className="relative z-10 flex items-center justify-between gap-2 px-3 pt-3 sm:absolute sm:left-3 sm:top-3 sm:p-0">
+        <p className="text-xs leading-5 text-[#557060] sm:hidden">หรือแตะจังหวัด<br />บนแผนที่</p>
+        <div className="flex gap-2 sm:flex-col">
+          <MapButton label="ขยายแผนที่" onClick={() => zoom(0.78)}>
+            <Plus aria-hidden="true" className="h-4 w-4" />
+          </MapButton>
+          <MapButton label="ย่อแผนที่" onClick={() => zoom(1.28)}>
+            <Minus aria-hidden="true" className="h-4 w-4" />
+          </MapButton>
+          <MapButton
+            label="รีเซ็ตแผนที่"
+            onClick={() => setViewBox(isMobileMap ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX)}
+          >
+            <RotateCcw aria-hidden="true" className="h-4 w-4" />
+          </MapButton>
+        </div>
+      </div>
       <svg
         role="img"
         aria-label="แผนที่ประเทศไทยแสดงจำนวนเหตุการณ์น้ำท่วมรายจังหวัด"
@@ -310,21 +327,6 @@ export default function ThailandFloodMap({
           </g>
         ) : null}
       </svg>
-
-      <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
-        <MapButton label="ขยายแผนที่" onClick={() => zoom(0.78)}>
-          <Plus aria-hidden="true" className="h-4 w-4" />
-        </MapButton>
-        <MapButton label="ย่อแผนที่" onClick={() => zoom(1.28)}>
-          <Minus aria-hidden="true" className="h-4 w-4" />
-        </MapButton>
-        <MapButton
-          label="รีเซ็ตแผนที่"
-          onClick={() => setViewBox(isMobileMap ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX)}
-        >
-          <RotateCcw aria-hidden="true" className="h-4 w-4" />
-        </MapButton>
-      </div>
 
       <div className="relative z-10 mx-3 mb-3 rounded-xl bg-white/95 p-3 text-[10px] shadow-[0_10px_30px_rgba(11,46,28,0.14)] backdrop-blur sm:absolute sm:bottom-3 sm:left-3 sm:mx-0 sm:mb-0 dark:bg-[#0d2014]/95">
         <p className="mb-2 font-bold text-emerald-950/75 dark:text-white/75">ระดับเหตุการณ์</p>
@@ -401,7 +403,7 @@ function MapButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="grid h-10 w-10 place-items-center rounded-xl bg-white/95 shadow-[0_7px_18px_rgba(11,46,28,0.16)] backdrop-blur transition hover:bg-emerald-50 active:scale-95 dark:bg-[#0d2014]/95 dark:hover:bg-[#173522]"
+      className="grid h-11 w-11 place-items-center rounded-xl bg-white/95 shadow-[0_7px_18px_rgba(11,46,28,0.16)] backdrop-blur transition hover:bg-emerald-50 active:scale-95 sm:h-10 sm:w-10 dark:bg-[#0d2014]/95 dark:hover:bg-[#173522]"
     >
       {children}
     </button>

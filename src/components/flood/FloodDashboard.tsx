@@ -578,8 +578,8 @@ function FloodKpiCard({
   imageFit: "contain" | "cover";
 }) {
   return (
-    <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-2xl bg-white p-3.5 shadow-[0_12px_34px_rgba(11,46,28,0.07)] sm:min-h-[136px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-4 dark:bg-[#0d2014]">
-      <div className="flex min-w-0 items-center gap-2.5 sm:contents">
+    <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-2xl bg-white p-3.5 shadow-[0_12px_34px_rgba(11,46,28,0.07)] max-[359px]:min-h-[172px] sm:min-h-[136px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-4 dark:bg-[#0d2014]">
+      <div className="flex min-w-0 items-center gap-2.5 max-[359px]:flex-col max-[359px]:items-start sm:contents">
         <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-[0_7px_18px_rgba(11,46,28,0.14)] sm:h-[72px] sm:w-[72px] dark:bg-white/95">
           <Image
             src={imageSrc}

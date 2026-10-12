@@ -431,15 +431,15 @@ function KpiCard({
   const logoFilterId = `overview-kpi-logo-${useId()}`;
 
   return (
-    <article className="flex min-h-[108px] min-w-0 items-center rounded-xl bg-white px-4 py-4 text-[#23654C] shadow-[0_10px_28px_rgba(64,145,108,0.16)] sm:px-5">
-      <div className="flex w-full items-center gap-3.5">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white shadow-[0_7px_20px_rgba(30,53,38,0.18)]">
+    <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-2xl bg-white p-3.5 text-[#23654C] shadow-[0_10px_28px_rgba(64,145,108,0.16)] max-[359px]:min-h-[172px] sm:min-h-[108px] sm:flex-row sm:items-center sm:justify-start sm:gap-3.5 sm:px-5 sm:py-4">
+      <div className="flex min-w-0 items-center gap-2.5 max-[359px]:flex-col max-[359px]:items-start sm:contents">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white shadow-[0_7px_20px_rgba(30,53,38,0.18)] sm:h-14 sm:w-14">
           <svg
             aria-hidden="true"
             focusable="false"
             viewBox={logo.viewBox}
             preserveAspectRatio="xMidYMid meet"
-            className="h-9 w-9 overflow-hidden"
+            className="h-7 w-7 overflow-hidden sm:h-9 sm:w-9"
           >
             <defs>
               <filter id={logoFilterId} x="0" y="0" width="100%" height="100%" colorInterpolationFilters="sRGB">
@@ -455,17 +455,20 @@ function KpiCard({
             />
           </svg>
         </span>
-        <div className="min-w-0">
-          <p className="break-words text-[23px] font-semibold leading-7 tracking-tight tabular-nums sm:text-2xl">
-            {formatNumber(value)}
-          </p>
-          <p className="mt-0.5 text-xs font-medium leading-4">
-            {label}
-          </p>
-          <p className="mt-0.5 text-[11px] leading-4 text-[#23654C]/75">
-            {value === null ? "ไม่มีข้อมูล" : detail}
-          </p>
-        </div>
+        <p className="min-w-0 break-words text-[1.35rem] font-semibold leading-[1.05] tracking-tight tabular-nums sm:hidden">
+          {formatNumber(value)}
+        </p>
+      </div>
+      <div className="min-w-0">
+        <p className="hidden break-words text-2xl font-semibold leading-7 tracking-tight tabular-nums sm:block">
+          {formatNumber(value)}
+        </p>
+        <p className="mt-0.5 text-xs font-medium leading-4">
+          {label}
+        </p>
+        <p className="mt-0.5 text-[11px] leading-4 text-[#23654C]/75">
+          {value === null ? "ไม่มีข้อมูล" : detail}
+        </p>
       </div>
     </article>
   );
@@ -1238,7 +1241,7 @@ export default function DisasterOverviewDashboard() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
         <KpiCard
           label="บันทึกน้ำท่วม"
           value={summary.kpiValues.flood}

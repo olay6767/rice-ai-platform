@@ -122,22 +122,27 @@ function KpiCard({
   imageSrc: string;
 }) {
   return (
-    <article className="flex min-h-[128px] min-w-0 items-center gap-2.5 rounded-2xl bg-white p-2.5 shadow-[0_12px_34px_rgba(124,45,18,0.08)] sm:min-h-[136px] sm:gap-4 sm:p-4 dark:bg-[#17130f]">
-      <div className="relative grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-[0_7px_18px_rgba(124,45,18,0.15)] sm:h-[72px] sm:w-[72px] dark:bg-white/95">
-        <Image
-          src={imageSrc}
-          alt=""
-          width={72}
-          height={72}
-          sizes="72px"
-          className="h-11 w-11 object-contain sm:h-14 sm:w-14"
-        />
-      </div>
-      <div className="min-w-0">
-        <p className="break-words text-xl font-bold leading-none tracking-tight text-orange-700 tabular-nums sm:text-2xl dark:text-orange-300">
+    <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-2xl bg-white p-3.5 shadow-[0_12px_34px_rgba(124,45,18,0.08)] max-[359px]:min-h-[172px] sm:min-h-[136px] sm:flex-row sm:items-center sm:justify-start sm:gap-4 sm:p-4 dark:bg-[#17130f]">
+      <div className="flex min-w-0 items-center gap-2.5 max-[359px]:flex-col max-[359px]:items-start sm:contents">
+        <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-[0_7px_18px_rgba(124,45,18,0.15)] sm:h-[72px] sm:w-[72px] dark:bg-white/95">
+          <Image
+            src={imageSrc}
+            alt=""
+            width={72}
+            height={72}
+            sizes="(max-width: 639px) 44px, 72px"
+            className="h-8 w-8 object-contain sm:h-14 sm:w-14"
+          />
+        </div>
+        <p className="min-w-0 break-words text-[1.35rem] font-bold leading-[1.05] tracking-tight text-orange-700 tabular-nums sm:hidden dark:text-orange-300">
           {value}
         </p>
-        <p className="mt-1.5 line-clamp-2 text-[11px] font-semibold leading-4 text-emerald-950/75 dark:text-white/75">
+      </div>
+      <div className="min-w-0">
+        <p className="hidden break-words text-2xl font-bold leading-none tracking-tight text-orange-700 tabular-nums sm:block dark:text-orange-300">
+          {value}
+        </p>
+        <p className="line-clamp-2 text-[11px] font-semibold leading-4 text-emerald-950/75 sm:mt-1.5 dark:text-white/75">
           {label}
         </p>
         <p className="mt-1 text-[9px] leading-4 text-emerald-950/45 sm:text-[10px] dark:text-white/45">

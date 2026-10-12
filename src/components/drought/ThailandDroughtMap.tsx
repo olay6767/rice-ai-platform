@@ -390,6 +390,24 @@ export default function ThailandDroughtMap({
                 : "border border-orange-950/10 bg-white dark:border-orange-950/20 dark:bg-white"
           }`}
         >
+          <div className="relative z-10 flex items-center justify-between gap-2 px-3 pt-3 sm:absolute sm:left-3 sm:top-3 sm:p-0">
+            <p className="text-xs leading-5 text-[#557060] sm:hidden">หรือแตะจังหวัด<br />บนแผนที่</p>
+            <div className="flex gap-2 sm:flex-col">
+              <MapButton theme={theme} label="ขยายแผนที่" onClick={() => zoom(0.78)}>
+                <Plus aria-hidden="true" className="h-4 w-4" />
+              </MapButton>
+              <MapButton theme={theme} label="ย่อแผนที่" onClick={() => zoom(1.28)}>
+                <Minus aria-hidden="true" className="h-4 w-4" />
+              </MapButton>
+              <MapButton
+                theme={theme}
+                label="รีเซ็ตแผนที่"
+                onClick={() => setViewBox(isMobileMap ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX)}
+              >
+                <RotateCcw aria-hidden="true" className="h-4 w-4" />
+              </MapButton>
+            </div>
+          </div>
           <svg
             role="img"
             aria-label={`แผนที่ประเทศไทยแสดง${frequencyLabel} ${scopeLabel}`}
@@ -456,22 +474,6 @@ export default function ThailandDroughtMap({
               );
             })}
           </svg>
-
-          <div className="absolute left-2 top-2 z-10 flex flex-col gap-2 sm:left-3 sm:top-3">
-            <MapButton theme={theme} label="ขยายแผนที่" onClick={() => zoom(0.78)}>
-              <Plus aria-hidden="true" className="h-4 w-4" />
-            </MapButton>
-            <MapButton theme={theme} label="ย่อแผนที่" onClick={() => zoom(1.28)}>
-              <Minus aria-hidden="true" className="h-4 w-4" />
-            </MapButton>
-            <MapButton
-              theme={theme}
-              label="รีเซ็ตแผนที่"
-              onClick={() => setViewBox(isMobileMap ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX)}
-            >
-              <RotateCcw aria-hidden="true" className="h-4 w-4" />
-            </MapButton>
-          </div>
 
           {compact ? (
             <div
@@ -677,7 +679,7 @@ function MapButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`grid h-10 w-10 place-items-center rounded-md bg-white/95 shadow-md backdrop-blur transition active:scale-95 ${
+      className={`grid h-11 w-11 place-items-center rounded-md bg-white/95 shadow-md backdrop-blur transition active:scale-95 sm:h-10 sm:w-10 ${
         theme === "green"
           ? "text-emerald-900 hover:bg-emerald-50"
           : "text-orange-900 hover:bg-orange-50 dark:bg-[#24170f]/95 dark:text-orange-200 dark:hover:bg-[#302015]"
