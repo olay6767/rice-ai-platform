@@ -2,9 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { BRAND_LOGO_SRC } from "@/lib/brand-logo";
+import { usePathname } from "next/navigation";
+
+import { brandLogoForPath } from "@/lib/brand-logo";
 
 export default function NavbarLogo() {
+  const pathname = usePathname();
+
   return (
     <Link
       href="/"
@@ -41,7 +45,7 @@ export default function NavbarLogo() {
         "
       >
         <Image
-          src={BRAND_LOGO_SRC}
+          src={brandLogoForPath(pathname)}
           alt="โลโก้ SmartRiceHub"
           fill
           preload
