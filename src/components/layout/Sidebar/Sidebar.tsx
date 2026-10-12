@@ -20,6 +20,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { BRAND_LOGO_SRC } from "@/lib/brand-logo";
+
 import SidebarMenu, {
   DEFAULT_SIDEBAR_MENU_SECTIONS,
   type SidebarMenuEntry,
@@ -500,7 +502,7 @@ export default function Sidebar({
             )}
           >
             <Image
-              src="/logo/rice-ai-farmer-mark.png"
+              src={BRAND_LOGO_SRC}
               alt=""
               fill
               sizes="40px"

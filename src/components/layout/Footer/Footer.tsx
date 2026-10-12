@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 
+import { BRAND_LOGO_SRC } from "@/lib/brand-logo";
+
 export interface FooterProps
   extends Omit<ComponentPropsWithoutRef<"footer">, "children"> {
   brandName?: string;
@@ -92,7 +94,7 @@ export default function Footer({
               className={`inline-flex items-center gap-3 rounded-lg ${FOCUS_STYLE}`}
             >
               <Image
-                src="/logo/rice-ai-farmer-mark.png"
+                src={BRAND_LOGO_SRC}
                 alt=""
                 width={48}
                 height={48}

@@ -33,7 +33,7 @@ import {
 } from "./NavbarMenu";
 
 import type { NavbarUser } from "./Navbar";
-import { brandLogoForPath } from "@/lib/brand-logo";
+import { BRAND_LOGO_SRC } from "@/lib/brand-logo";
 
 export interface NavbarMobileProps
   extends Omit<
@@ -504,7 +504,7 @@ export default function NavbarMobile({
                   )}
                 >
                   <Image
-                    src={brandLogoForPath(pathname)}
+                    src={BRAND_LOGO_SRC}
                     alt=""
                     fill
                     sizes="44px"

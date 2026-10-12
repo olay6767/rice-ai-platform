@@ -308,7 +308,7 @@ export default function RiceYieldDashboard() {
       />
 
       {selectedRecord ? (
-        <section aria-label="ข้อมูลสรุปผลผลิต" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="ข้อมูลสรุปผลผลิต" className="grid grid-cols-2 gap-2.5 sm:gap-3 xl:grid-cols-4">
           {cards.map(({ label, value, unit, image, imageAlt }) => (
             <YieldKpiCard
               key={`${label}-${unit}`}
@@ -374,24 +374,27 @@ function YieldKpiCard({
   imageAlt: string;
 }) {
   return (
-    <article className="flex min-h-[108px] min-w-0 items-center rounded-xl bg-white px-4 py-4 text-[#23654C] shadow-[0_10px_28px_rgba(64,145,108,0.16)] dark:bg-[#0d2014] sm:px-5">
-      <div className="flex w-full items-center gap-3.5">
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white shadow-[0_7px_20px_rgba(30,53,38,0.18)]">
+    <article className="flex min-h-[148px] min-w-0 flex-col justify-between rounded-xl bg-white p-3.5 text-[#23654C] shadow-[0_10px_28px_rgba(64,145,108,0.16)] max-[359px]:min-h-[172px] sm:min-h-[108px] sm:flex-row sm:items-center sm:justify-start sm:gap-3.5 sm:px-5 sm:py-4 dark:bg-[#0d2014]">
+      <div className="flex min-w-0 items-center gap-2.5 max-[359px]:flex-col max-[359px]:items-start sm:contents">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white shadow-[0_7px_20px_rgba(30,53,38,0.18)] sm:h-14 sm:w-14">
           <Image
             src={image}
             alt={imageAlt}
             width={38}
             height={38}
-            className="h-9 w-9 object-contain opacity-80 brightness-0"
+            className="h-7 w-7 object-contain opacity-80 brightness-0 sm:h-9 sm:w-9"
           />
         </span>
-        <div className="min-w-0">
-          <p className="text-xs font-medium leading-5 text-[#557060]">{label}</p>
-          <p className="mt-0.5 break-words text-[1.7rem] font-bold leading-none tabular-nums text-[#173523] dark:text-white">
-            {value}
-          </p>
-          <p className="mt-1.5 text-[11px] text-[#6d8274] dark:text-white/55">{unit}</p>
-        </div>
+        <p className="min-w-0 break-words text-[1.35rem] font-bold leading-[1.05] tabular-nums text-[#173523] sm:hidden dark:text-white">
+          {value}
+        </p>
+      </div>
+      <div className="min-w-0">
+        <p className="hidden break-words text-[1.7rem] font-bold leading-none tabular-nums text-[#173523] sm:block dark:text-white">
+          {value}
+        </p>
+        <p className="line-clamp-2 text-[11px] font-medium leading-4 text-[#557060] sm:mt-0.5 sm:text-xs sm:leading-5">{label}</p>
+        <p className="mt-1.5 text-[11px] text-[#6d8274] dark:text-white/55">{unit}</p>
       </div>
     </article>
   );
