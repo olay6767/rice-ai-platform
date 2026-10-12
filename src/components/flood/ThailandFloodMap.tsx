@@ -9,6 +9,8 @@ import { RiceErrorState, RiceLoadingState } from "@/components/rice-yield/RiceAn
 
 const WIDTH = 820;
 const HEIGHT = 620;
+const MOBILE_VIEW_BOX = { x: 200, y: 0, width: 420, height: HEIGHT };
+const DESKTOP_VIEW_BOX = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
 
 interface FloodMapFeature {
   type: "Feature";
@@ -148,10 +150,23 @@ export default function ThailandFloodMap({
 }) {
   const [features, setFeatures] = useState<FloodMapFeature[]>([]);
   const [hovered, setHovered] = useState<FloodMapFeature | null>(null);
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: WIDTH, height: HEIGHT });
+  const [viewBox, setViewBox] = useState(DESKTOP_VIEW_BOX);
+  const [isMobileMap, setIsMobileMap] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const syncViewport = () => {
+      setIsMobileMap(media.matches);
+      setViewBox(media.matches ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX);
+    };
+
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -206,8 +221,11 @@ export default function ThailandFloodMap({
 
   function zoom(factor: number) {
     setViewBox((current) => {
-      const nextWidth = Math.max(220, Math.min(WIDTH, current.width * factor));
-      const nextHeight = (nextWidth / WIDTH) * HEIGHT;
+      const nextWidth = Math.max(
+        220,
+        Math.min(isMobileMap ? MOBILE_VIEW_BOX.width : WIDTH, current.width * factor)
+      );
+      const nextHeight = (nextWidth / current.width) * current.height;
       return {
         x: Math.max(0, Math.min(WIDTH - nextWidth, current.x + (current.width - nextWidth) / 2)),
         y: Math.max(0, Math.min(HEIGHT - nextHeight, current.y + (current.height - nextHeight) / 2)),
@@ -229,7 +247,7 @@ export default function ThailandFloodMap({
         aria-label="แผนที่ประเทศไทยแสดงจำนวนเหตุการณ์น้ำท่วมรายจังหวัด"
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
         onDoubleClick={() => zoom(0.78)}
-        className="aspect-[4/3] w-full select-none"
+        className="aspect-[3/4] w-full select-none sm:aspect-[4/3]"
       >
         <title>แผนที่ความถี่เหตุการณ์น้ำท่วม 77 จังหวัด</title>
         {pathFeatures.map(({ feature, path }) => {
@@ -263,7 +281,7 @@ export default function ThailandFloodMap({
           );
         })}
         {activePathFeature ? (
-          <g aria-hidden="true" pointerEvents="none">
+          <g aria-hidden="true" pointerEvents="none" className="max-sm:hidden">
             <path
               d={`M ${activePathFeature.center[0]} ${activePathFeature.center[1]} C ${(activePathFeature.center[0] + connectorEnd[0]) / 2} ${activePathFeature.center[1]}, ${(activePathFeature.center[0] + connectorEnd[0]) / 2} ${connectorEnd[1]}, ${connectorEnd[0]} ${connectorEnd[1]}`}
               fill="none"
@@ -302,13 +320,13 @@ export default function ThailandFloodMap({
         </MapButton>
         <MapButton
           label="รีเซ็ตแผนที่"
-          onClick={() => setViewBox({ x: 0, y: 0, width: WIDTH, height: HEIGHT })}
+          onClick={() => setViewBox(isMobileMap ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX)}
         >
           <RotateCcw aria-hidden="true" className="h-4 w-4" />
         </MapButton>
       </div>
 
-      <div className="absolute bottom-3 left-3 z-10 hidden rounded-xl bg-white/95 p-3 text-[10px] shadow-[0_10px_30px_rgba(11,46,28,0.14)] backdrop-blur sm:block dark:bg-[#0d2014]/95">
+      <div className="relative z-10 mx-3 mb-3 rounded-xl bg-white/95 p-3 text-[10px] shadow-[0_10px_30px_rgba(11,46,28,0.14)] backdrop-blur sm:absolute sm:bottom-3 sm:left-3 sm:mx-0 sm:mb-0 dark:bg-[#0d2014]/95">
         <p className="mb-2 font-bold text-emerald-950/75 dark:text-white/75">ระดับเหตุการณ์</p>
         <MapLegendItem color={mapColor(maximum, maximum)} label="เหตุการณ์สูง" />
         <MapLegendItem color={mapColor(Math.max(1, maximum * 0.25), maximum)} label="เหตุการณ์ต่ำ" />
@@ -317,7 +335,7 @@ export default function ThailandFloodMap({
 
       <aside
         aria-live="polite"
-        className="absolute bottom-3 right-3 z-10 w-[min(15.5rem,calc(100%-1.5rem))] rounded-2xl bg-white/95 p-4 shadow-[0_16px_40px_rgba(11,46,28,0.18)] backdrop-blur dark:bg-[#0d2014]/95"
+        className={`relative z-10 mx-3 mb-3 rounded-2xl bg-white/95 p-4 shadow-[0_16px_40px_rgba(11,46,28,0.18)] backdrop-blur sm:absolute sm:bottom-3 sm:right-3 sm:mx-0 sm:mb-0 sm:w-[min(15.5rem,calc(100%-1.5rem))] dark:bg-[#0d2014]/95 ${active ? "" : "hidden sm:block"}`}
       >
         {active ? (
           <>

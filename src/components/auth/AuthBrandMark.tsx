@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { BRAND_LOGO_SRC } from "@/lib/brand-logo";
 
 export interface AuthBrandMarkProps {
   size?: "compact" | "hero";
@@ -23,13 +24,13 @@ export default function AuthBrandMark({
       `}
     >
       <Image
-        src="/images/44.png"
+        src={BRAND_LOGO_SRC}
         alt="โลโก้ SmartRiceHub"
         width={isHero ? 76 : 54}
         height={isHero ? 76 : 54}
         sizes={isHero ? "76px" : "54px"}
         className="h-full w-full object-contain p-0.5 drop-shadow-sm"
-        priority
+        preload
       />
     </span>
   );

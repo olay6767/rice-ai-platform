@@ -9,6 +9,8 @@ import type { RiceGeometry, RicePosition } from "@/lib/rice-yield/types";
 
 const WIDTH = 820;
 const HEIGHT = 640;
+const MOBILE_VIEW_BOX = { x: 200, y: 0, width: 420, height: HEIGHT };
+const DESKTOP_VIEW_BOX = { x: 0, y: 0, width: WIDTH, height: HEIGHT };
 
 interface ProvinceFeature {
   type: "Feature";
@@ -172,7 +174,8 @@ export default function ThailandDroughtMap({
 }) {
   const [features, setFeatures] = useState<ProvinceFeature[]>([]);
   const [hovered, setHovered] = useState<ProvinceFeature | null>(null);
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, width: WIDTH, height: HEIGHT });
+  const [viewBox, setViewBox] = useState(DESKTOP_VIEW_BOX);
+  const [isMobileMap, setIsMobileMap] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
@@ -180,6 +183,18 @@ export default function ThailandDroughtMap({
   const interactionLayerRef = useRef<HTMLDivElement>(null);
   const detailCardRef = useRef<HTMLElement>(null);
   const provincePathRefs = useRef(new Map<number, SVGPathElement>());
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const syncViewport = () => {
+      setIsMobileMap(media.matches);
+      setViewBox(media.matches ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX);
+    };
+
+    syncViewport();
+    media.addEventListener("change", syncViewport);
+    return () => media.removeEventListener("change", syncViewport);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -322,8 +337,11 @@ export default function ThailandDroughtMap({
 
   function zoom(factor: number) {
     setViewBox((current) => {
-      const nextWidth = Math.max(220, Math.min(WIDTH, current.width * factor));
-      const nextHeight = (nextWidth / WIDTH) * HEIGHT;
+      const nextWidth = Math.max(
+        220,
+        Math.min(isMobileMap ? MOBILE_VIEW_BOX.width : WIDTH, current.width * factor)
+      );
+      const nextHeight = (nextWidth / current.width) * current.height;
 
       return {
         x: Math.max(
@@ -376,7 +394,7 @@ export default function ThailandDroughtMap({
             role="img"
             aria-label={`แผนที่ประเทศไทยแสดง${frequencyLabel} ${scopeLabel}`}
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
-            className="aspect-[4/3] w-full select-none"
+            className="aspect-[3/4] w-full select-none sm:aspect-[4/3]"
             onDoubleClick={() => zoom(0.78)}
           >
             <title>{`แผนที่${frequencyLabel}รายจังหวัด`}</title>
@@ -449,7 +467,7 @@ export default function ThailandDroughtMap({
             <MapButton
               theme={theme}
               label="รีเซ็ตแผนที่"
-              onClick={() => setViewBox({ x: 0, y: 0, width: WIDTH, height: HEIGHT })}
+              onClick={() => setViewBox(isMobileMap ? MOBILE_VIEW_BOX : DESKTOP_VIEW_BOX)}
             >
               <RotateCcw aria-hidden="true" className="h-4 w-4" />
             </MapButton>
@@ -458,12 +476,10 @@ export default function ThailandDroughtMap({
           {compact ? (
             <div
               aria-label="คำอธิบายระดับความถี่"
-              className={`absolute bottom-3 left-3 z-10 w-36 gap-2 rounded-xl border p-3 backdrop-blur ${
+              className={`relative z-10 mt-3 grid grid-cols-2 gap-2 rounded-xl border p-3 sm:absolute sm:bottom-3 sm:left-3 sm:mt-0 sm:w-36 sm:grid-cols-1 backdrop-blur ${
                 isGreen
                   ? "border-[#40916C]/15 bg-[#fffdf5]/95 shadow-[0_12px_30px_rgba(39,77,53,0.22)]"
                   : "border-orange-700/10 bg-white/95 shadow-[0_12px_30px_rgba(124,45,18,0.18)]"
-              } ${
-                active ? "hidden sm:grid" : "grid"
               }`}
             >
               {legendTitle ? (
@@ -494,7 +510,7 @@ export default function ThailandDroughtMap({
             aria-hidden="true"
             viewBox={`0 0 ${connector.width} ${connector.height}`}
             preserveAspectRatio="none"
-            className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible"
+            className="pointer-events-none absolute inset-0 z-20 hidden h-full w-full overflow-visible sm:block"
           >
             <path
               d={connector.path}
@@ -533,7 +549,7 @@ export default function ThailandDroughtMap({
           className={`rounded-lg p-4 ${
             compact
               ? active
-                ? "dashboard-map-detail-card absolute bottom-3 right-3 z-30 w-[min(240px,calc(100%-1.5rem))] bg-white/95 shadow-[0_20px_48px_rgba(17,53,35,0.26)] backdrop-blur"
+                ? "dashboard-map-detail-card relative z-30 mt-3 w-full bg-white/95 shadow-[0_20px_48px_rgba(17,53,35,0.15)] backdrop-blur sm:absolute sm:bottom-3 sm:right-3 sm:mt-0 sm:w-[min(240px,calc(100%-1.5rem))]"
                 : "hidden"
               : ""
           } ${

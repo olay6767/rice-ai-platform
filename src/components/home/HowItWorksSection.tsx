@@ -37,7 +37,7 @@ export default function HowItWorksSection() {
         </div>
         <div className="flex flex-col gap-5 border-t border-rice-forest/10 bg-white/70 px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-9 lg:px-10">
           <div className="flex items-center gap-4">
-            <Image src="/logo/rice-ai-farmer-mark.png" alt="น้องเสริม ผู้ช่วยของ SmartRiceHub" width={52} height={52} className="h-13 w-13 shrink-0 object-contain" />
+            <Image src="/images/44.png" alt="น้องเสริม ผู้ช่วยของ SmartRiceHub" width={52} height={52} className="h-13 w-13 shrink-0 object-contain" />
             <div>
               <h3 className="text-base font-semibold text-rice-forest">อยากถามเรื่องการปลูกข้าวต่อ?</h3>
               <p className="mt-1 text-sm leading-6 text-rice-muted">เข้าสู่ระบบ แล้วคุยกับน้องเสริมได้ในหน้าแชตบอต</p>
